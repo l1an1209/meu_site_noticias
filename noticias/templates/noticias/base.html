@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="pt-br" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Portal de Notícias Premium</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+    :root {
+        --primary-color: #2563eb;
+        --primary-light: #3b82f6;
+        --secondary-color: #64748b;
+        --accent-color: #ef4444;
+        --light-color: #f8fafc;
+        --dark-color: #0f172a;
+        --card-bg: rgba(255, 255, 255, 0.92);
+        --header-gradient: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+        --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
+        --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+        --border-radius: 16px;
+        --glass-bg: rgba(255, 255, 255, 0.08);
+        --glass-border: rgba(255, 255, 255, 0.18);
+    }
+
+    body[data-bs-theme="dark"] {
+        --primary-color: #3b82f6;
+        --primary-light: #60a5fa;
+        --secondary-color: #94a3b8;
+        --light-color: #0f172a;
+        --dark-color: #f1f5f9;
+        --card-bg: rgba(15, 23, 42, 0.92);
+        --header-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        --glass-bg: rgba(15, 23, 42, 0.15);
+        --glass-border: rgba(148, 163, 184, 0.1);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background-color: var(--light-color);
+        color: var(--dark-color);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        line-height: 1.6;
+        transition: var(--transition);
+        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23e2e8f0' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+    }
+
+    h1, h2, h3, h4, h5 {
+        font-family: 'Playfair Display', Georgia, serif;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--dark-color);
+    }
+
+    body[data-bs-theme="dark"] h1,
+    body[data-bs-theme="dark"] h2,
+    body[data-bs-theme="dark"] h3,
+    body[data-bs-theme="dark"] h4,
+    body[data-bs-theme="dark"] h5 {
+        color: var(--dark-color);
+    }
+
+    /* Navbar Premium */
+    .navbar {
+        background: var(--header-gradient);
+        box-shadow: var(--shadow-md);
+        padding: 1rem 0;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--glass-border);
+    }
+
+    .navbar-brand {
+        font-weight: 700;
+        font-size: 1.8rem;
+        letter-spacing: -0.5px;
+        display: flex;
+        align-items: center;
+        font-family: 'Playfair Display', Georgia, serif;
+    }
+
+    .navbar-brand i {
+        margin-right: 10px;
+        color: #fff;
+        transition: var(--transition);
+    }
+
+    .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.92) !important;
+        font-weight: 500;
+        padding: 0.7rem 1.3rem;
+        margin: 0 0.2rem;
+        border-radius: 50px;
+        transition: var(--transition);
+        position: relative;
+    }
+
+    .navbar-nav .nav-link::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background: #fff;
+        transform: translateX(-50%);
+        transition: var(--transition);
+        border-radius: 2px;
+    }
+
+    .navbar-nav .nav-link:hover,
+    .navbar-nav .nav-link.active {
+        color: #fff !important;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .navbar-nav .nav-link:hover::after,
+    .navbar-nav .nav-link.active::after {
+        width: 60%;
+    }
+
+    .theme-toggle {
+        background: rgba(255, 255, 255, 0.15);
+        border: none;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 1.1rem;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 12px;
+        transition: var(--transition);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }
+
+    .theme-toggle:hover {
+        background: rgba(255, 255, 255, 0.25);
+        transform: scale(1.1) rotate(15deg);
+        color: #fff;
+    }
+
+    /* Page Header Elegante */
+    .page-header {
+        position: relative;
+        padding: 4rem 1rem;
+        margin: 0 auto 4rem;
+        background: var(--card-bg);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        text-align: center;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        max-width: 1200px;
+        width: 95%;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+    }
+
+    .page-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    }
+
+    .page-header h1 {
+        font-weight: 800;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        letter-spacing: -0.5px;
+    }
+
+    .page-header .lead {
+        font-size: 1.3rem;
+        max-width: 700px;
+        margin: 0 auto;
+        color: var(--secondary-color);
+    }
+
+    /* Footer Elegante */
+    .footer {
+        background: var(--header-gradient);
+        color: rgba(255, 255, 255, 0.92);
+        padding: 5rem 0 2.5rem;
+        margin-top: auto;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .footer::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    }
+
+    .footer a {
+        color: rgba(255, 255, 255, 0.92);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .footer a:hover {
+        color: #fff;
+        text-decoration: underline;
+        transform: translateX(3px);
+    }
+
+    .footer-title {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        color: #fff;
+        padding-bottom: 0.5rem;
+        display: inline-block;
+        position: relative;
+    }
+
+    .footer-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background: var(--accent-color);
+        border-radius: 3px;
+    }
+
+    .footer-links li {
+        margin-bottom: 0.9rem;
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .footer-links li::before {
+        content: '→';
+        position: absolute;
+        left: 0;
+        color: var(--accent-color);
+        font-weight: bold;
+        transition: var(--transition);
+    }
+
+    .footer-links li:hover::before {
+        transform: translateX(5px);
+    }
+
+    .social-icons {
+        display: flex;
+        gap: 14px;
+        margin-top: 1.5rem;
+    }
+
+    .social-icons a {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: var(--glass-bg);
+        color: #fff;
+        font-size: 1.1rem;
+        transition: var(--transition);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid var(--glass-border);
+    }
+
+    .social-icons a:hover {
+        background: var(--primary-light);
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .newsletter-form {
+        display: flex;
+        flex-wrap: nowrap;
+        margin-top: 1.5rem;
+    }
+
+    .newsletter-form .form-control {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        color: #fff;
+        border-radius: 50px 0 0 50px;
+        padding: 1rem 1.5rem;
+        min-width: 0;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        transition: var(--transition);
+    }
+
+    .newsletter-form .form-control:focus {
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        border-color: var(--primary-light);
+    }
+
+    .newsletter-form .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.7);
+        font-style: italic;
+    }
+
+    .newsletter-form .btn {
+        border-radius: 0 50px 50px 0;
+        padding: 0 1.75rem;
+        background: var(--accent-color);
+        border: none;
+        color: #fff;
+        white-space: nowrap;
+        font-weight: 600;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+    }
+
+    .newsletter-form .btn:hover {
+        background: #dc2626;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+    }
+
+    .footer-bottom {
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
+        padding-top: 1.5rem;
+        margin-top: 4rem;
+        text-align: center;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    /* Responsividade */
+    @media (max-width: 992px) {
+        .navbar-collapse {
+            padding: 1rem 0;
+            background: var(--header-gradient);
+            border-radius: 0 0 12px 12px;
+            margin-top: 8px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .navbar-nav .nav-link {
+            margin: 0.3rem 0;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .newsletter-form {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .newsletter-form .form-control,
+        .newsletter-form .btn {
+            border-radius: 50px !important;
+            width: 100%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .navbar-brand {
+            font-size: 1.5rem;
+        }
+
+        .page-header {
+            padding: 3rem 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.3rem;
+        }
+
+        .footer-title {
+            font-size: 1.2rem;
+        }
+
+        .footer {
+            text-align: center;
+        }
+
+        .footer .col-lg-4,
+        .footer .col-lg-2 {
+            margin-bottom: 2rem;
+        }
+
+        .social-icons {
+            justify-content: center;
+        }
+        
+        .footer-title::after {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .footer-links li {
+            padding-left: 0;
+        }
+        
+        .footer-links li::before {
+            display: none;
+        }
+    }
+
+    /* Animação de entrada */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .animate-in {
+        animation: fadeIn 0.6s ease-out forwards;
+    }
+
+    .delay-1 {
+        animation-delay: 0.1s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.2s;
+    }
+
+    .delay-3 {
+        animation-delay: 0.3s;
+    }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegação premium -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'index' %}">
+                <i class="fas fa-newspaper"></i>Portal Notícias
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{% url 'index' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://noticias.uol.com.br/politica/" target="_blank" rel="noopener noreferrer">Política</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://forbes.com.br/" target="_blank" rel="noopener noreferrer">Economia</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://www.tecmundo.com.br" target="_blank" rel="noopener noreferrer">Tecnologia</a>
+                    </li>
+                    <li class="nav-item">
+                         <a class="nav-link" href="https://ge.globo.com/" target="_blank" rel="noopener noreferrer">Esporte</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://canaltech.com.br/" target="_blank" rel="noopener noreferrer">Entretenimento</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            Mais
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">Saúde</a></li>
+                            <li><a class="dropdown-item" href="#">Educação</a></li>
+                            <li><a class="dropdown-item" href="#">Ciência</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#">Opinião</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <form class="d-flex me-2" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control rounded-pill-start" placeholder="Pesquisar..." aria-label="Pesquisar">
+                        <button class="btn btn-outline-light rounded-pill-end" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                <button class="btn theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo principal -->
+    <main class="container my-4">
+        {% block page_header %}
+        <div class="page-header text-center animate-in">
+            <div class="container">
+                <h1>{% block page_title %}{% endblock %}</h1>
+                <p class="lead text-muted">{% block page_subtitle %}{% endblock %}</p>
+            </div>
+        </div>
+        {% endblock %}
+        
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Rodapé premium -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row g-4">
+                <div class="col-lg-4 col-md-6">
+                    <h3 class="footer-title">Portal de Notícias</h3>
+                    <p>O seu portal de notícias confiável, trazendo as últimas novidades e informações relevantes 24 horas por dia.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-youtube"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-2 col-md-6">
+                    <h3 class="footer-title">Links Rápidos</h3>
+                    <ul class="list-unstyled footer-links">
+                        <li><a href="{% url 'index' %}"><i class="fas fa-chevron-right me-2"></i> Home</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Sobre Nós</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Contato</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Política de Privacidade</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Termos de Uso</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-2 col-md-6">
+                    <h3 class="footer-title">Categorias</h3>
+                    <ul class="list-unstyled footer-links">
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Política</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Economia</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Tecnologia</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Esportes</a></li>
+                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Entretenimento</a></li>
+                    </ul>
+                </div>
+                
+                <div class="col-lg-4 col-md-6">
+                    <h3 class="footer-title">Newsletter</h3>
+                    <p>Inscreva-se para receber as últimas notícias diretamente no seu e-mail.</p>
+                    <form class="newsletter-form d-flex mt-3">
+                        <input type="email" class="form-control" placeholder="Seu melhor e-mail">
+                        <button class="btn" type="submit">Inscrever</button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <div class="row">
+                    <div class="col-12">
+                        <p class="mb-0">© {{ now|date:"Y" }} Portal de Notícias. Todos os direitos reservados.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Toggle de tema claro/escuro
+        const themeToggle = document.getElementById('themeToggle');
+        const htmlElement = document.documentElement;
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        
+        // Aplicar tema salvo
+        htmlElement.setAttribute('data-bs-theme', currentTheme);
+        updateThemeIcon(currentTheme);
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+            
+            // Adicionar efeito de transição suave
+            document.documentElement.style.transition = 'background-color 0.5s ease, color 0.5s ease';
+        });
+        
+        function updateThemeIcon(theme) {
+            themeToggle.innerHTML = theme === 'light' ? 
+                '<i class="fas fa-moon"></i>' : 
+                '<i class="fas fa-sun"></i>';
+        }
+        
+        // Adicionar classe ativa ao item de menu atual
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Animação de entrada
+            const animatedElements = document.querySelectorAll('.animate-in');
+            animatedElements.forEach(el => {
+                el.style.visibility = 'hidden';
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.visibility = 'visible';
+                            setTimeout(() => {
+                                entry.target.style.opacity = '1';
+                                entry.target.style.transform = 'translateY(0)';
+                            }, 50);
+                        }
+                    });
+                }, { threshold: 0.1 });
+                
+                observer.observe(el);
+            });
+        });
+    </script>
+</body>
+</html>
