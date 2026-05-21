@@ -1,0 +1,42 @@
+{% load portal_extras %}
+{% if is_paginated %}
+<nav class="mt-5" aria-label="Paginação de notícias">
+    <ul class="pagination pagination-modern justify-content-center mb-0">
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+            {% if page_obj.has_previous %}
+            <a class="page-link" href="{% query_string page_obj.previous_page_number %}" aria-label="Anterior">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% else %}
+            <span class="page-link" aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+            {% endif %}
+        </li>
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active" aria-current="page">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="{% query_string num %}">{{ num }}</a>
+            </li>
+            {% endif %}
+        {% endfor %}
+
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+            {% if page_obj.has_next %}
+            <a class="page-link" href="{% query_string page_obj.next_page_number %}" aria-label="Próxima">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% else %}
+            <span class="page-link" aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+            {% endif %}
+        </li>
+    </ul>
+    <p class="text-center text-muted small mt-3 mb-0">
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        · {{ page_obj.paginator.count }} notícia{{ page_obj.paginator.count|pluralize }}
+    </p>
+</nav>
+{% endif %}

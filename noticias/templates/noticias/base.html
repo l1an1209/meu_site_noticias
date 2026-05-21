@@ -1,1094 +1,185 @@
+{% load static portal_extras %}
 <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Portal de Notícias Premium</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#0c1929">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="description" content="{% block meta_description %}{{ site_description }}{% endblock %}">
+    <title>{% block title %}{{ site_name }} — {{ site_slogan }}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static site_favicon %}">
+    <link rel="apple-touch-icon" href="{% static site_logo %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-    :root {
-        --primary-color: #2563eb;
-        --primary-light: #3b82f6;
-        --secondary-color: #64748b;
-        --accent-color: #ef4444;
-        --light-color: #f8fafc;
-        --dark-color: #0f172a;
-        --card-bg: rgba(255, 255, 255, 0.95);
-        --header-gradient: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-        --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-        --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -4px rgba(0, 0, 0, 0.07);
-        --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
-        --border-radius: 16px;
-        --glass-bg: rgba(255, 255, 255, 0.08);
-        --glass-border: rgba(255, 255, 255, 0.18);
-    }
-
-    body[data-bs-theme="dark"] {
-        --primary-color: #3b82f6;
-        --primary-light: #60a5fa;
-        --secondary-color: #94a3b8;
-        --light-color: #0f172a;
-        --dark-color: #f1f5f9;
-        --card-bg: rgba(15, 23, 42, 0.95);
-        --header-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-        --glass-bg: rgba(15, 23, 42, 0.15);
-        --glass-border: rgba(148, 163, 184, 0.1);
-    }
-
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-
-    body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        background-color: var(--light-color);
-        color: var(--dark-color);
-        display: flex;
-        flex-direction: column;
-        min-height: 100vh;
-        line-height: 1.6;
-        transition: var(--transition);
-        background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23e2e8f0' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
-    }
-
-    h1, h2, h3, h4, h5 {
-        font-family: 'Playfair Display', Georgia, serif;
-        font-weight: 700;
-        line-height: 1.2;
-        color: var(--dark-color);
-    }
-
-    body[data-bs-theme="dark"] h1,
-    body[data-bs-theme="dark"] h2,
-    body[data-bs-theme="dark"] h3,
-    body[data-bs-theme="dark"] h4,
-    body[data-bs-theme="dark"] h5 {
-        color: var(--dark-color);
-    }
-
-    /* Navbar Premium */
-    .navbar {
-        background: var(--header-gradient);
-        box-shadow: var(--shadow-md);
-        padding: 0.8rem 0;
-        transition: var(--transition);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-bottom: 1px solid var(--glass-border);
-    }
-
-    .navbar-brand {
-        font-weight: 700;
-        font-size: 1.8rem;
-        letter-spacing: -0.5px;
-        display: flex;
-        align-items: center;
-        font-family: 'Playfair Display', Georgia, serif;
-    }
-
-    .navbar-brand i {
-        margin-right: 10px;
-        color: #fff;
-        transition: var(--transition);
-    }
-
-    .navbar-nav .nav-link {
-        color: rgba(255, 255, 255, 0.92) !important;
-        font-weight: 500;
-        padding: 0.7rem 1.3rem;
-        margin: 0 0.2rem;
-        border-radius: 50px;
-        transition: var(--transition);
-        position: relative;
-    }
-
-    .navbar-nav .nav-link::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        width: 0;
-        height: 2px;
-        background: #fff;
-        transform: translateX(-50%);
-        transition: var(--transition);
-        border-radius: 2px;
-    }
-
-    .navbar-nav .nav-link:hover,
-    .navbar-nav .nav-link.active {
-        color: #fff !important;
-        background: rgba(255, 255, 255, 0.12);
-    }
-
-    .navbar-nav .nav-link:hover::after,
-    .navbar-nav .nav-link.active::after {
-        width: 60%;
-    }
-
-    .theme-toggle {
-        background: rgba(255, 255, 255, 0.15);
-        border: none;
-        color: rgba(255, 255, 255, 0.92);
-        font-size: 1.1rem;
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-left: 12px;
-        transition: var(--transition);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-    }
-
-    .theme-toggle:hover {
-        background: rgba(255, 255, 255, 0.25);
-        transform: scale(1.1) rotate(15deg);
-        color: #fff;
-    }
-
-    /* Page Header Elegante */
-    .page-header {
-        position: relative;
-        padding: 4rem 1rem;
-        margin: 0 auto 4rem;
-        background: var(--card-bg);
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        text-align: center;
-        box-shadow: var(--shadow-sm);
-        transition: var(--transition);
-        max-width: 1200px;
-        width: 95%;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1px solid var(--glass-border);
-    }
-
-    .page-header::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 5px;
-        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    }
-
-    .page-header h1 {
-        font-weight: 800;
-        font-size: 3rem;
-        margin-bottom: 1rem;
-        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        letter-spacing: -0.5px;
-    }
-
-    .page-header .lead {
-        font-size: 1.3rem;
-        max-width: 700px;
-        margin: 0 auto;
-        color: var(--secondary-color);
-    }
-
-    /* Footer Elegante */
-    .footer {
-        background: var(--header-gradient);
-        color: rgba(255, 255, 255, 0.92);
-        padding: 5rem 0 2.5rem;
-        margin-top: auto;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .footer::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-    }
-
-    .footer a {
-        color: rgba(255, 255, 255, 0.92);
-        text-decoration: none;
-        transition: var(--transition);
-    }
-
-    .footer a:hover {
-        color: #fff;
-        text-decoration: underline;
-        transform: translateX(3px);
-    }
-
-    .footer-title {
-        font-size: 1.4rem;
-        font-weight: 700;
-        margin-bottom: 1.5rem;
-        color: #fff;
-        padding-bottom: 0.5rem;
-        display: inline-block;
-        position: relative;
-    }
-
-    .footer-title::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 50px;
-        height: 3px;
-        background: var(--accent-color);
-        border-radius: 3px;
-    }
-
-    .footer-links li {
-        margin-bottom: 0.9rem;
-        position: relative;
-        padding-left: 20px;
-    }
-
-    .footer-links li::before {
-        content: '→';
-        position: absolute;
-        left: 0;
-        color: var(--accent-color);
-        font-weight: bold;
-        transition: var(--transition);
-    }
-
-    .footer-links li:hover::before {
-        transform: translateX(5px);
-    }
-
-    .social-icons {
-        display: flex;
-        gap: 14px;
-        margin-top: 1.5rem;
-    }
-
-    .social-icons a {
-        width: 44px;
-        height: 44px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        background: var(--glass-bg);
-        color: #fff;
-        font-size: 1.1rem;
-        transition: var(--transition);
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        border: 1px solid var(--glass-border);
-    }
-
-    .social-icons a:hover {
-        background: var(--primary-light);
-        transform: translateY(-3px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .newsletter-form {
-        display: flex;
-        flex-wrap: nowrap;
-        margin-top: 1.5rem;
-    }
-
-    .newsletter-form .form-control {
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        color: #fff;
-        border-radius: 50px 0 0 50px;
-        padding: 1rem 1.5rem;
-        min-width: 0;
-        backdrop-filter: blur(4px);
-        -webkit-backdrop-filter: blur(4px);
-        transition: var(--transition);
-    }
-
-    .newsletter-form .form-control:focus {
-        background: rgba(255, 255, 255, 0.15);
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
-        border-color: var(--primary-light);
-    }
-
-    .newsletter-form .form-control::placeholder {
-        color: rgba(255, 255, 255, 0.7);
-        font-style: italic;
-    }
-
-    .newsletter-form .btn {
-        border-radius: 0 50px 50px 0;
-        padding: 0 1.75rem;
-        background: var(--accent-color);
-        border: none;
-        color: #fff;
-        white-space: nowrap;
-        font-weight: 600;
-        transition: var(--transition);
-        display: flex;
-        align-items: center;
-    }
-
-    .newsletter-form .btn:hover {
-        background: #dc2626;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
-    }
-
-    .footer-bottom {
-        border-top: 1px solid rgba(255, 255, 255, 0.15);
-        padding-top: 1.5rem;
-        margin-top: 4rem;
-        text-align: center;
-        font-size: 0.9rem;
-        color: rgba(255, 255, 255, 0.7);
-    }
-
-    /* NOVOS ESTILOS ADICIONADOS */
-    
-    /* Cards de notícias modernos */
-    .news-card {
-        background: var(--card-bg);
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        transition: var(--transition);
-        box-shadow: var(--shadow-sm);
-        height: 100%;
-        border: 1px solid rgba(0,0,0,0.05);
-    }
-    
-    .news-card:hover {
-        transform: translateY(-5px);
-        box-shadow: var(--shadow-lg);
-    }
-    
-    .news-card-img {
-        height: 200px;
-        object-fit: cover;
-        width: 100%;
-        transition: transform 0.5s ease;
-    }
-    
-    .news-card:hover .news-card-img {
-        transform: scale(1.05);
-    }
-    
-    .news-card-body {
-        padding: 1.5rem;
-    }
-    
-    .news-card-title {
-        font-size: 1.25rem;
-        margin-bottom: 0.75rem;
-        font-weight: 700;
-        line-height: 1.4;
-    }
-    
-    .news-card-text {
-        color: var(--secondary-color);
-        margin-bottom: 1rem;
-    }
-    
-    .news-card-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0.75rem 1.5rem;
-        background: rgba(0,0,0,0.03);
-        border-top: 1px solid rgba(0,0,0,0.05);
-    }
-    
-    .news-card-category {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: var(--primary-color);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    
-    .news-card-date {
-        font-size: 0.8rem;
-        color: var(--secondary-color);
-    }
-    
-    /* Carrossel de destaques */
-    .featured-carousel {
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        box-shadow: var(--shadow-md);
-        margin-bottom: 3rem;
-    }
-    
-    .carousel-item {
-        height: 500px;
-    }
-    
-    .carousel-caption {
-        background: linear-gradient(transparent, rgba(0,0,0,0.8));
-        padding: 2rem;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        text-align: left;
-    }
-    
-    .carousel-caption h3 {
-        font-size: 2rem;
-        margin-bottom: 1rem;
-    }
-    
-    .carousel-caption p {
-        font-size: 1.1rem;
-        margin-bottom: 1.5rem;
-    }
-    
-    .carousel-control-prev, .carousel-control-next {
-        width: 50px;
-        height: 50px;
-        background: rgba(0,0,0,0.3);
-        border-radius: 50%;
-        top: 50%;
-        transform: translateY(-50%);
-        opacity: 0.7;
-        transition: var(--transition);
-    }
-    
-    .carousel-control-prev {
-        left: 20px;
-    }
-    
-    .carousel-control-next {
-        right: 20px;
-    }
-    
-    .carousel-control-prev:hover, .carousel-control-next:hover {
-        opacity: 0.9;
-        background: rgba(0,0,0,0.5);
-    }
-    
-    /* Seção de categorias */
-    .category-filter {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.75rem;
-        margin-bottom: 2.5rem;
-        justify-content: center;
-    }
-    
-    .category-btn {
-        padding: 0.6rem 1.5rem;
-        background: var(--card-bg);
-        border: 1px solid rgba(0,0,0,0.1);
-        border-radius: 50px;
-        font-weight: 500;
-        transition: var(--transition);
-        color: var(--dark-color);
-    }
-    
-    .category-btn:hover, .category-btn.active {
-        background: var(--primary-color);
-        color: white;
-        border-color: var(--primary-color);
-        transform: translateY(-2px);
-    }
-    
-    /* Badge de notícia quente */
-    .hot-badge {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: var(--accent-color);
-        color: white;
-        padding: 0.35rem 0.75rem;
-        border-radius: 50px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        z-index: 10;
-        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
-    }
-    
-    /* Layout em grid moderno */
-    .news-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-        gap: 2rem;
-        margin-bottom: 4rem;
-    }
-    
-    .main-news {
-        grid-column: span 2;
-    }
-    
-    @media (max-width: 768px) {
-        .main-news {
-            grid-column: span 1;
-        }
-    }
-    
-    /* Barra de pesquisa melhorada */
-    .search-bar {
-        position: relative;
-    }
-    
-    .search-bar .form-control {
-        border-radius: 50px;
-        padding-left: 1.5rem;
-        padding-right: 3rem;
-        border: 1px solid rgba(255,255,255,0.2);
-        background: rgba(255,255,255,0.15);
-        color: white;
-    }
-    
-    .search-bar .form-control::placeholder {
-        color: rgba(255,255,255,0.7);
-    }
-    
-    .search-bar .btn {
-        position: absolute;
-        right: 5px;
-        top: 5px;
-        background: transparent;
-        border: none;
-        color: rgba(255,255,255,0.8);
-        z-index: 10;
-    }
-    
-    /* Indicador de scroll progress */
-    .scroll-progress {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 0%;
-        height: 3px;
-        background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
-        z-index: 9999;
-        transition: width 0.2s ease;
-    }
-    
-    /* Botão de voltar ao topo */
-    .back-to-top {
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: var(--primary-color);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        box-shadow: var(--shadow-md);
-        opacity: 0;
-        visibility: hidden;
-        transition: var(--transition);
-        z-index: 99;
-    }
-    
-    .back-to-top.show {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    .back-to-top:hover {
-        background: var(--primary-light);
-        transform: translateY(-5px);
-    }
-
-    /* Responsividade */
-    @media (max-width: 992px) {
-        .navbar-collapse {
-            padding: 1rem 0;
-            background: var(--header-gradient);
-            border-radius: 0 0 12px 12px;
-            margin-top: 8px;
-            box-shadow: var(--shadow-md);
-        }
-
-        .navbar-nav .nav-link {
-            margin: 0.3rem 0;
-            padding: 0.75rem 1.5rem;
-        }
-
-        .newsletter-form {
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .newsletter-form .form-control,
-        .newsletter-form .btn {
-            border-radius: 50px !important;
-            width: 100%;
-        }
-        
-        .carousel-item {
-            height: 400px;
-        }
-        
-        .carousel-caption h3 {
-            font-size: 1.5rem;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .navbar-brand {
-            font-size: 1.5rem;
-        }
-
-        .page-header {
-            padding: 3rem 1rem;
-            margin-bottom: 3rem;
-        }
-
-        .page-header h1 {
-            font-size: 2.3rem;
-        }
-
-        .footer-title {
-            font-size: 1.2rem;
-        }
-
-        .footer {
-            text-align: center;
-        }
-
-        .footer .col-lg-4,
-        .footer .col-lg-2 {
-            margin-bottom: 2rem;
-        }
-
-        .social-icons {
-            justify-content: center;
-        }
-        
-        .footer-title::after {
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        .footer-links li {
-            padding-left: 0;
-        }
-        
-        .footer-links li::before {
-            display: none;
-        }
-        
-        .carousel-item {
-            height: 350px;
-        }
-        
-        .carousel-caption {
-            padding: 1.5rem;
-        }
-        
-        .carousel-caption h3 {
-            font-size: 1.3rem;
-        }
-        
-        .carousel-caption p {
-            font-size: 1rem;
-            display: none;
-        }
-        
-        .news-grid {
-            grid-template-columns: 1fr;
-            gap: 1.5rem;
-        }
-    }
-
-    /* Animação de entrada */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .animate-in {
-        animation: fadeIn 0.6s ease-out forwards;
-    }
-
-    .delay-1 {
-        animation-delay: 0.1s;
-    }
-
-    .delay-2 {
-        animation-delay: 0.2s;
-    }
-
-    .delay-3 {
-        animation-delay: 0.3s;
-    }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/portal.css' %}">
+    {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <!-- Barra de progresso de scroll -->
-    <div class="scroll-progress" id="scrollProgress"></div>
-    
-    <!-- Botão voltar ao topo -->
-    <a href="#" class="back-to-top" id="backToTop">
-        <i class="fas fa-arrow-up"></i>
-    </a>
+<body class="{% block body_class %}{% endblock %} has-mobile-nav">
+    <div id="scrollProgress"></div>
 
-    <!-- Barra de navegação premium -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="city-bar">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span><i class="fas fa-map-marker-alt me-1"></i> <strong>{{ site_region }}</strong> — {{ site_state }}</span>
+            <span class="live-badge"><span class="live-dot" aria-hidden="true"></span> {{ site_slogan }}</span>
+        </div>
+    </div>
+
+    <nav class="navbar navbar-expand-lg site-nav sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'index' %}">
-                <i class="fas fa-newspaper"></i>Portal Notícias
-            </a>
-            
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <div class="navbar-brand brand-lockup m-0">
+                <a href="{% url 'experiencia' %}" class="logo-link" title="Experiência ao vivo — clima, hora e localização">
+                    <img src="{% static site_logo %}" alt="{{ site_name }}" class="site-logo site-logo--nav">
+                </a>
+                <a href="{% url 'index' %}" class="brand-text text-decoration-none">
+                    <span class="brand-title">{{ site_name }}</span>
+                    <span class="brand-sub">{{ site_region }} · {{ site_slogan }}</span>
+                </a>
+            </div>
+            <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            
-            <div class="collapse navbar-collapse" id="navbarContent">
+            <div class="collapse navbar-collapse" id="navMain">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'index' %}">Home</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Início</a>
                     </li>
+                    {% for cat in nav_categorias|slice:":5" %}
                     <li class="nav-item">
-                        <a class="nav-link" href="https://noticias.uol.com.br/politica/" target="_blank" rel="noopener noreferrer">Política</a>
+                        <a class="nav-link" href="{% url 'noticias_por_categoria' cat.slug %}">{{ cat.nome }}</a>
                     </li>
+                    {% endfor %}
+                    {% if user_is_assinante %}
                     <li class="nav-item">
-                        <a class="nav-link" href="https://forbes.com.br/" target="_blank" rel="noopener noreferrer">Economia</a>
+                        <a class="nav-link" href="{% url 'exclusivo' %}"><i class="fas fa-star text-warning me-1"></i> Exclusivo</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://www.tecmundo.com.br" target="_blank" rel="noopener noreferrer">Tecnologia</a>
-                    </li>
-                    <li class="nav-item">
-                         <a class="nav-link" href="https://ge.globo.com/" target="_blank" rel="noopener noreferrer">Esporte</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="https://canaltech.com.br/" target="_blank" rel="noopener noreferrer">Entretenimento</a>
-                    </li>
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            Mais
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#">Saúde</a></li>
-                            <li><a class="dropdown-item" href="#">Educação</a></li>
-                            <li><a class="dropdown-item" href="#">Ciência</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#">Opinião</a></li>
-                        </ul>
-                    </li>
+                    {% endif %}
                 </ul>
-                
-                <form class="d-flex search-bar me-2" role="search">
-                    <input type="text" class="form-control rounded-pill" placeholder="Pesquisar..." aria-label="Pesquisar">
-                    <button class="btn" type="submit">
-                        <i class="fas fa-search"></i>
-                    </button>
+                <form class="d-none d-md-flex me-2 nav-search" method="get" action="{% url 'index' %}">
+                    <input type="search" name="q" class="form-control form-control-sm rounded-pill bg-dark text-white border-secondary" placeholder="Buscar..." value="{{ request.GET.q }}">
                 </form>
-                
-                <button class="btn theme-toggle" id="themeToggle">
+                {% if user.is_authenticated %}
+                <a href="{% url 'conta' %}" class="btn btn-outline-light btn-sm rounded-pill me-2 d-none d-md-inline-flex align-items-center">
+                    <i class="fas fa-user me-1"></i>
+                    <span class="d-none d-lg-inline">{{ user.username|truncatechars:12 }}</span>
+                </a>
+                {% else %}
+                <a href="{% url 'entrar' %}" class="btn btn-outline-light btn-sm rounded-pill me-2">
+                    <i class="fas fa-sign-in-alt me-1"></i><span class="d-none d-md-inline">Entrar</span>
+                </a>
+                {% endif %}
+                {% if user.is_staff %}
+                <a href="{% url 'painel' %}" class="btn btn-outline-light btn-sm rounded-pill me-2 position-relative">
+                    <i class="fas fa-inbox"></i> Analisar
+                    {% if envios_pendentes %}
+                    <span class="badge-painel">{{ envios_pendentes }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
+                <a href="{% url 'contribuir' %}" class="btn btn-contribuir btn-sm d-none d-md-inline-flex">
+                    <i class="fas fa-pen me-1"></i> Publicar
+                </a>
+                <button class="btn btn-link text-white ms-1" id="themeToggle" type="button" aria-label="Tema">
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
         </div>
     </nav>
- <!-- Cabeçalho da página -->
-    <section class="relative py-12 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white rounded-2xl shadow-lg overflow-hidden animate-in">
-        <div class="container text-center relative z-10">
-            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-                {% block page_title %}{% endblock %}
-            </h1>
-            <p class="max-w-2xl mx-auto text-lg md:text-xl text-gray-100">
-                {% block page_subtitle %}{% endblock %}
-            </p>
+
+    {% ad_slot 'top' %}
+
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-        <!-- Efeito decorativo moderno -->
-        <div class="absolute inset-0 opacity-20 bg-[url('https://www.toptal.com/designers/subtlepatterns/patterns/dot-grid.png')]"></div>
-    </section>
-
-    <!-- Conteúdo principal -->
-    <main class="container my-12">
+    <main class="container my-4 my-lg-5">
         {% block content %}{% endblock %}
     </main>
-        <!-- Grid de Notícias -->
-        <div class="news-grid">
-            <!-- Notícia Principal -->
-            <div class="news-card main-news animate-in">
-                <div class="position-relative">
-                    <img src="https://images.unsplash.com/photo-1563986768609-322da13575f3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" class="news-card-img" alt="Notícia principal">
-                    <span class="hot-badge"><i class="fas fa-bolt me-1"></i> Destaque</span>
-                </div>
-                <div class="news-card-body">
-                    <h3 class="news-card-title">Novas políticas de incentivo à tecnologia são anunciadas pelo governo</h3>
-                    <p class="news-card-text">O ministro da Ciência e Tecnologia revelou hoje um pacote de medidas para impulsionar startups e empresas de tecnologia no país, com investimentos previstos de R$ 2 bilhões para os próximos dois anos.</p>
-                    <a href="#" class="btn btn-primary">Continuar lendo</a>
-                </div>
-                <div class="news-card-footer">
-                    <span class="news-card-category">Política & Tecnologia</span>
-                    <span class="news-card-date"><i class="far fa-clock me-1"></i> 2 horas atrás</span>
-                </div>
-            </div>
 
-            <!-- Notícias Secundárias -->
-            <div class="news-card animate-in delay-1">
-                <img src="https://images.unsplash.com/photo-1601597111158-2fceff292cdc?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="news-card-img" alt="Notícia esportiva">
-                <div class="news-card-body">
-                    <h3 class="news-card-title">Time local vence campeonato após 10 anos de espera</h3>
-                    <p class="news-card-text">Em uma partida emocionante, o time da cidade conquistou o título estadual após uma década sem vencer competições.</p>
-                    <a href="#" class="btn btn-outline-primary btn-sm">Ler notícia</a>
-                </div>
-                <div class="news-card-footer">
-                    <span class="news-card-category">Esportes</span>
-                    <span class="news-card-date"><i class="far fa-clock me-1"></i> 5 horas atrás</span>
-                </div>
-            </div>
-
-            <div class="news-card animate-in delay-2">
-                <img src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="news-card-img" alt="Notícia tecnologia">
-                <div class="news-card-body">
-                    <h3 class="news-card-title">Nova inteligência artificial promete revolucionar busca na internet</h3>
-                    <p class="news-card-text">Empresa anuncia tecnologia que entende contextos e nuances da linguagem humana com precisão nunca vista antes.</p>
-                    <a href="#" class="btn btn-outline-primary btn-sm">Ler notícia</a>
-                </div>
-                <div class="news-card-footer">
-                    <span class="news-card-category">Tecnologia</span>
-                    <span class="news-card-date"><i class="far fa-clock me-1"></i> 8 horas atrás</span>
-                </div>
-            </div>
-
-            <div class="news-card animate-in delay-1">
-                <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="news-card-img" alt="Notícia economia">
-                <div class="news-card-body">
-                    <h3 class="news-card-title">Dólar tem maior queda do ano após medidas do Banco Central</h3>
-                    <p class="news-card-text">Moeda norte-americana recua 2,5% em um único dia, aliviando pressão sobre preços de importados.</p>
-                    <a href="#" class="btn btn-outline-primary btn-sm">Ler notícia</a>
-                </div>
-                <div class="news-card-footer">
-                    <span class="news-card-category">Economia</span>
-                    <span class="news-card-date"><i class="far fa-clock me-1"></i> 12 horas atrás</span>
-                </div>
-            </div>
-
-            <div class="news-card animate-in delay-2">
-                <img src="https://images.unsplash.com/photo-1498837167922-ddd27525d352?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="news-card-img" alt="Notícia saúde">
-                <div class="news-card-body">
-                    <h3 class="news-card-title">Pesquisadores descobrem potencial novo tratamento para doença rara</h3>
-                    <p class="news-card-text">Estudo brasileiro mostra eficácia de composto natural no tratamento de condição que afeta milhares no país.</p>
-                    <a href="#" class="btn btn-outline-primary btn-sm">Ler notícia</a>
-                </div>
-                <div class="news-card-footer">
-                    <span class="news-card-category">Saúde</span>
-                    <span class="news-card-date"><i class="far fa-clock me-1"></i> 1 dia atrás</span>
-                </div>
-            </div>
-
-            <div class="news-card animate-in delay-3">
-                <img src="https://images.unsplash.com/photo-1478720568477-b840004f9ac5?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" class="news-card-img" alt="Notícia entretenimento">
-                <div class="news-card-body">
-                    <h3 class="news-card-title">Festival de cinema anuncia programação com produções nacionais</h3>
-                    <p class="news-card-text">Evento que acontece no próximo mês terá mostras especiais e competição dedicada a diretores estreantes.</p>
-                    <a href="#" class="btn btn-outline-primary btn-sm">Ler notícia</a>
-                </div>
-                <div class="news-card-footer">
-                    <span class="news-card-category">Entretenimento</span>
-                    <span class="news-card-date"><i class="far fa-clock me-1"></i> 2 dias atrás</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Seção de Newsletter -->
-        <div class="row justify-content-center mb-5">
-            <div class="col-lg-8">
-                <div class="card border-0 shadow-lg rounded-3 animate-in">
-                    <div class="card-body p-5 text-center">
-                        <h2 class="card-title mb-3">Receba as notícias em primeira mão</h2>
-                        <p class="card-text mb-4">Inscreva-se em nossa newsletter e receba diariamente as principais notícias no seu e-mail.</p>
-                        <form class="row g-2 justify-content-center">
-                            <div class="col-md-8">
-                                <input type="email" class="form-control form-control-lg" placeholder="Seu melhor e-mail">
-                            </div>
-                            <div class="col-md-4">
-                                <button type="submit" class="btn btn-primary btn-lg w-100">Inscrever-se</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Rodapé premium -->
-    <footer class="footer">
+    <footer class="site-footer">
         <div class="container">
             <div class="row g-4">
-                <div class="col-lg-4 col-md-6">
-                    <h3 class="footer-title">Portal de Notícias</h3>
-                    <p>O seu portal de notícias confiável, trazendo as últimas novidades e informações relevantes 24 horas por dia.</p>
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-youtube"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <div class="col-lg-4">
+                    <a href="{% url 'index' %}" class="footer-brand-lockup d-inline-flex align-items-center gap-2 text-decoration-none mb-2">
+                        <img src="{% static site_logo %}" alt="" class="site-logo site-logo--footer" width="40" height="40">
+                        <span>
+                            <span class="footer-brand d-block">{{ site_name }}</span>
+                            <small class="text-white-50">{{ site_slogan }}</small>
+                        </span>
+                    </a>
+                    <p class="small">{{ site_tagline }}. Conteúdo revisado — confiança para moradores e comércios.</p>
+                    <div class="d-flex gap-2 mt-3">
+                        <span class="badge bg-dark border border-secondary"><i class="fas fa-shield-alt me-1"></i> Revisado</span>
+                        <span class="badge bg-dark border border-secondary"><i class="fas fa-store me-1"></i> Lojas</span>
                     </div>
                 </div>
-                
-                <div class="col-lg-2 col-md-6">
-                    <h3 class="footer-title">Links Rápidos</h3>
-                    <ul class="list-unstyled footer-links">
-                        <li><a href="{% url 'index' %}"><i class="fas fa-chevron-right me-2"></i> Home</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Sobre Nós</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Contato</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Política de Privacidade</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Termos de Uso</a></li>
+                <div class="col-lg-3">
+                    <h4 class="h6 text-white mb-3">Categorias</h4>
+                    <ul class="list-unstyled small">
+                        {% for cat in nav_categorias %}
+                        <li class="mb-2"><a href="{% url 'noticias_por_categoria' cat.slug %}">{{ cat.nome }}</a></li>
+                        {% endfor %}
                     </ul>
                 </div>
-                
-                <div class="col-lg-2 col-md-6">
-                    <h3 class="footer-title">Categorias</h3>
-                    <ul class="list-unstyled footer-links">
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Política</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Economia</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Tecnologia</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Esportes</a></li>
-                        <li><a href="#"><i class="fas fa-chevron-right me-2"></i> Entretenimento</a></li>
+                <div class="col-lg-2">
+                    <h4 class="h6 text-white mb-3">Portal</h4>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a href="{% url 'index' %}">Notícias</a></li>
+                        <li class="mb-2"><a href="{% url 'contribuir' %}">Enviar conteúdo</a></li>
+                        <li class="mb-2"><a href="{% url 'entrar' %}">Entrar</a></li>
+                        <li class="mb-2"><a href="{% url 'parceria' %}">Parceria / assinatura</a></li>
+                        {% if user.is_staff %}
+                        <li class="mb-2"><a href="{% url 'painel' %}">Painel de análise</a></li>
+                        <li class="mb-2"><a href="/admin/">Admin completo</a></li>
+                        {% endif %}
                     </ul>
                 </div>
-                
-                <div class="col-lg-4 col-md-6">
-                    <h3 class="footer-title">Newsletter</h3>
-                    <p>Inscreva-se para receber as últimas notícias diretamente no seu e-mail.</p>
-                    <form class="newsletter-form d-flex mt-3">
-                        <input type="email" class="form-control" placeholder="Seu melhor e-mail">
-                        <button class="btn" type="submit">Inscrever</button>
-                    </form>
+                <div class="col-lg-3">
+                    <h4 class="h6 text-white mb-3">Para lojas e moradores</h4>
+                    <p class="small">Divulgue promoções e novidades. Cada envio fica em <strong>aguardando análise</strong> até você aprovar.</p>
+                    <a href="{% url 'contribuir' %}" class="btn btn-contribuir btn-sm">Quero publicar</a>
                 </div>
             </div>
-            
-            <div class="footer-bottom">
-                <div class="row">
-                    <div class="col-12">
-                        <p class="mb-0">© 2023 Portal de Notícias. Todos os direitos reservados.</p>
-                    </div>
-                </div>
-            </div>
+            <hr class="border-secondary my-4 opacity-25">
+            <p class="text-center small mb-0 opacity-75">
+                © {% now "Y" %} {{ site_name }} — {{ site_region }}, {{ site_state }}.
+            </p>
         </div>
     </footer>
 
+    {% block mobile_engagement %}{% endblock %}
+    {% include "noticias/partials/mobile_nav.html" %}
+
+    <button id="backToTop" type="button" aria-label="Topo"><i class="fas fa-arrow-up"></i></button>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Toggle de tema claro/escuro
+        const html = document.documentElement;
         const themeToggle = document.getElementById('themeToggle');
-        const htmlElement = document.documentElement;
-        const currentTheme = localStorage.getItem('theme') || 'light';
-        
-        // Aplicar tema salvo
-        htmlElement.setAttribute('data-bs-theme', currentTheme);
-        updateThemeIcon(currentTheme);
-        
+        const saved = localStorage.getItem('theme') || 'light';
+        html.setAttribute('data-bs-theme', saved);
+        themeToggle.innerHTML = saved === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
         themeToggle.addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
-            htmlElement.setAttribute('data-bs-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-            updateThemeIcon(newTheme);
-            
-            // Adicionar efeito de transição suave
-            document.documentElement.style.transition = 'background-color 0.5s ease, color 0.5s ease';
+            const next = html.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-bs-theme', next);
+            localStorage.setItem('theme', next);
+            themeToggle.innerHTML = next === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
         });
-        
-        function updateThemeIcon(theme) {
-            themeToggle.innerHTML = theme === 'light' ? 
-                '<i class="fas fa-moon"></i>' : 
-                '<i class="fas fa-sun"></i>';
-        }
-        
-        // Adicionar classe ativa ao item de menu atual
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentPath = window.location.pathname;
-            const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
-            
-            navLinks.forEach(link => {
-                if (link.getAttribute('href') === currentPath) {
-                    link.classList.add('active');
-                }
-            });
-            
-            // Animação de entrada
-            const animatedElements = document.querySelectorAll('.animate-in');
-            animatedElements.forEach(el => {
-                el.style.visibility = 'hidden';
-                el.style.opacity = '0';
-                el.style.transform = 'translateY(20px)';
-                
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            entry.target.style.visibility = 'visible';
-                            setTimeout(() => {
-                                entry.target.style.opacity = '1';
-                                entry.target.style.transform = 'translateY(0)';
-                            }, 50);
-                        }
-                    });
-                }, { threshold: 0.1 });
-                
-                observer.observe(el);
-            });
-            
-            // Filtro de categorias
-            const categoryButtons = document.querySelectorAll('.category-btn');
-            categoryButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    categoryButtons.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-                    // Aqui iria a lógica para filtrar as notícias
-                });
-            });
-            
-            // Barra de progresso de scroll
-            window.addEventListener('scroll', function() {
-                const winHeight = window.innerHeight;
-                const docHeight = document.documentElement.scrollHeight;
-                const scrollTop = window.pageYOffset;
-                const scrollPercent = (scrollTop / (docHeight - winHeight)) * 100;
-                document.getElementById('scrollProgress').style.width = scrollPercent + '%';
-                
-                // Botão voltar ao topo
-                const backToTop = document.getElementById('backToTop');
-                if (scrollTop > 500) {
-                    backToTop.classList.add('show');
-                } else {
-                    backToTop.classList.remove('show');
-                }
-            });
-            
-            // Smooth scroll para o topo
-            document.getElementById('backToTop').addEventListener('click', function(e) {
-                e.preventDefault();
-                window.scrollTo({
-                    top: 0,
-                    behavior: 'smooth'
-                });
-            });
+        window.addEventListener('scroll', () => {
+            const h = document.documentElement.scrollHeight - window.innerHeight;
+            if (h > 0) document.getElementById('scrollProgress').style.width = (window.scrollY / h * 100) + '%';
+            document.getElementById('backToTop').classList.toggle('show', window.scrollY > 400);
         });
+        document.getElementById('backToTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     </script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>

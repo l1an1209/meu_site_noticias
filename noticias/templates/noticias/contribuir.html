@@ -1,0 +1,105 @@
+{% extends "noticias/base.html" %}
+
+{% block title %}Enviar para {{ site_city }} — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="hero-banner mb-4">
+            <h1 class="display-font h2 mb-2">Sua voz em {{ site_city }}</h1>
+            <p class="mb-0 opacity-90">
+                Moradores e lojas enviam aqui. O conteúdo <strong>não vai direto ao site</strong> —
+                fica na fila <em>aguardando sua análise</em> antes de publicar.
+            </p>
+        </div>
+
+        <div class="steps-envio">
+            <div class="step-card">
+                <div class="step-num">1</div>
+                <strong>Preencha o formulário</strong>
+                <p class="small text-muted mb-0 mt-1">Título, texto, categoria e foto</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">2</div>
+                <strong>Aguarda análise</strong>
+                <p class="small text-muted mb-0 mt-1">Status: pendente na sua fila</p>
+            </div>
+            <div class="step-card">
+                <div class="step-num">3</div>
+                <strong>Você aprova</strong>
+                <p class="small text-muted mb-0 mt-1">Vira notícia no portal</p>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 p-lg-5">
+            <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="fas fa-store fa-lg text-primary"></i>
+                </div>
+                <div>
+                    <h2 class="h5 mb-0 display-font">Formulário de envio</h2>
+                    <p class="text-muted small mb-0">Ideal para promoções de lojas e avisos da comunidade</p>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ form.titulo.label }}</label>
+                        {{ form.titulo }}
+                        {% if form.titulo.errors %}<div class="text-danger small">{{ form.titulo.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.tipo.label }}</label>
+                        {{ form.tipo }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.categoria.label }} *</label>
+                        {{ form.categoria }}
+                        <div class="form-text">Escolha a mesma categoria que você cadastrou no painel</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold">{{ form.conteudo.label }}</label>
+                        {{ form.conteudo }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.nome.label }}</label>
+                        {{ form.nome }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.email.label }}</label>
+                        {{ form.email }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.telefone.label }}</label>
+                        {{ form.telefone }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold">{{ form.imagem.label }}</label>
+                        {{ form.imagem }}
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold"><i class="fas fa-video me-1 text-primary"></i> {{ form.video.label }}</label>
+                        {{ form.video }}
+                        <div class="form-text">MP4 ou WebM, até 50 MB — ideal para lojas e empresas parceiras.</div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success rounded-4 mt-4 mb-0 d-flex gap-3">
+                    <i class="fas fa-lock fa-lg mt-1"></i>
+                    <div class="small">
+                        <strong>Transparência:</strong> após enviar, seu texto aparece para o administrador em
+                        <strong>Admin → Envios da comunidade</strong> ou no <strong>Painel de análise</strong>
+                        (botão "Analisar" no menu, só para você). Nada é publicado sem sua aprovação.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-contribuir btn-lg w-100 mt-4 py-3">
+                    <i class="fas fa-paper-plane me-2"></i>Enviar para análise
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+<div class="engagement-bar d-lg-none" id="engagementBar">
+    {% if user.is_authenticated %}
+    <form method="post" action="{% url 'curtir' noticia.id %}" class="engagement-item" id="formCurtirMobile">
+        {% csrf_token %}
+        <button type="submit" class="engagement-btn {% if usuario_curtiu %}active{% endif %}" data-curtir-btn>
+            <i class="{% if usuario_curtiu %}fas{% else %}far{% endif %} fa-heart"></i>
+            <span data-curtidas-count>{{ total_curtidas }}</span>
+        </button>
+    </form>
+    {% else %}
+    <a href="{% url 'entrar' %}?next={{ request.path }}" class="engagement-item engagement-btn">
+        <i class="far fa-heart"></i>
+        <span>{{ total_curtidas }}</span>
+    </a>
+    {% endif %}
+    <a href="#comentarios" class="engagement-item engagement-btn">
+        <i class="far fa-comment"></i>
+        <span>{{ comentarios|length }}</span>
+    </a>
+    <button type="button" class="engagement-item engagement-btn" onclick="compartilharNativo('{{ share_text|escapejs }}')">
+        <i class="fas fa-share-alt"></i>
+        <span>Enviar</span>
+    </button>
+    <a href="https://wa.me/?text={{ share_text|urlencode }}%20{{ share_url|urlencode }}"
+       target="_blank" rel="noopener" class="engagement-item engagement-btn engagement-btn--wa">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+</div>

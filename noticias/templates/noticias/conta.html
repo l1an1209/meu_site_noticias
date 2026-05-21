@@ -1,0 +1,65 @@
+{% extends "noticias/base.html" %}
+
+{% block title %}Minha conta — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="glass-card p-4 p-lg-5">
+            <div class="d-flex flex-wrap align-items-center gap-3 mb-4">
+                <div class="account-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <h1 class="display-font h4 mb-1">{{ user.get_full_name|default:user.username }}</h1>
+                    <span class="badge bg-primary-subtle text-primary">{{ perfil.badge_label }}</span>
+                    {% if perfil.is_assinante %}
+                    <span class="badge bg-warning text-dark ms-1"><i class="fas fa-star me-1"></i>Assinante</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-4">
+                    <div class="stat-box">
+                        <div class="num">{{ curtidas_count }}</div>
+                        <div class="lbl">Curtidas dadas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-4">
+                    <div class="stat-box">
+                        <div class="num">{{ comentarios_count }}</div>
+                        <div class="lbl">Comentários</div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="stat-box">
+                        <div class="num"><i class="fas fa-envelope text-primary"></i></div>
+                        <div class="lbl small">{{ user.email }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+                {% if perfil.is_assinante %}
+                <a href="{% url 'exclusivo' %}" class="btn btn-warning rounded-pill"><i class="fas fa-star me-1"></i> Área exclusiva</a>
+                {% endif %}
+                <a href="{% url 'contribuir' %}" class="btn btn-contribuir rounded-pill">Enviar conteúdo</a>
+                <a href="{% url 'experiencia' %}" class="btn btn-outline-primary rounded-pill">Experiência ao vivo</a>
+                <a href="{% url 'sair' %}" class="btn btn-outline-danger rounded-pill">Sair</a>
+            </div>
+
+            {% if not perfil.is_assinante %}
+            <div class="alert alert-warning rounded-4 mt-4 mb-0">
+                <strong>Parceria / assinatura:</strong> lojas e parceiros podem ter conteúdo exclusivo.
+                <a href="{% url 'parceria' %}" class="alert-link">Saiba como fechar parceria</a>.
+            </div>
+            {% else %}
+            <div class="alert alert-success rounded-4 mt-4 mb-0">
+                <i class="fas fa-check-circle me-2"></i>Você tem acesso de <strong>assinante parceiro</strong>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

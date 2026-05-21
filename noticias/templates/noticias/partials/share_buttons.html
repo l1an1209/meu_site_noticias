@@ -1,0 +1,22 @@
+<div class="share-box">
+    <span class="share-label d-none d-md-inline">Compartilhar:</span>
+    <div class="share-buttons">
+        <a href="https://wa.me/?text={{ share_text|urlencode }}%20{{ share_url|urlencode }}"
+           target="_blank" rel="noopener" class="share-btn share-btn--whatsapp" aria-label="WhatsApp">
+            <i class="fab fa-whatsapp"></i>
+            <span class="d-none d-sm-inline">WhatsApp</span>
+        </a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ share_url|urlencode }}"
+           target="_blank" rel="noopener" class="share-btn share-btn--facebook" aria-label="Facebook">
+            <i class="fab fa-facebook-f"></i>
+        </a>
+        <button type="button" class="share-btn share-btn--copy" data-copy="{{ share_url }}" aria-label="Copiar link">
+            <i class="fas fa-link"></i>
+            <span class="d-none d-sm-inline">Copiar</span>
+        </button>
+        <button type="button" class="share-btn share-btn--native"
+                onclick="compartilharNativo('{{ share_text|escapejs }}')" aria-label="Mais opções">
+            <i class="fas fa-share-alt"></i>
+        </button>
+    </div>
+</div>

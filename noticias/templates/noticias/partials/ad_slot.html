@@ -1,0 +1,11 @@
+{% if anuncio and anuncio.tem_conteudo %}
+<div class="ad-slot ad-slot--{{ slot }} ad-slot--live" role="complementary" aria-label="Publicidade">
+    {% if anuncio.codigo_html %}
+    {{ anuncio.codigo_html|safe }}
+    {% elif anuncio.imagem %}
+    <a href="{{ anuncio.link|default:'#' }}" target="_blank" rel="noopener sponsored">
+        <img src="{{ anuncio.imagem.url }}" alt="{{ anuncio.titulo_interno }}" class="ad-slot-img">
+    </a>
+    {% endif %}
+</div>
+{% endif %}

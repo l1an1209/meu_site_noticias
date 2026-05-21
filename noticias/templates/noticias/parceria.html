@@ -1,0 +1,43 @@
+{% extends "noticias/base.html" %}
+
+{% block title %}Parceria e assinatura — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="hero-banner mb-4">
+    <h1 class="display-font h2 mb-2">Parceria para lojas e assinantes</h1>
+    <p class="mb-0 opacity-90">Conteúdo exclusivo, destaque no portal e fechamento de parcerias em {{ site_city }}.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="glass-card p-4 h-100 text-center">
+            <i class="fas fa-store fa-2x text-primary mb-3"></i>
+            <h3 class="h5 display-font">Loja parceira</h3>
+            <p class="small text-muted">Promoções revisadas, selo de confiança e prioridade nas buscas locais.</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-4 h-100 text-center border border-warning">
+            <i class="fas fa-star fa-2x text-warning mb-3"></i>
+            <h3 class="h5 display-font">Assinante</h3>
+            <p class="small text-muted">Login especial para conteúdos fechados e parcerias exclusivas (em breve).</p>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="glass-card p-4 h-100 text-center">
+            <i class="fas fa-ad fa-2x text-primary mb-3"></i>
+            <h3 class="h5 display-font">Anunciante</h3>
+            <p class="small text-muted">Banner nos espaços reservados do site — só onde você autorizar.</p>
+        </div>
+    </div>
+</div>
+
+<div class="glass-card p-4 p-lg-5 mt-4 text-center">
+    <h2 class="h5 display-font">Quer fechar parceria?</h2>
+    <p class="text-muted">Crie sua conta como <strong>Loja</strong> ou entre em contato com a redação do {{ site_name }}.</p>
+    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+        <a href="{% url 'cadastro' %}" class="btn btn-contribuir rounded-pill">Criar conta de loja</a>
+        <a href="{% url 'contribuir' %}" class="btn btn-outline-primary rounded-pill">Enviar proposta</a>
+    </div>
+</div>
+{% endblock %}

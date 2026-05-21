@@ -1,0 +1,112 @@
+{% extends "noticias/base.html" %}
+
+{% block title %}Painel de análise — {{ site_name }}{% endblock %}
+
+{% block content %}
+<div class="hero-banner mb-4">
+    <h1 class="display-font h3 mb-2"><i class="fas fa-inbox me-2"></i>O que a comunidade enviou</h1>
+    <p class="mb-0 opacity-90">
+        Aqui você vê os envios de moradores e lojas. <strong>Não confunda com Categorias</strong> —
+        categorias são só os tipos de notícia; os textos enviados ficam nesta lista.
+    </p>
+</div>
+
+<ul class="nav nav-pills filter-tabs gap-2 mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if filtro_status == 'pendente' %}active{% endif %}" href="?status=pendente">
+            Aguardando ({{ contagem_pendente }})
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if filtro_status == 'aprovado' %}active{% endif %}" href="?status=aprovado">
+            Publicados ({{ contagem_aprovado }})
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if filtro_status == 'rejeitado' %}active{% endif %}" href="?status=rejeitado">
+            Não publicados ({{ contagem_rejeitado }})
+        </a>
+    </li>
+</ul>
+
+<div class="alert alert-info rounded-4 mb-4">
+    <strong>Atalho no Admin:</strong> <a href="/admin/noticias/contribuicao/" class="alert-link">Envios da comunidade (analisar aqui)</a>
+    — marque vários e use a ação <em>Aprovar e publicar no site</em>.
+</div>
+
+{% for envio in envios %}
+<div class="glass-card painel-envio status-{{ envio.status }} p-4 mb-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+        <div>
+            <span class="badge {% if envio.status == 'pendente' %}bg-warning text-dark{% elif envio.status == 'aprovado' %}bg-success{% else %}bg-secondary{% endif %}">
+                {{ envio.get_status_display }}
+            </span>
+            <span class="badge bg-light text-dark ms-1">{{ envio.get_tipo_display }}</span>
+            {% if envio.categoria %}<span class="badge bg-primary-subtle text-primary ms-1">{{ envio.categoria.nome }}</span>{% endif %}
+        </div>
+        <small class="text-muted">{{ envio.data_envio|date:"d/m/Y H:i" }}</small>
+    </div>
+
+    <h2 class="h5 display-font">{{ envio.titulo }}</h2>
+    <p class="text-muted mb-3">{{ envio.conteudo|truncatewords:60 }}</p>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6 small">
+            <strong><i class="fas fa-user me-1"></i></strong> {{ envio.nome }}<br>
+            <strong><i class="fas fa-envelope me-1"></i></strong> {{ envio.email }}
+            {% if envio.telefone %}<br><strong><i class="fab fa-whatsapp me-1"></i></strong> {{ envio.telefone }}{% endif %}
+        </div>
+        {% if envio.imagem or envio.video %}
+        <div class="col-md-6">
+            {% if envio.imagem %}
+            <img src="{{ envio.imagem.url }}" class="img-fluid rounded-3 mb-2" style="max-height:160px;object-fit:cover" alt="">
+            {% endif %}
+            {% if envio.video %}
+            <video src="{{ envio.video.url }}" controls class="w-100 rounded-3" style="max-height:200px"></video>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    {% if envio.status == 'pendente' %}
+    <div class="d-flex flex-wrap gap-2">
+        <form method="post" action="{% url 'aprovar_envio' envio.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success rounded-pill">
+                <i class="fas fa-check me-1"></i> Aprovar e publicar
+            </button>
+        </form>
+        <form method="post" action="{% url 'rejeitar_envio' envio.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-danger rounded-pill" onclick="return confirm('Rejeitar este envio?')">
+                <i class="fas fa-times me-1"></i> Não publicar
+            </button>
+        </form>
+        <a href="/admin/noticias/contribuicao/{{ envio.pk }}/change/" class="btn btn-outline-secondary rounded-pill btn-sm">
+            Editar no admin
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% empty %}
+<div class="glass-card p-5 text-center">
+    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+    <h3 class="display-font">Nenhum envio neste filtro</h3>
+    <p class="text-muted">Quando alguém usar <a href="{% url 'contribuir' %}">Publicar</a>, aparecerá aqui como pendente.</p>
+</div>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination pagination-modern justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?status={{ filtro_status }}&page={{ page_obj.previous_page_number }}">Anterior</a></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?status={{ filtro_status }}&page={{ page_obj.next_page_number }}">Próxima</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
