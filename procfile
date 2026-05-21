@@ -1,1 +1,1 @@
-web: gunicorn portal_noticias.wsgi
+web: gunicorn portal_noticias.wsgi:application
