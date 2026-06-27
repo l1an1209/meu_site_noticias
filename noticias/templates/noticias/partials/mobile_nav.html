@@ -3,9 +3,13 @@
         <i class="fas fa-home"></i>
         <span>Início</span>
     </a>
+    <a href="{% url 'experiencia' %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'experiencia' %}active{% endif %}">
+        <i class="fas fa-cloud-sun"></i>
+        <span>Clima</span>
+    </a>
     <a href="{% url 'contribuir' %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'contribuir' %}active{% endif %}">
         <i class="fas fa-pen"></i>
-        <span>Publicar</span>
+        <span>Enviar</span>
     </a>
     {% if user.is_authenticated %}
     <a href="{% url 'conta' %}" class="mobile-nav-item {% if request.resolver_match.url_name == 'conta' %}active{% endif %}">
@@ -18,8 +22,4 @@
         <span>Entrar</span>
     </a>
     {% endif %}
-    <button type="button" class="mobile-nav-item" data-bs-toggle="collapse" data-bs-target="#navMain" aria-expanded="false">
-        <i class="fas fa-bars"></i>
-        <span>Menu</span>
-    </button>
 </nav>

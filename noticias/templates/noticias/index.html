@@ -4,132 +4,91 @@
 {% block title %}{% if categoria %}{{ categoria.nome }} — {% endif %}{{ site_name }} | {{ site_slogan }}{% endblock %}
 
 {% block content %}
-<div class="hero-banner">
-    <div class="position-relative" style="z-index:1">
-        <div class="hero-brand d-flex align-items-center gap-3 mb-3">
-            <a href="{% url 'experiencia' %}" class="hero-logo-link" title="Abrir experiência — clima e localização">
-                <img src="{% static site_logo %}" alt="{{ site_name }}" class="hero-logo rounded-3 shadow">
-            </a>
-            <div>
-                <div class="hero-location mb-1">
-                    <span class="live-dot live-dot--hero" aria-hidden="true"></span>
-                    {{ site_slogan }}
-                </div>
-                <p class="mb-0 small opacity-90">{{ site_region }} · {{ site_state }}</p>
-            </div>
-        </div>
-        <h1 class="display-font mb-3">
-            {% if categoria %}{{ categoria.nome }}{% else %}{{ site_name }}{% endif %}
-        </h1>
-        <p class="mb-0 col-lg-9 opacity-90">{{ site_tagline }}. Lojas e moradores participam — tudo com revisão antes de publicar.</p>
-        <div class="trust-strip">
-            <span class="trust-item"><i class="fas fa-shield-alt"></i> Conteúdo revisado</span>
-            <span class="trust-item"><i class="fas fa-store"></i> Espaço para comércios</span>
-            <span class="trust-item"><i class="fas fa-users"></i> Comunidade participa</span>
-        </div>
-    </div>
+{% if manchete_urgente and not categoria and not busca and page_obj.number == 1 %}
+<div class="urgente-bar">
+    <span class="urgente-bar__label">Última hora</span>
+    <a href="{% url 'detalhe' manchete_urgente.id %}" class="urgente-bar__text">{{ manchete_urgente.titulo }}</a>
 </div>
+{% endif %}
 
-<div class="stats-row">
-    <div class="stat-box">
-        <div class="num">{{ total_noticias }}</div>
-        <div class="lbl">Notícias publicadas</div>
+{% if not categoria and not busca and noticias_destaques and page_obj.number == 1 %}
+<section class="mosaic-hero" aria-label="Destaques">
+    {% with principal=noticias_destaques.0 %}
+    <a href="{% url 'detalhe' principal.id %}" class="mosaic-hero__main">
+        <img src="{% noticia_capa principal %}" alt="{{ principal.titulo }}" loading="eager">
+        <div class="mosaic-hero__overlay">
+            {% if principal.categoria %}<span class="mosaic-hero__cat">{{ principal.categoria.nome }}</span>{% endif %}
+            <h2 class="mosaic-hero__title display-font">{{ principal.titulo }}</h2>
+            <p class="mosaic-hero__resumo">{{ principal.resumo_curto|truncatechars:140 }}</p>
+            <span class="mosaic-hero__meta">{{ principal.data_publicacao|date:"d/m/Y" }} · {{ principal.visualizacoes }} leituras</span>
+        </div>
+    </a>
+    {% endwith %}
+    <div class="mosaic-hero__side">
+        {% for destaque in noticias_destaques|slice:"1:5" %}
+        <a href="{% url 'detalhe' destaque.id %}" class="mosaic-hero__item">
+            <img src="{% noticia_capa destaque %}" alt="{{ destaque.titulo }}" loading="lazy">
+            <div class="mosaic-hero__item-body">
+                <span class="mosaic-hero__item-date">{{ destaque.data_publicacao|date:"d/m/Y" }}</span>
+                <h3 class="mosaic-hero__item-title">{{ destaque.titulo|truncatechars:72 }}</h3>
+            </div>
+        </a>
+        {% endfor %}
     </div>
-    <div class="stat-box">
-        <div class="num">{{ nav_categorias|length }}</div>
-        <div class="lbl">Categorias</div>
-    </div>
-    <div class="stat-box">
-        <div class="num"><i class="fas fa-chart-line text-primary"></i></div>
-        <div class="lbl">Monetização por views e anúncios</div>
-    </div>
-    <div class="stat-box">
-        <a href="{% url 'contribuir' %}" class="btn btn-contribuir btn-sm w-100">Publicar agora</a>
-        <div class="lbl mt-2">Para lojas e moradores</div>
-    </div>
+</section>
+{% elif categoria or busca %}
+<div class="page-head mb-4">
+    <h1 class="page-head__title display-font">
+        {% if busca %}Busca: {{ busca }}{% else %}{{ categoria.nome }}{% endif %}
+    </h1>
+    <p class="page-head__sub text-muted mb-0">{{ site_region }} — notícias em tempo real</p>
 </div>
+{% endif %}
 
 <div class="row g-4">
     <div class="col-lg-8">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
-            <div class="filter-pills btn-group flex-wrap">
+        <div class="feed-head">
+            <h2 class="feed-head__title display-font">
+                {% if busca %}Resultados{% elif categoria %}Mais de {{ categoria.nome }}{% else %}Últimas notícias{% endif %}
+            </h2>
+            <div class="feed-head__sort">
                 <a href="{% query_string ordenacao='-data_publicacao' page=1 %}"
-                   class="btn btn-sm btn-outline-secondary {% if ordenacao_atual == '-data_publicacao' %}active{% endif %}">
-                    <i class="fas fa-clock me-1"></i> Recentes
-                </a>
+                   class="feed-sort-btn {% if ordenacao_atual == '-data_publicacao' %}is-active{% endif %}">Recentes</a>
                 <a href="{% query_string ordenacao='-visualizacoes' page=1 %}"
-                   class="btn btn-sm btn-outline-secondary {% if ordenacao_atual == '-visualizacoes' %}active{% endif %}">
-                    <i class="fas fa-fire me-1"></i> Populares
-                </a>
+                   class="feed-sort-btn {% if ordenacao_atual == '-visualizacoes' %}is-active{% endif %}">Mais lidas</a>
             </div>
-            {% if busca %}<span class="badge bg-primary-subtle text-primary rounded-pill px-3">Busca: "{{ busca }}"</span>{% endif %}
         </div>
 
-        {% if not categoria and not busca and noticias_destaques and page_obj.number == 1 %}
-        <div class="row g-3 mb-4">
-            {% for destaque in noticias_destaques %}
-            <div class="col-md-{% if forloop.first %}12{% else %}6{% endif %}">
-                <a href="{% url 'detalhe' destaque.id %}" class="text-decoration-none featured-card d-block glass-card">
-                    {% if destaque.imagem %}
-                    <img src="{{ destaque.imagem.url }}" alt="{{ destaque.titulo }}">
-                    {% else %}
-                    <div class="bg-secondary" style="min-height:260px"></div>
-                    {% endif %}
-                    <div class="overlay">
-                        <span class="badge bg-warning text-dark mb-2">Destaque · {{ site_city }}</span>
-                        <h3 class="h5 text-white display-font mb-1">{{ destaque.titulo }}</h3>
-                        <small><i class="far fa-eye me-1"></i>{{ destaque.visualizacoes }} leituras</small>
-                    </div>
-                </a>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-
-        <div class="row g-4">
+        <div class="news-feed">
             {% for noticia in noticias %}
-            <div class="col-12">
-                <article class="glass-card news-card-item">
-                    <div class="row g-0">
-                        <div class="col-md-4 position-relative">
-                            {% if noticia.imagem %}
-                            <img src="{{ noticia.imagem.url }}" class="thumb" alt="{{ noticia.titulo }}">
-                            {% else %}
-                            <div class="thumb bg-light d-flex align-items-center justify-content-center">
-                                <i class="far fa-newspaper fa-3x text-secondary"></i>
-                            </div>
-                            {% endif %}
-                            {% if noticia.categoria %}
-                            <span class="category-pill">{{ noticia.categoria.nome }}</span>
-                            {% endif %}
-                        </div>
-                        <div class="col-md-8 p-4 d-flex flex-column">
-                            <div class="d-flex justify-content-between text-muted small mb-2">
-                                <span><i class="fas fa-user-check me-1 text-primary"></i>{{ noticia.autor|default:"Redação" }}</span>
-                                <span>{{ noticia.data_publicacao|date:"d/m/Y" }}</span>
-                            </div>
-                            <h2 class="h4 display-font mb-2">
-                                <a href="{% url 'detalhe' noticia.id %}" class="text-decoration-none text-reset">{{ noticia.titulo }}</a>
-                            </h2>
-                            <p class="text-muted mb-3 flex-grow-1">{{ noticia.resumo_curto }}</p>
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                <span class="text-muted small">
-                                    <i class="far fa-eye me-1"></i>{{ noticia.visualizacoes }}
-                                    <i class="far fa-heart ms-2 me-1"></i>{{ noticia.total_curtidas }}
-                                    <i class="far fa-comment ms-2 me-1"></i>{{ noticia.total_comentarios }}
-                                </span>
-                                <a href="{% url 'detalhe' noticia.id %}" class="btn btn-sm btn-contribuir rounded-pill px-3">Ler</a>
-                            </div>
-                        </div>
+            <article class="feed-card">
+                <a href="{% url 'detalhe' noticia.id %}" class="feed-card__image">
+                    <img src="{% noticia_capa noticia %}" alt="{{ noticia.titulo }}" loading="lazy">
+                </a>
+                <div class="feed-card__body">
+                    <div class="feed-card__top">
+                        <span class="feed-card__time">{{ noticia.data_publicacao|timesince }} atrás</span>
+                        {% if noticia.categoria %}
+                        <a href="{% url 'noticias_por_categoria' noticia.categoria.slug %}" class="feed-card__cat">{{ noticia.categoria.nome }}</a>
+                        {% endif %}
                     </div>
-                </article>
-            </div>
+                    <h3 class="feed-card__title display-font">
+                        <a href="{% url 'detalhe' noticia.id %}">{{ noticia.titulo }}</a>
+                    </h3>
+                    <p class="feed-card__excerpt">{{ noticia.resumo_curto|truncatechars:160 }}</p>
+                    <div class="feed-card__foot">
+                        <span><i class="far fa-eye"></i> {{ noticia.visualizacoes }}</span>
+                        <span><i class="far fa-heart"></i> {{ noticia.total_curtidas }}</span>
+                        <span><i class="far fa-comment"></i> {{ noticia.total_comentarios }}</span>
+                    </div>
+                </div>
+            </article>
             {% empty %}
-            <div class="col-12 glass-card p-5 text-center">
-                <i class="far fa-newspaper fa-4x text-primary mb-3"></i>
+            <div class="empty-state">
+                <i class="far fa-newspaper"></i>
                 <h3 class="display-font">Comece a história de {{ site_city }}</h3>
-                <p class="text-muted">Publique a primeira notícia ou peça à comunidade para enviar.</p>
-                <a href="{% url 'contribuir' %}" class="btn btn-contribuir mt-2">Receber envios</a>
+                <p>Publique a primeira notícia ou peça à comunidade para enviar.</p>
+                <a href="{% url 'contribuir' %}" class="btn btn-contribuir">Receber envios</a>
             </div>
             {% endfor %}
         </div>

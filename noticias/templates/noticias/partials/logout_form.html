@@ -1,0 +1,7 @@
+<form method="post" action="{% url 'sair' %}" class="d-inline logout-form {{ css_class|default:'' }}">
+    {% csrf_token %}
+    <button type="submit" class="btn {{ btn_class|default:'btn-outline-danger btn-sm rounded-pill' }}">
+        {% if show_icon != False %}<i class="fas fa-sign-out-alt me-1"></i>{% endif %}
+        {{ label|default:'Sair' }}
+    </button>
+</form>

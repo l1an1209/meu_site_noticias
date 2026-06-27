@@ -23,6 +23,9 @@ SITE_DESCRIPTION = (
 )
 SITE_LOGO = 'img/logo.png'
 SITE_FAVICON = 'img/favicon.png'
+SITE_HERO_IMAGE = (
+    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1600&q=80'
+)
 SITE_LAT = -10.8854
 SITE_LON = -61.9516
 

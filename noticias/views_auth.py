@@ -1,10 +1,12 @@
-from django.contrib.auth import login
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth import logout
+from django.contrib.auth.views import LoginView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import CreateView, TemplateView
+from django.views import View
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.contrib.auth import login
 from .forms import CadastroForm, LoginForm
 from .models import Perfil
 
@@ -19,8 +21,22 @@ class EntrarView(LoginView):
         return next_url or str(reverse_lazy('index'))
 
 
-class SairView(LogoutView):
-    next_page = reverse_lazy('index')
+class SairView(View):
+    """Logout via GET ou POST — evita página quebrada ao clicar em Sair."""
+
+    http_method_names = ['get', 'post', 'head', 'options']
+
+    def get(self, request):
+        return self._sair(request)
+
+    def post(self, request):
+        return self._sair(request)
+
+    def _sair(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+            messages.success(request, 'Você saiu da sua conta. Até logo!')
+        return redirect('index')
 
 
 class CadastroView(CreateView):

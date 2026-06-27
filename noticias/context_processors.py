@@ -32,6 +32,7 @@ def site_context(request):
         'site_description': settings.SITE_DESCRIPTION,
         'site_logo': getattr(settings, 'SITE_LOGO', 'img/logo.png'),
         'site_favicon': getattr(settings, 'SITE_FAVICON', 'img/favicon.png'),
+        'site_hero_image': getattr(settings, 'SITE_HERO_IMAGE', ''),
         'envios_pendentes': pendentes,
         'user_is_assinante': is_assinante,
     }

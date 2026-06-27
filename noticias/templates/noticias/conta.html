@@ -46,7 +46,7 @@
                 {% endif %}
                 <a href="{% url 'contribuir' %}" class="btn btn-contribuir rounded-pill">Enviar conteúdo</a>
                 <a href="{% url 'experiencia' %}" class="btn btn-outline-primary rounded-pill">Experiência ao vivo</a>
-                <a href="{% url 'sair' %}" class="btn btn-outline-danger rounded-pill">Sair</a>
+                {% include "noticias/partials/logout_form.html" with btn_class="btn btn-outline-danger rounded-pill" %}
             </div>
 
             {% if not perfil.is_assinante %}

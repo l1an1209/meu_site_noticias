@@ -30,18 +30,23 @@ class NoticiasBaseMixin:
             populares = list(Noticia.objects.order_by('-visualizacoes')[:5])
             cache.set('noticias_populares', populares, 300)
 
-        destaques = cache.get('noticias_destaques')
+        destaques = cache.get('noticias_destaques_v2')
         if not destaques:
             destaques = list(
-                Noticia.objects.filter(destaque=True).order_by('-data_publicacao')[:3]
+                Noticia.objects.filter(destaque=True).order_by('-data_publicacao')[:5]
             )
-            if not destaques:
-                destaques = list(Noticia.objects.order_by('-data_publicacao')[:3])
-            cache.set('noticias_destaques', destaques, 300)
+            if len(destaques) < 5:
+                ids = [n.id for n in destaques]
+                extras = list(
+                    Noticia.objects.exclude(id__in=ids).order_by('-data_publicacao')[: 5 - len(destaques)]
+                )
+                destaques = destaques + extras
+            cache.set('noticias_destaques_v2', destaques, 300)
 
         context['categorias'] = categorias
         context['noticias_populares'] = populares
         context['noticias_destaques'] = destaques
+        context['manchete_urgente'] = destaques[0] if destaques else None
         context['ordenacao_atual'] = self.request.GET.get('ordenacao', '-data_publicacao')
         context['busca'] = self.request.GET.get('q', '').strip()
         context['total_noticias'] = Noticia.objects.count()

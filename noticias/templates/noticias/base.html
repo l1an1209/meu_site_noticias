@@ -4,85 +4,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#0c1929">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0d9488">
     <meta name="description" content="{% block meta_description %}{{ site_description }}{% endblock %}">
     <title>{% block title %}{{ site_name }} — {{ site_slogan }}{% endblock %}</title>
     <link rel="icon" type="image/png" href="{% static site_favicon %}">
     <link rel="apple-touch-icon" href="{% static site_logo %}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/portal.css' %}">
     {% block extra_css %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %} has-mobile-nav">
     <div id="scrollProgress"></div>
 
-    <div class="city-bar">
+    <div class="top-strip">
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <span><i class="fas fa-map-marker-alt me-1"></i> <strong>{{ site_region }}</strong> — {{ site_state }}</span>
-            <span class="live-badge"><span class="live-dot" aria-hidden="true"></span> {{ site_slogan }}</span>
+            <span class="top-strip__loc"><i class="fas fa-map-marker-alt me-1"></i>{{ site_region }}, {{ site_state }}</span>
+            <span class="top-strip__clock" id="navClock" aria-live="polite"></span>
+            <span class="top-strip__live"><span class="live-dot" aria-hidden="true"></span>{{ site_slogan }}</span>
         </div>
     </div>
 
-    <nav class="navbar navbar-expand-lg site-nav sticky-top">
+    <header class="masthead">
         <div class="container">
-            <div class="navbar-brand brand-lockup m-0">
-                <a href="{% url 'experiencia' %}" class="logo-link" title="Experiência ao vivo — clima, hora e localização">
-                    <img src="{% static site_logo %}" alt="{{ site_name }}" class="site-logo site-logo--nav">
-                </a>
-                <a href="{% url 'index' %}" class="brand-text text-decoration-none">
-                    <span class="brand-title">{{ site_name }}</span>
-                    <span class="brand-sub">{{ site_region }} · {{ site_slogan }}</span>
-                </a>
-            </div>
-            <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navMain">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'index' %}active{% endif %}" href="{% url 'index' %}">Início</a>
-                    </li>
-                    {% for cat in nav_categorias|slice:":5" %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'noticias_por_categoria' cat.slug %}">{{ cat.nome }}</a>
-                    </li>
-                    {% endfor %}
-                    {% if user_is_assinante %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'exclusivo' %}"><i class="fas fa-star text-warning me-1"></i> Exclusivo</a>
-                    </li>
-                    {% endif %}
-                </ul>
-                <form class="d-none d-md-flex me-2 nav-search" method="get" action="{% url 'index' %}">
-                    <input type="search" name="q" class="form-control form-control-sm rounded-pill bg-dark text-white border-secondary" placeholder="Buscar..." value="{{ request.GET.q }}">
-                </form>
-                {% if user.is_authenticated %}
-                <a href="{% url 'conta' %}" class="btn btn-outline-light btn-sm rounded-pill me-2 d-none d-md-inline-flex align-items-center">
-                    <i class="fas fa-user me-1"></i>
-                    <span class="d-none d-lg-inline">{{ user.username|truncatechars:12 }}</span>
-                </a>
-                {% else %}
-                <a href="{% url 'entrar' %}" class="btn btn-outline-light btn-sm rounded-pill me-2">
-                    <i class="fas fa-sign-in-alt me-1"></i><span class="d-none d-md-inline">Entrar</span>
-                </a>
-                {% endif %}
-                {% if user.is_staff %}
-                <a href="{% url 'painel' %}" class="btn btn-outline-light btn-sm rounded-pill me-2 position-relative">
-                    <i class="fas fa-inbox"></i> Analisar
-                    {% if envios_pendentes %}
-                    <span class="badge-painel">{{ envios_pendentes }}</span>
-                    {% endif %}
-                </a>
-                {% endif %}
-                <a href="{% url 'contribuir' %}" class="btn btn-contribuir btn-sm d-none d-md-inline-flex">
-                    <i class="fas fa-pen me-1"></i> Publicar
-                </a>
-                <button class="btn btn-link text-white ms-1" id="themeToggle" type="button" aria-label="Tema">
-                    <i class="fas fa-moon"></i>
+            <a href="{% url 'experiencia' %}" class="masthead__brand" title="Clique — clima, hora e localização ao vivo">
+                <img src="{% static site_logo %}" alt="{{ site_name }}" class="masthead__logo">
+                <div class="masthead__text">
+                    <span class="masthead__name display-font">{{ site_name }}</span>
+                    <span class="masthead__tagline">{{ site_region }} · {{ site_slogan }}</span>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <nav class="cat-nav sticky-top" aria-label="Categorias">
+        <div class="container-fluid px-lg-4">
+            <div class="cat-nav__row">
+                <button class="cat-nav__toggle d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#catNavMenu" aria-label="Menu">
+                    <i class="fas fa-bars"></i>
                 </button>
+                <div class="collapse cat-nav__collapse show" id="catNavMenu">
+                    <ul class="cat-nav__list">
+                        <li>
+                            <a href="{% url 'index' %}" class="cat-nav__link {% if request.resolver_match.url_name == 'index' and not request.GET.q %}is-active{% endif %}">Início</a>
+                        </li>
+                        {% for cat in nav_categorias %}
+                        <li>
+                            <a href="{% url 'noticias_por_categoria' cat.slug %}" class="cat-nav__link">{{ cat.nome }}</a>
+                        </li>
+                        {% endfor %}
+                        <li><a href="{% url 'contribuir' %}" class="cat-nav__link cat-nav__link--cta">Publicar</a></li>
+                        {% if user_is_assinante %}
+                        <li><a href="{% url 'exclusivo' %}" class="cat-nav__link"><i class="fas fa-star me-1"></i>Exclusivo</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div class="cat-nav__tools">
+                    <a href="{% url 'experiencia' %}" class="nav-weather" id="navWeather" title="Clima ao vivo">
+                        <i class="fas fa-cloud-sun"></i>
+                        <span>{{ site_city }}</span>
+                        <strong id="navWeatherTemp">—°</strong>
+                    </a>
+                    <form class="nav-search-form" method="get" action="{% url 'index' %}">
+                        <input type="search" name="q" placeholder="Buscar notícias..." value="{{ request.GET.q }}" aria-label="Buscar">
+                        <button type="submit" aria-label="Buscar"><i class="fas fa-search"></i></button>
+                    </form>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'conta' %}" class="cat-nav__user d-none d-md-inline-flex"><i class="fas fa-user-circle"></i></a>
+                    {% else %}
+                    <a href="{% url 'entrar' %}" class="cat-nav__user d-none d-md-inline-flex"><i class="fas fa-sign-in-alt"></i></a>
+                    {% endif %}
+                    {% if user.is_staff %}
+                    <a href="{% url 'painel' %}" class="cat-nav__user position-relative" title="Analisar envios">
+                        <i class="fas fa-inbox"></i>
+                        {% if envios_pendentes %}<span class="badge-painel">{{ envios_pendentes }}</span>{% endif %}
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </nav>
@@ -92,7 +91,7 @@
     {% if messages %}
     <div class="container mt-3">
         {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">
             {{ message }}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -100,30 +99,28 @@
     </div>
     {% endif %}
 
-    <main class="container my-4 my-lg-5">
-        {% block content %}{% endblock %}
+    <main class="site-main">
+        <div class="container my-4 my-lg-5">
+            {% block content %}{% endblock %}
+        </div>
     </main>
 
     <footer class="site-footer">
         <div class="container">
             <div class="row g-4">
                 <div class="col-lg-4">
-                    <a href="{% url 'index' %}" class="footer-brand-lockup d-inline-flex align-items-center gap-2 text-decoration-none mb-2">
-                        <img src="{% static site_logo %}" alt="" class="site-logo site-logo--footer" width="40" height="40">
+                    <a href="{% url 'index' %}" class="footer-brand-lockup d-inline-flex align-items-center gap-3 text-decoration-none mb-3">
+                        <img src="{% static site_logo %}" alt="" class="masthead__logo masthead__logo--sm">
                         <span>
-                            <span class="footer-brand d-block">{{ site_name }}</span>
+                            <span class="footer-brand d-block display-font">{{ site_name }}</span>
                             <small class="text-white-50">{{ site_slogan }}</small>
                         </span>
                     </a>
-                    <p class="small">{{ site_tagline }}. Conteúdo revisado — confiança para moradores e comércios.</p>
-                    <div class="d-flex gap-2 mt-3">
-                        <span class="badge bg-dark border border-secondary"><i class="fas fa-shield-alt me-1"></i> Revisado</span>
-                        <span class="badge bg-dark border border-secondary"><i class="fas fa-store me-1"></i> Lojas</span>
-                    </div>
+                    <p class="small mb-0">{{ site_tagline }}. Conteúdo revisado para moradores e comércios locais.</p>
                 </div>
                 <div class="col-lg-3">
                     <h4 class="h6 text-white mb-3">Categorias</h4>
-                    <ul class="list-unstyled small">
+                    <ul class="list-unstyled small footer-links">
                         {% for cat in nav_categorias %}
                         <li class="mb-2"><a href="{% url 'noticias_por_categoria' cat.slug %}">{{ cat.nome }}</a></li>
                         {% endfor %}
@@ -131,27 +128,21 @@
                 </div>
                 <div class="col-lg-2">
                     <h4 class="h6 text-white mb-3">Portal</h4>
-                    <ul class="list-unstyled small">
+                    <ul class="list-unstyled small footer-links">
                         <li class="mb-2"><a href="{% url 'index' %}">Notícias</a></li>
                         <li class="mb-2"><a href="{% url 'contribuir' %}">Enviar conteúdo</a></li>
-                        <li class="mb-2"><a href="{% url 'entrar' %}">Entrar</a></li>
-                        <li class="mb-2"><a href="{% url 'parceria' %}">Parceria / assinatura</a></li>
-                        {% if user.is_staff %}
-                        <li class="mb-2"><a href="{% url 'painel' %}">Painel de análise</a></li>
-                        <li class="mb-2"><a href="/admin/">Admin completo</a></li>
-                        {% endif %}
+                        <li class="mb-2"><a href="{% url 'parceria' %}">Parceria</a></li>
+                        <li class="mb-2"><a href="{% url 'experiencia' %}">Clima ao vivo</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-3">
-                    <h4 class="h6 text-white mb-3">Para lojas e moradores</h4>
-                    <p class="small">Divulgue promoções e novidades. Cada envio fica em <strong>aguardando análise</strong> até você aprovar.</p>
+                    <h4 class="h6 text-white mb-3">Participe</h4>
+                    <p class="small">Moradores, lojas e parceiros enviam notícias e vídeos — tudo passa por revisão.</p>
                     <a href="{% url 'contribuir' %}" class="btn btn-contribuir btn-sm">Quero publicar</a>
                 </div>
             </div>
             <hr class="border-secondary my-4 opacity-25">
-            <p class="text-center small mb-0 opacity-75">
-                © {% now "Y" %} {{ site_name }} — {{ site_region }}, {{ site_state }}.
-            </p>
+            <p class="text-center small mb-0 opacity-75">© {% now "Y" %} {{ site_name }} — {{ site_region }}, {{ site_state }}.</p>
         </div>
     </footer>
 
@@ -161,18 +152,8 @@
     <button id="backToTop" type="button" aria-label="Topo"><i class="fas fa-arrow-up"></i></button>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'js/portal-nav.js' %}"></script>
     <script>
-        const html = document.documentElement;
-        const themeToggle = document.getElementById('themeToggle');
-        const saved = localStorage.getItem('theme') || 'light';
-        html.setAttribute('data-bs-theme', saved);
-        themeToggle.innerHTML = saved === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
-        themeToggle.addEventListener('click', () => {
-            const next = html.getAttribute('data-bs-theme') === 'light' ? 'dark' : 'light';
-            html.setAttribute('data-bs-theme', next);
-            localStorage.setItem('theme', next);
-            themeToggle.innerHTML = next === 'light' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
-        });
         window.addEventListener('scroll', () => {
             const h = document.documentElement.scrollHeight - window.innerHeight;
             if (h > 0) document.getElementById('scrollProgress').style.width = (window.scrollY / h * 100) + '%';

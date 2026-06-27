@@ -12,16 +12,15 @@
             {% if noticia.imagem %}
             <div class="position-relative article-hero-img">
                 <img src="{{ noticia.imagem.url }}" class="w-100" alt="{{ noticia.titulo }}">
+            {% else %}
+            <div class="position-relative article-hero-img">
+                <img src="{% noticia_capa noticia %}" class="w-100" alt="{{ noticia.titulo }}">
+            {% endif %}
                 <div class="article-hero-overlay">
                     {% if noticia.categoria %}<span class="badge bg-primary mb-2">{{ noticia.categoria.nome }}</span>{% endif %}
                     <h1 class="text-white display-font h2 mb-0">{{ noticia.titulo }}</h1>
                 </div>
             </div>
-            {% else %}
-            <div class="p-4 pb-0">
-                <h1 class="display-font h2">{{ noticia.titulo }}</h1>
-            </div>
-            {% endif %}
 
             <div class="p-3 p-md-4 p-lg-5">
                 <div class="article-meta d-flex flex-wrap gap-2 gap-md-3 text-muted small mb-3 pb-3 border-bottom">
@@ -134,9 +133,7 @@
                     {% for rel in noticias_relacionadas %}
                     <div class="col-12 col-sm-6 col-md-4">
                         <a href="{% url 'detalhe' rel.id %}" class="glass-card d-block text-decoration-none text-reset overflow-hidden h-100">
-                            {% if rel.imagem %}
-                            <img src="{{ rel.imagem.url }}" class="w-100 related-thumb" alt="">
-                            {% endif %}
+                            <img src="{% noticia_capa rel %}" class="w-100 related-thumb" alt="">
                             <div class="p-3"><h6 class="fw-semibold mb-0 small">{{ rel.titulo|truncatechars:48 }}</h6></div>
                         </a>
                     </div>
