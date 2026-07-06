@@ -80,22 +80,29 @@ TEMPLATES = [
 WSGI_APPLICATION = 'portal_noticias.wsgi.application'
 
 
-
 import os
 import dj_database_url
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-if os.getenv("DATABASE_URL"):
-    DATABASES = {
-        "default": dj_database_url.config(
-            default=os.getenv("DATABASE_URL"),
-            conn_max_age=600,
-            ssl_require=True,
-        )
-    }
-else:
+
+# =========================
+# BANCO DE DADOS (CORRIGIDO)
+# =========================
+DATABASES = {
+    "default": dj_database_url.config(
+        default=os.environ.get("DATABASE_URL"),
+        conn_max_age=600,
+        ssl_require=True,
+    )
+}
+
+
+# =========================
+# SEGURANÇA (EVITA ERROS NO LOCAL)
+# =========================
+if not os.environ.get("DATABASE_URL"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
