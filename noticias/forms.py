@@ -1,7 +1,9 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError as DjangoValidationError
 from .models import Contribuicao, Comentario, Perfil
+from .image_utils import validate_gallery_files, validate_image_file, MAX_GALLERY_PHOTOS
 
 
 class ContribuicaoForm(forms.ModelForm):
@@ -19,7 +21,7 @@ class ContribuicaoForm(forms.ModelForm):
             'telefone': 'WhatsApp (opcional)',
             'tipo': 'Você é',
             'categoria': 'Categoria',
-            'imagem': 'Foto (opcional)',
+            'imagem': 'Foto principal (opcional)',
             'video': 'Vídeo (opcional)',
         }
         widgets = {
@@ -53,10 +55,28 @@ class ContribuicaoForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, extra_files=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.extra_files = extra_files or []
         self.fields['categoria'].required = True
         self.fields['categoria'].empty_label = 'Escolha a categoria'
+
+    def clean_imagem(self):
+        return validate_image_file(self.cleaned_data.get('imagem'))
+
+    def clean(self):
+        cleaned = super().clean()
+        try:
+            validate_gallery_files(self.extra_files)
+        except DjangoValidationError as exc:
+            self.add_error(None, exc)
+        total = len(self.extra_files) + (1 if cleaned.get('imagem') else 0)
+        if total > MAX_GALLERY_PHOTOS:
+            self.add_error(
+                None,
+                f'Envie no máximo {MAX_GALLERY_PHOTOS} fotos (principal + galeria).',
+            )
+        return cleaned
 
     def clean_video(self):
         video = self.cleaned_data.get('video')

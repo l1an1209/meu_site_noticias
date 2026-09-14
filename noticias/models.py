@@ -2,6 +2,14 @@ from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
+from .image_utils import (
+    is_new_upload,
+    optimize_image_field,
+    upload_path_contrib,
+    upload_path_contrib_galeria,
+    upload_path_galeria,
+)
+
 class Categoria(models.Model):
     nome = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, blank=True)
@@ -20,7 +28,12 @@ class Noticia(models.Model):
     resumo = models.CharField(max_length=300, blank=True)
     autor = models.CharField(max_length=100, blank=True, default='Redação')
     data_publicacao = models.DateTimeField(auto_now_add=True)
-    imagem = models.ImageField(upload_to='noticias/', blank=True, null=True)
+    imagem = models.ImageField(
+        upload_to='noticias/',
+        blank=True,
+        null=True,
+        help_text='Foto principal (capa) da notícia.',
+    )
     video = models.FileField(
         upload_to='noticias/videos/',
         blank=True,
@@ -56,15 +69,53 @@ class Noticia(models.Model):
 
     @property
     def total_curtidas(self):
+        cached = getattr(self, '_curtidas_count', None)
+        if cached is not None:
+            return cached
         return self.curtidas.count()
 
     @property
     def total_comentarios(self):
+        cached = getattr(self, '_comentarios_count', None)
+        if cached is not None:
+            return cached
         return self.comentarios.filter(ativo=True).count()
 
     @property
     def tem_video(self):
         return bool(self.video)
+
+    @property
+    def imagens_galeria(self):
+        """Capa + fotos extras, na ordem da galeria."""
+        fotos = []
+        if self.imagem:
+            fotos.append({'url': self.imagem.url, 'legenda': '', 'principal': True})
+        for item in self.fotos.all():
+            if item.imagem:
+                fotos.append({
+                    'url': item.imagem.url,
+                    'legenda': item.legenda or '',
+                    'principal': False,
+                })
+        return fotos
+
+    @property
+    def total_fotos(self):
+        extra = getattr(self, '_fotos_count', None)
+        if extra is None:
+            extra = self.fotos.count()
+        return extra + (1 if self.imagem else 0)
+
+    def save(self, *args, **kwargs):
+        if getattr(self, '_optimizing', False):
+            super().save(*args, **kwargs)
+            return
+        novo = is_new_upload(self.imagem)
+        super().save(*args, **kwargs)
+        if novo and optimize_image_field(self.imagem):
+            self._optimizing = True
+            super().save(update_fields=['imagem'])
 
 
 class Contribuicao(models.Model):
@@ -92,7 +143,7 @@ class Contribuicao(models.Model):
         blank=True,
         verbose_name='Categoria sugerida',
     )
-    imagem = models.ImageField(upload_to='contribuicoes/', blank=True, null=True)
+    imagem = models.ImageField(upload_to=upload_path_contrib, blank=True, null=True)
     video = models.FileField(
         upload_to='contribuicoes/videos/',
         blank=True,
@@ -117,13 +168,35 @@ class Contribuicao(models.Model):
     def __str__(self):
         return f'{self.titulo} — {self.nome}'
 
+    @property
+    def imagens_galeria(self):
+        fotos = []
+        if self.imagem:
+            fotos.append(self.imagem)
+        for item in self.fotos.all():
+            if item.imagem:
+                fotos.append(item.imagem)
+        return fotos
+
+    def save(self, *args, **kwargs):
+        if getattr(self, '_optimizing', False):
+            super().save(*args, **kwargs)
+            return
+        novo = is_new_upload(self.imagem)
+        super().save(*args, **kwargs)
+        if novo and optimize_image_field(self.imagem):
+            self._optimizing = True
+            super().save(update_fields=['imagem'])
+
 
 class Anuncio(models.Model):
     """Anúncio exibido somente nos espaços reservados do layout."""
     SLOT_CHOICES = [
         ('top', 'Banner topo (abaixo do menu)'),
-        ('sidebar', 'Barra lateral'),
+        ('sidebar', 'Barra lateral (desktop)'),
         ('article', 'Dentro da notícia'),
+        ('feed', 'Entre notícias (lista)'),
+        ('mobile', 'Entre conteúdos no celular'),
     ]
 
     slot = models.CharField(max_length=20, choices=SLOT_CHOICES, unique=True, verbose_name='Posição')
@@ -222,3 +295,54 @@ class Curtida(models.Model):
 
     def __str__(self):
         return f'{self.usuario} curtiu {self.noticia_id}'
+
+
+class NoticiaImagem(models.Model):
+    noticia = models.ForeignKey(Noticia, on_delete=models.CASCADE, related_name='fotos')
+    imagem = models.ImageField(upload_to=upload_path_galeria)
+    legenda = models.CharField(max_length=200, blank=True)
+    ordem = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['ordem', 'id']
+        verbose_name = 'Foto da notícia'
+        verbose_name_plural = 'Fotos da notícia (galeria)'
+
+    def __str__(self):
+        return f'Foto {self.ordem} — {self.noticia_id}'
+
+    def save(self, *args, **kwargs):
+        if getattr(self, '_optimizing', False):
+            super().save(*args, **kwargs)
+            return
+        novo = is_new_upload(self.imagem)
+        super().save(*args, **kwargs)
+        if novo and optimize_image_field(self.imagem):
+            self._optimizing = True
+            super().save(update_fields=['imagem'])
+
+
+class ContribuicaoImagem(models.Model):
+    contribuicao = models.ForeignKey(
+        Contribuicao, on_delete=models.CASCADE, related_name='fotos'
+    )
+    imagem = models.ImageField(upload_to=upload_path_contrib_galeria)
+    ordem = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['ordem', 'id']
+        verbose_name = 'Foto do envio'
+        verbose_name_plural = 'Fotos dos envios'
+
+    def __str__(self):
+        return f'Foto {self.pk} — envio {self.contribuicao_id}'
+
+    def save(self, *args, **kwargs):
+        if getattr(self, '_optimizing', False):
+            super().save(*args, **kwargs)
+            return
+        novo = is_new_upload(self.imagem)
+        super().save(*args, **kwargs)
+        if novo and optimize_image_field(self.imagem):
+            self._optimizing = True
+            super().save(update_fields=['imagem'])

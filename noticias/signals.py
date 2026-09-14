@@ -15,7 +15,11 @@ def criar_perfil_usuario(sender, instance, created, **kwargs):
 
 @receiver([post_save, post_delete], sender=Anuncio)
 def limpar_cache_anuncio(sender, instance, **kwargs):
-    cache_keys = [f'anuncio_{instance.slot}', 'anuncio_top', 'anuncio_sidebar', 'anuncio_article']
+    cache_keys = [
+        f'anuncio_{instance.slot}',
+        'anuncio_top', 'anuncio_sidebar', 'anuncio_article',
+        'anuncio_feed', 'anuncio_mobile',
+    ]
     cache.delete_many(cache_keys)
 
 

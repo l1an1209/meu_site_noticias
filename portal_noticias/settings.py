@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',
     'noticias.apps.NoticiasConfig',
 ]
 
@@ -85,6 +86,8 @@ import dj_database_url
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
 
 
 # =========================

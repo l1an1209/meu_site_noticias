@@ -1,4 +1,4 @@
-from .models import Noticia
+from .models import Noticia, NoticiaImagem
 
 
 def criar_noticia_de_contribuicao(contrib):
@@ -18,4 +18,27 @@ def criar_noticia_de_contribuicao(contrib):
         updated.append('video')
     if updated:
         noticia.save(update_fields=updated)
+
+    ordem = 0
+    for extra in contrib.fotos.all():
+        if not extra.imagem:
+            continue
+        foto = NoticiaImagem(noticia=noticia, ordem=ordem)
+        foto.imagem.save(extra.imagem.name, extra.imagem, save=False)
+        foto.save()
+        ordem += 1
     return noticia
+
+
+def anexar_fotos_envio(contribuicao, arquivos):
+    ordem = contribuicao.fotos.count()
+    from .models import ContribuicaoImagem
+    for arquivo in arquivos:
+        if not arquivo:
+            continue
+        ContribuicaoImagem.objects.create(
+            contribuicao=contribuicao,
+            imagem=arquivo,
+            ordem=ordem,
+        )
+        ordem += 1

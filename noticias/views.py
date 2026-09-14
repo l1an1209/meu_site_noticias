@@ -4,14 +4,30 @@ from django.views import View
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, F
+from django.db.models import Count, F, Prefetch, Q
 from django.core.cache import cache
 from django.urls import reverse_lazy
 from django.contrib import messages
-from .models import Noticia, Categoria, Contribuicao, Curtida, Comentario
+from .models import Noticia, Categoria, Contribuicao, Curtida, Comentario, NoticiaImagem
 from .forms import ContribuicaoForm, ComentarioForm
 from .utils import limpar_cache_portal
-from .utils_noticia import criar_noticia_de_contribuicao
+from .utils_noticia import criar_noticia_de_contribuicao, anexar_fotos_envio
+
+
+def _qs_noticias():
+    return (
+        Noticia.objects.select_related('categoria')
+        .prefetch_related(
+            Prefetch('fotos', queryset=NoticiaImagem.objects.order_by('ordem', 'id')),
+        )
+        .annotate(
+            _curtidas_count=Count('curtidas', distinct=True),
+            _comentarios_count=Count(
+                'comentarios', filter=Q(comentarios__ativo=True), distinct=True
+            ),
+            _fotos_count=Count('fotos', distinct=True),
+        )
+    )
 
 
 class NoticiasBaseMixin:
@@ -76,7 +92,7 @@ class NoticiaListView(NoticiasBaseMixin, ListView):
             '-visualizacoes': '-visualizacoes',
         }
         ordenacao = ordenacoes_validas.get(ordenacao, '-data_publicacao')
-        queryset = Noticia.objects.select_related('categoria').order_by(ordenacao)
+        queryset = _qs_noticias().order_by(ordenacao)
 
         categoria_id = self.request.GET.get('categoria')
         if categoria_id and categoria_id != '0':
@@ -98,6 +114,28 @@ class NoticiaListView(NoticiasBaseMixin, ListView):
             context['categoria_selecionada'] = int(categoria_id) if categoria_id else 0
         except (TypeError, ValueError):
             context['categoria_selecionada'] = 0
+        if (
+            not context.get('categoria')
+            and not context.get('busca')
+            and context.get('page_obj')
+            and context['page_obj'].number == 1
+        ):
+            base = _qs_noticias()
+            if not self._usuario_ve_exclusivo():
+                base = base.filter(exclusivo_assinantes=False)
+            context['noticias_com_video'] = list(
+                base.exclude(video='')
+                .exclude(video__isnull=True)
+                .order_by('-data_publicacao')[:6]
+            )
+            blocos = []
+            for cat in context.get('categorias', [])[:6]:
+                itens = list(
+                    base.filter(categoria=cat).order_by('-data_publicacao')[:4]
+                )
+                if itens:
+                    blocos.append({'categoria': cat, 'noticias': itens})
+            context['blocos_categoria'] = blocos
         return context
 
 
@@ -106,6 +144,9 @@ class NoticiaDetailView(NoticiasBaseMixin, DetailView):
     template_name = 'noticias/detalhe.html'
     context_object_name = 'noticia'
     pk_url_kwarg = 'id'
+
+    def get_queryset(self):
+        return _qs_noticias()
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
@@ -123,7 +164,8 @@ class NoticiaDetailView(NoticiasBaseMixin, DetailView):
             or (perfil and perfil.is_assinante)
         )
         context['noticias_relacionadas'] = (
-            Noticia.objects.filter(categoria=noticia.categoria)
+            _qs_noticias()
+            .filter(categoria=noticia.categoria)
             .exclude(id=noticia.id)
             .order_by('-data_publicacao')[:3]
         )
@@ -150,9 +192,7 @@ class NoticiaPorCategoriaListView(NoticiasBaseMixin, ListView):
 
     def get_queryset(self):
         self.categoria = get_object_or_404(Categoria, slug=self.kwargs['slug'])
-        qs = Noticia.objects.filter(categoria=self.categoria).select_related(
-            'categoria'
-        ).order_by('-data_publicacao')
+        qs = _qs_noticias().filter(categoria=self.categoria).order_by('-data_publicacao')
         if not self._usuario_ve_exclusivo():
             qs = qs.filter(exclusivo_assinantes=False)
         return qs
@@ -164,13 +204,44 @@ class NoticiaPorCategoriaListView(NoticiasBaseMixin, ListView):
         return context
 
 
+class NoticiaVideoListView(NoticiasBaseMixin, ListView):
+    model = Noticia
+    template_name = 'noticias/index.html'
+    context_object_name = 'noticias'
+    paginate_by = 8
+
+    def get_queryset(self):
+        qs = (
+            _qs_noticias()
+            .exclude(video='')
+            .exclude(video__isnull=True)
+            .order_by('-data_publicacao')
+        )
+        if not self._usuario_ve_exclusivo():
+            qs = qs.filter(exclusivo_assinantes=False)
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['pagina_videos'] = True
+        return context
+
+
 class ContribuicaoCreateView(CreateView):
     model = Contribuicao
     form_class = ContribuicaoForm
     template_name = 'noticias/contribuir.html'
     success_url = reverse_lazy('contribuir')
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['extra_files'] = self.request.FILES.getlist('fotos')
+        return kwargs
+
     def form_valid(self, form):
+        extras = list(self.request.FILES.getlist('fotos'))
+        if not form.instance.imagem and extras:
+            form.instance.imagem = extras.pop(0)
         form.instance.status = 'pendente'
         messages.success(
             self.request,
@@ -178,7 +249,9 @@ class ContribuicaoCreateView(CreateView):
             f'A equipe de {settings.SITE_CITY} revisa em breve — obrigado por participar.',
         )
         limpar_cache_portal()
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        anexar_fotos_envio(self.object, extras)
+        return response
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -201,7 +274,9 @@ class PainelModeracaoView(StaffRequiredMixin, ListView):
 
     def get_queryset(self):
         status = self.request.GET.get('status', 'pendente')
-        return Contribuicao.objects.filter(status=status).select_related('categoria')
+        return Contribuicao.objects.filter(status=status).select_related(
+            'categoria'
+        ).prefetch_related('fotos')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -39,9 +39,18 @@ def ad_slot(slot):
 
 @register.simple_tag
 def noticia_capa(noticia):
-    """URL da capa: foto real ou imagem editorial de fallback."""
+    """URL da capa: foto real, galeria ou imagem editorial de fallback."""
     if noticia.imagem:
         return noticia.imagem.url
+    fotos = getattr(noticia, '_prefetched_objects_cache', {}).get('fotos')
+    if fotos:
+        primeira = next((f for f in fotos if f.imagem), None)
+        if primeira:
+            return primeira.imagem.url
+    else:
+        primeira = noticia.fotos.first()
+        if primeira and primeira.imagem:
+            return primeira.imagem.url
     slug = ''
     if noticia.categoria and noticia.categoria.slug:
         slug = noticia.categoria.slug.lower()

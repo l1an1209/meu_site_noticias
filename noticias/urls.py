@@ -3,6 +3,7 @@ from .views import (
     NoticiaListView,
     NoticiaDetailView,
     NoticiaPorCategoriaListView,
+    NoticiaVideoListView,
     ContribuicaoCreateView,
     PainelModeracaoView,
     AprovarEnvioView,
@@ -15,6 +16,7 @@ from .views_experiencia import ExperienciaView, ClimaApiView
 
 urlpatterns = [
     path('', NoticiaListView.as_view(), name='index'),
+    path('videos/', NoticiaVideoListView.as_view(), name='videos'),
     path('experiencia/', ExperienciaView.as_view(), name='experiencia'),
     path('api/clima/', ClimaApiView.as_view(), name='api_clima'),
     path('exclusivo/', ExclusivoListView.as_view(), name='exclusivo'),

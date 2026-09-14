@@ -3,7 +3,12 @@ from django.contrib import messages
 from django.utils.html import format_html
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
-from .models import Noticia, Categoria, Contribuicao, Anuncio, Perfil, Comentario, Curtida
+from django import forms
+from django.db.models import Count
+from .models import (
+    Noticia, Categoria, Contribuicao, Anuncio, Perfil, Comentario, Curtida,
+    NoticiaImagem, ContribuicaoImagem,
+)
 from .utils_noticia import criar_noticia_de_contribuicao
 
 
@@ -19,6 +24,51 @@ class UserAdmin(BaseUserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+
+class ContribuicaoImagemInline(admin.TabularInline):
+    model = ContribuicaoImagem
+    extra = 1
+    fields = ('preview', 'imagem', 'ordem')
+    readonly_fields = ('preview',)
+
+    def preview(self, obj):
+        if obj.pk and obj.imagem:
+            return format_html(
+                '<img src="{}" style="width:80px;height:60px;object-fit:cover;border-radius:6px"/>',
+                obj.imagem.url,
+            )
+        return '—'
+    preview.short_description = 'Prévia'
+
+
+class NoticiaImagemForm(forms.ModelForm):
+    usar_como_principal = forms.BooleanField(
+        required=False,
+        label='Definir como foto principal',
+        help_text='Copia esta foto para a capa da notícia.',
+    )
+
+    class Meta:
+        model = NoticiaImagem
+        fields = ('imagem', 'legenda', 'ordem')
+
+
+class NoticiaImagemInline(admin.TabularInline):
+    model = NoticiaImagem
+    form = NoticiaImagemForm
+    extra = 1
+    fields = ('preview', 'imagem', 'legenda', 'ordem', 'usar_como_principal')
+    readonly_fields = ('preview',)
+
+    def preview(self, obj):
+        if obj.pk and obj.imagem:
+            return format_html(
+                '<img src="{}" style="width:90px;height:64px;object-fit:cover;border-radius:6px"/>',
+                obj.imagem.url,
+            )
+        return '—'
+    preview.short_description = 'Prévia'
 
 
 @admin.register(Comentario)
@@ -44,12 +94,13 @@ class ContribuicaoAdmin(admin.ModelAdmin):
     """Onde você vê o que moradores e lojas enviaram — NÃO fica em Categorias."""
     list_display = (
         'status_badge', 'titulo', 'nome', 'tipo', 'categoria',
-        'email', 'telefone', 'data_envio',
+        'email', 'telefone', 'qtd_fotos', 'data_envio',
     )
     list_filter = ('status', 'tipo', 'categoria', 'data_envio')
     search_fields = ('titulo', 'conteudo', 'nome', 'email', 'telefone')
     readonly_fields = ('data_envio', 'preview_imagem', 'preview_video')
     list_per_page = 25
+    inlines = (ContribuicaoImagemInline,)
     actions = ['aprovar_publicacoes', 'rejeitar_publicacoes']
     fieldsets = (
         ('📥 Envio da comunidade', {
@@ -112,6 +163,11 @@ class ContribuicaoAdmin(admin.ModelAdmin):
         return '—'
     preview_video.short_description = 'Prévia do vídeo'
 
+    def qtd_fotos(self, obj):
+        extra = obj.fotos.count()
+        return extra + (1 if obj.imagem else 0)
+    qtd_fotos.short_description = 'Fotos'
+
     @admin.action(description='✅ Aprovar e publicar no site')
     def aprovar_publicacoes(self, request, queryset):
         aprovadas = 0
@@ -141,7 +197,7 @@ class AnuncioAdmin(admin.ModelAdmin):
             'fields': ('slot', 'titulo_interno', 'ativo'),
             'description': (
                 'O anúncio só aparece no site se estiver ATIVO e tiver código HTML ou imagem. '
-                'Cada posição é única (topo, lateral ou artigo).'
+                'Cada posição é única (topo, lateral, artigo, feed ou celular).'
             ),
         }),
         ('Conteúdo do anúncio', {
@@ -168,21 +224,56 @@ class CategoriaAdmin(admin.ModelAdmin):
 @admin.register(Noticia)
 class NoticiaAdmin(admin.ModelAdmin):
     list_display = (
-        'titulo', 'categoria', 'exclusivo_assinantes', 'destaque',
-        'data_publicacao', 'visualizacoes', 'autor',
+        'titulo', 'categoria', 'autor', 'data_publicacao', 'status_pub',
+        'qtd_fotos', 'visualizacoes', 'exclusivo_assinantes', 'destaque',
     )
     list_filter = ('categoria', 'exclusivo_assinantes', 'destaque', 'data_publicacao')
     fieldsets = (
         (None, {
             'fields': ('titulo', 'resumo', 'conteudo', 'categoria', 'autor', 'destaque', 'exclusivo_assinantes'),
         }),
-        ('Mídia', {'fields': ('imagem', 'video')}),
+        ('Mídia', {
+            'fields': ('imagem', 'video'),
+            'description': 'A foto principal é a capa. Use a galeria abaixo para fotos 2, 3, 4...',
+        }),
         ('Estatísticas', {'fields': ('visualizacoes',)}),
     )
     search_fields = ('titulo', 'conteudo', 'resumo')
     list_editable = ('destaque',)
     date_hierarchy = 'data_publicacao'
     readonly_fields = ('visualizacoes',)
+    inlines = (NoticiaImagemInline,)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(_fotos=Count('fotos'))
+
+    def qtd_fotos(self, obj):
+        extra = getattr(obj, '_fotos', 0)
+        return extra + (1 if obj.imagem else 0)
+    qtd_fotos.short_description = 'Fotos'
+    qtd_fotos.admin_order_field = '_fotos'
+
+    def status_pub(self, obj):
+        return 'Publicada'
+    status_pub.short_description = 'Status'
+
+    def save_formset(self, request, form, formset, change):
+        if formset.model is NoticiaImagem:
+            instances = formset.save(commit=False)
+            for obj in formset.deleted_objects:
+                obj.delete()
+            for inst in instances:
+                inst.save()
+            for subform in formset.forms:
+                data = getattr(subform, 'cleaned_data', None) or {}
+                if data.get('DELETE') or not data.get('usar_como_principal'):
+                    continue
+                inst = subform.instance
+                if inst.pk and inst.imagem:
+                    inst.noticia.imagem.save(inst.imagem.name, inst.imagem, save=True)
+            formset.save_m2m()
+            return
+        super().save_formset(request, form, formset, change)
 
     def imagem_preview(self, obj):
         if obj.imagem:

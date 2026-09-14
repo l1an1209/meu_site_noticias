@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from .models import Noticia
 from .mixins import AssinanteRequiredMixin
-from .views import NoticiasBaseMixin, NoticiaDetailView
+from .views import NoticiasBaseMixin, NoticiaDetailView, _qs_noticias
 
 
 class ExclusivoListView(AssinanteRequiredMixin, NoticiasBaseMixin, ListView):
@@ -14,15 +14,15 @@ class ExclusivoListView(AssinanteRequiredMixin, NoticiasBaseMixin, ListView):
 
     def get_queryset(self):
         return (
-            Noticia.objects.filter(exclusivo_assinantes=True)
-            .select_related('categoria')
+            _qs_noticias()
+            .filter(exclusivo_assinantes=True)
             .order_by('-data_publicacao')
         )
 
 
 class ExclusivoDetailView(NoticiaDetailView):
     def get_queryset(self):
-        return Noticia.objects.filter(exclusivo_assinantes=True)
+        return _qs_noticias().filter(exclusivo_assinantes=True)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
