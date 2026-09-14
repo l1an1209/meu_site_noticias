@@ -3,10 +3,11 @@
 {% block heading %}Confirmar exclusão{% endblock %}
 {% block content %}
 <div class="ds-card p-4" style="max-width:560px">
-    <p>Esta ação não pode ser desfeita. Excluir <strong>{{ object }}</strong>?</p>
-    <form method="post">
+    <p class="mb-1 fw-semibold">Esta ação não pode ser desfeita.</p>
+    <p class="text-muted">Excluir <strong>{{ object }}</strong> deste portal?</p>
+    <form method="post" class="js-loading-form">
         {% csrf_token %}
-        <button class="btn btn-danger" type="submit">Excluir definitivamente</button>
+        <button class="btn btn-danger" type="submit" data-loading="Excluindo…">Excluir definitivamente</button>
         <a class="btn btn-ds-ghost" href="javascript:history.back()">Cancelar</a>
     </form>
 </div>

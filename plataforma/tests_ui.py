@@ -51,6 +51,7 @@ class PainelUiTests(TestCase):
         resp = self.client.get('/app/', **self._host(self.legado.slug))
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Visão geral')
+        self.assertContains(resp, 'Dashboard')
         resp_b = self.client.get('/app/', **self._host(self.beta.slug))
         self.assertEqual(resp_b.status_code, 403)
 

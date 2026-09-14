@@ -3,7 +3,7 @@
 {% block heading %}Notícias{% endblock %}
 {% block content %}
 <form class="app-toolbar" method="get">
-    <input class="form-control" style="max-width:260px" type="search" name="q" value="{{ q }}" placeholder="Buscar…">
+    <input class="form-control" style="max-width:260px" type="search" name="q" value="{{ q }}" placeholder="Buscar título ou texto…">
     <select name="categoria" class="form-select" style="max-width:200px" onchange="this.form.submit()">
         <option value="">Todas as categorias</option>
         {% for c in categorias %}
@@ -26,6 +26,7 @@
         </td>
         <td>{{ n.categoria.nome|default:"—" }}</td>
         <td>
+            <span class="ds-badge ds-badge--ok">Publicada</span>
             {% if n.destaque %}<span class="ds-badge">Destaque</span>{% endif %}
             {% if n.exclusivo_assinantes %}<span class="ds-badge ds-badge--warn">Exclusivo</span>{% endif %}
         </td>
@@ -35,7 +36,13 @@
         </td>
     </tr>
     {% empty %}
-    <tr><td colspan="5"><div class="empty-state my-3">Nenhuma notícia cadastrada</div></td></tr>
+    <tr><td colspan="5">
+        <div class="empty-state my-3">
+            <i class="far fa-newspaper"></i>
+            <p class="empty-title">{% if q %}Nenhuma notícia corresponde à busca.{% else %}Você ainda não publicou nenhuma notícia.{% endif %}</p>
+            {% if not q %}<a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir">Escrever a primeira</a>{% endif %}
+        </div>
+    </td></tr>
     {% endfor %}
     </tbody>
 </table>

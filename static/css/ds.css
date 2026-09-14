@@ -1,13 +1,13 @@
 /* Design system — produto SaaS (público + painéis) */
 :root {
-    --ds-font: 'Inter', system-ui, -apple-system, sans-serif;
-    --ds-serif: 'Source Serif 4', Georgia, serif;
+    --ds-font: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --ds-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
     --ds-radius-sm: 8px;
     --ds-radius: 12px;
     --ds-radius-lg: 16px;
     --ds-radius-pill: 999px;
-    --ds-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-    --ds-shadow-md: 0 8px 24px rgba(15, 23, 42, 0.06);
+    --ds-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    --ds-shadow-md: 0 10px 28px rgba(15, 23, 42, 0.06);
     --ds-space-1: 0.25rem;
     --ds-space-2: 0.5rem;
     --ds-space-3: 0.75rem;
@@ -17,7 +17,7 @@
     --ds-space-8: 3rem;
     --ds-text: #0f172a;
     --ds-muted: #64748b;
-    --ds-border: #e7ebf0;
+    --ds-border: #e6eaf0;
     --ds-bg: #f4f6f8;
     --ds-surface: #ffffff;
     --ds-danger: #dc2626;
@@ -42,7 +42,11 @@ body {
     font-family: var(--ds-serif);
     font-weight: 650;
     letter-spacing: -0.03em;
-    line-height: 1.2;
+    line-height: 1.18;
+}
+
+h1, h2, h3 {
+    letter-spacing: -0.02em;
 }
 
 .btn-ds,
@@ -71,7 +75,8 @@ body {
     outline: none;
 }
 .btn-ds:disabled,
-.btn-contribuir:disabled {
+.btn-contribuir:disabled,
+.btn:disabled {
     opacity: 0.55;
     cursor: not-allowed;
 }
@@ -141,7 +146,6 @@ body {
 .ds-badge--info { background: #eff6ff; color: #1d4ed8; }
 
 .alert {
-    border: 0;
     border-radius: var(--ds-radius);
     box-shadow: none;
     border: 1px solid var(--ds-border);
@@ -193,10 +197,17 @@ body {
     border-radius: var(--ds-radius-lg);
 }
 .empty-state i { font-size: 1.6rem; margin-bottom: 0.65rem; opacity: 0.4; }
+.empty-state h3,
+.empty-state .empty-title {
+    color: var(--ds-text);
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+}
 .empty-state p { margin-bottom: 0.85rem; color: #475569; }
 
 .skeleton {
-    background: #eef2f6;
+    background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+    background-size: 200% 100%;
     border-radius: 8px;
 }
 
@@ -212,6 +223,9 @@ body {
     border-color: transparent;
     color: #fff;
 }
+.pagination-modern .page-item.disabled .page-link {
+    opacity: 0.45;
+}
 
 .cms-title {
     font-size: 1.35rem;
@@ -224,13 +238,14 @@ body {
     line-height: 1.65;
 }
 
-.sales-page { max-width: 1080px; margin: 0 auto; }
-.sales-hero { padding: 2.5rem 0 1.5rem; text-align: center; }
-.sales-hero h1 { font-size: clamp(1.8rem, 4vw, 2.7rem); max-width: 18ch; margin: 0 auto 1rem; }
-.sales-kicker { color: var(--ds-muted); font-weight: 600; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
-.plan-card--featured { border-color: var(--primary, #0f766e); }
-.cmp-table { font-size: 0.9rem; }
-.cmp-table th { font-weight: 600; }
+.section-kicker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ds-muted);
+    margin-bottom: 0.85rem;
+}
 
 .sub-status { display: inline-flex; align-items: center; gap: 0.4rem; }
 .sub-status::before {
@@ -266,6 +281,26 @@ body {
 }
 .preview-box img { width: 100%; height: 100%; object-fit: cover; }
 
+.gallery-thumb {
+    width: 88px;
+    position: relative;
+}
+.gallery-thumb img {
+    width: 88px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--ds-border);
+}
+.gallery-thumb label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--ds-muted);
+    margin-top: 0.25rem;
+}
+
 .media-card {
     display: block;
     overflow: hidden;
@@ -274,7 +309,9 @@ body {
     border-radius: var(--ds-radius);
     border: 1px solid var(--ds-border);
     background: #fff;
+    transition: border-color 0.15s ease;
 }
+.media-card:hover { border-color: #cfd6df; color: inherit; }
 .media-card img,
 .media-card .ratio { aspect-ratio: 16/10; object-fit: cover; width: 100%; }
 .media-card__cap { padding: 0.65rem 0.75rem; font-size: 0.82rem; font-weight: 600; }
@@ -296,9 +333,21 @@ body {
     font-size: 0.85rem;
     font-weight: 600;
     background: #fff;
+    transition: background 0.15s ease;
 }
 .shortcut-grid a:hover { background: var(--ds-bg); }
 .shortcut-grid i { color: var(--primary, #0f766e); width: 1.1rem; text-align: center; }
+
+.list-card {
+    display: none;
+}
+
+.error-page,
+.auth-card {
+    max-width: 28rem;
+    margin-left: auto;
+    margin-right: auto;
+}
 
 @media (max-width: 575px) {
     .cms-title { font-size: 1.1rem; }

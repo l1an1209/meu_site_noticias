@@ -16,7 +16,12 @@
         <td>{% if m.ativo %}<span class="ds-badge ds-badge--ok">Ativo</span>{% else %}<span class="ds-badge ds-badge--muted">Inativo</span>{% endif %}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="3"><div class="empty-state my-3">Nenhum membro nesta equipe</div></td></tr>
+    <tr><td colspan="3">
+        <div class="empty-state my-3">
+            <p class="empty-title">A equipe deste portal ainda não tem membros listados.</p>
+            <a href="{% url 'app_usuario_novo' %}" class="btn btn-contribuir">Convidar membro</a>
+        </div>
+    </td></tr>
     {% endfor %}
     </tbody>
 </table>

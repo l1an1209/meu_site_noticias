@@ -1,7 +1,7 @@
 {% extends "plataforma/app/base.html" %}
 {% block title %}{{ page_title|default:'Notícia' }}{% endblock %}
 {% block heading %}{{ page_title|default:'Notícia' }}{% endblock %}
-{% block subheading %}Conteúdo deste portal{% endblock %}
+{% block subheading %}Publicação neste portal{% endblock %}
 {% block content %}
 <form method="post" enctype="multipart/form-data" class="js-loading-form">
     {% csrf_token %}
@@ -9,7 +9,7 @@
     <div class="row g-3">
         <div class="col-lg-8">
             <div class="ds-card p-3 p-md-4 mb-3">
-                <p class="text-muted small mb-3">Conteúdo</p>
+                <p class="section-kicker">Conteúdo</p>
                 <div class="mb-3">
                     <label class="form-label">{{ form.titulo.label }}</label>
                     {{ form.titulo }}
@@ -18,6 +18,7 @@
                 <div class="mb-3">
                     <label class="form-label">{{ form.resumo.label }}</label>
                     {{ form.resumo }}
+                    <div class="form-text">Aparece nas listagens, busca e compartilhamento.</div>
                     {% if form.resumo.errors %}<div class="text-danger small">{{ form.resumo.errors }}</div>{% endif %}
                 </div>
                 <div>
@@ -27,35 +28,54 @@
                 </div>
             </div>
             <div class="ds-card p-3 p-md-4">
-                <p class="text-muted small mb-3">Mídia</p>
-                <div class="d-flex gap-3 align-items-start mb-3 flex-wrap">
-                    <div class="preview-box">
-                        {% if form.instance.imagem %}
-                        <img src="{{ form.instance.imagem.url }}" alt="">
-                        {% else %}
-                        <span class="small text-muted">Capa</span>
-                        {% endif %}
+                <p class="section-kicker">Mídia</p>
+                <div class="upload-drop mb-3">
+                    <div class="d-flex gap-3 align-items-start flex-wrap upload-row">
+                        <div class="preview-box">
+                            {% if form.instance.imagem %}
+                            <img src="{{ form.instance.imagem.url }}" alt="">
+                            {% else %}
+                            <span class="small text-muted">Capa</span>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <label class="form-label">Imagem principal</label>
+                            {{ form.imagem }}
+                            {% if form.imagem.errors %}<div class="text-danger small">{{ form.imagem.errors }}</div>{% endif %}
+                            <p class="small text-muted mb-0 mt-1">JPEG, PNG, WebP ou GIF. A validação de segurança permanece.</p>
+                        </div>
                     </div>
-                    <div class="flex-grow-1">
-                        <label class="form-label">{{ form.imagem.label }}</label>
-                        {{ form.imagem }}
-                        {% if form.imagem.errors %}<div class="text-danger small">{{ form.imagem.errors }}</div>{% endif %}
-                        <p class="small text-muted mb-0 mt-1">JPEG, PNG, WebP ou GIF. A validação de segurança da etapa 5 permanece.</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Galeria (fotos extras)</label>
+                    <input class="form-control" type="file" name="fotos_galeria" accept="image/*" multiple>
+                    <div id="galeriaPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    {% if form.instance.pk %}
+                    <div class="d-flex flex-wrap gap-3 mt-3">
+                        {% for foto in form.instance.fotos.all %}
+                        <div class="gallery-thumb">
+                            <img src="{{ foto.imagem.url }}" alt="">
+                            <label><input type="checkbox" name="remover_foto" value="{{ foto.pk }}"> Remover</label>
+                        </div>
+                        {% empty %}
+                        <p class="small text-muted mb-0">Nenhuma foto extra ainda.</p>
+                        {% endfor %}
                     </div>
+                    {% endif %}
                 </div>
                 <div>
                     <label class="form-label">{{ form.video.label }}</label>
                     {{ form.video }}
                     {% if form.video.errors %}<div class="text-danger small">{{ form.video.errors }}</div>{% endif %}
                     {% if form.instance.video %}
-                    <p class="small text-muted mb-0 mt-1">Vídeo atual: {{ form.instance.video.name }}</p>
+                    <p class="small text-muted mb-0 mt-1">Vídeo atual enviado.</p>
                     {% endif %}
                 </div>
             </div>
         </div>
         <div class="col-lg-4">
             <div class="ds-card p-3 p-md-4 mb-3">
-                <p class="text-muted small mb-3">Publicação</p>
+                <p class="section-kicker">Publicação</p>
                 <div class="mb-3">
                     <label class="form-label">{{ form.categoria.label }}</label>
                     {{ form.categoria }}
@@ -67,10 +87,18 @@
                     {% if form.autor.errors %}<div class="text-danger small">{{ form.autor.errors }}</div>{% endif %}
                 </div>
                 <div class="form-check mb-2">{{ form.destaque }} <label class="form-check-label">{{ form.destaque.label }}</label></div>
-                <div class="form-check">{{ form.exclusivo_assinantes }} <label class="form-check-label">{{ form.exclusivo_assinantes.label }}</label></div>
+                <div class="form-check mb-3">{{ form.exclusivo_assinantes }} <label class="form-check-label">{{ form.exclusivo_assinantes.label }}</label></div>
+                {% if form.instance.pk %}
+                <p class="small text-muted mb-0">Publicada em {{ form.instance.data_publicacao|date:"d/m/Y H:i" }}</p>
+                {% else %}
+                <p class="small text-muted mb-0">Ao salvar, a matéria entra no ar neste portal. Não há rascunho separado neste momento.</p>
+                {% endif %}
             </div>
             <div class="d-grid gap-2">
-                <button class="btn btn-contribuir" type="submit">Publicar</button>
+                <button class="btn btn-contribuir" type="submit" data-loading="Publicando…">Publicar</button>
+                {% if form.instance.pk %}
+                <a class="btn btn-ds-ghost" href="{% url 'detalhe' form.instance.pk %}" target="_blank" rel="noopener">Pré-visualizar no site</a>
+                {% endif %}
                 <a class="btn btn-ds-ghost" href="{% url 'app_noticias' %}">Cancelar</a>
             </div>
         </div>

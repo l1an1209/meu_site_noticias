@@ -1,6 +1,6 @@
 {% extends "plataforma/app/base.html" %}
 {% block title %}Envios{% endblock %}
-{% block heading %}Envios da comunidade{% endblock %}
+{% block heading %}Envio de notícias{% endblock %}
 {% block content %}
 <div class="app-toolbar">
     <a class="btn btn-sm {% if filtro_status == 'pendente' %}btn-contribuir{% else %}btn-ds-ghost{% endif %}" href="?status=pendente">Pendentes ({{ contagem_pendente }})</a>
@@ -19,9 +19,9 @@
     </div>
     {% if envio.status == 'pendente' %}
     <div class="d-flex gap-2 mt-3">
-        <form method="post" action="{% url 'aprovar_envio' envio.pk %}">
+        <form method="post" action="{% url 'aprovar_envio' envio.pk %}" class="js-loading-form">
             {% csrf_token %}
-            <button class="btn btn-contribuir btn-sm" type="submit">Aprovar e publicar</button>
+            <button class="btn btn-contribuir btn-sm" type="submit" data-loading="Publicando…">Aprovar e publicar</button>
         </form>
         <form method="post" action="{% url 'rejeitar_envio' envio.pk %}">
             {% csrf_token %}
@@ -31,7 +31,11 @@
     {% endif %}
 </div>
 {% empty %}
-<div class="empty-state">Nenhum envio neste filtro</div>
+<div class="empty-state">
+    <i class="far fa-inbox"></i>
+    <p class="empty-title">{% if filtro_status == 'pendente' %}Não há envios aguardando revisão.{% elif filtro_status == 'aprovado' %}Nenhum envio publicado neste filtro.{% else %}Nenhum envio recusado.{% endif %}</p>
+    <p>Quando a comunidade enviar notícias pelo site, elas aparecem aqui para aprovação.</p>
+</div>
 {% endfor %}
 {% include "noticias/partials/pagination.html" %}
 {% endblock %}

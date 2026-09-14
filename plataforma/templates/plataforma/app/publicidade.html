@@ -17,7 +17,13 @@
         <td class="text-end"><a class="btn btn-sm btn-ds-ghost" href="{% url 'app_anuncio_editar' a.pk %}">Editar</a></td>
     </tr>
     {% empty %}
-    <tr><td colspan="4"><div class="empty-state my-3">Nenhum anúncio cadastrado</div></td></tr>
+    <tr><td colspan="4">
+        <div class="empty-state my-3">
+            <p class="empty-title">Nenhum anúncio cadastrado.</p>
+            <p>Publique um espaço para aparecer no topo, na lateral ou no meio do feed.</p>
+            <a href="{% url 'app_anuncio_novo' %}" class="btn btn-contribuir">Criar espaço</a>
+        </div>
+    </td></tr>
     {% endfor %}
     </tbody>
 </table>

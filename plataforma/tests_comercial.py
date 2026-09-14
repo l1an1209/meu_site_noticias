@@ -219,6 +219,9 @@ class ComercialKiwifyTests(TestCase):
         resp = self.client.get(reverse('pagina_vendas'), HTTP_HOST='localhost')
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'R$')
+        self.assertContains(resp, 'Tenha seu próprio portal de notícias profissional')
+        self.assertContains(resp, 'sales-hero')
+        self.assertNotContains(resp, 'Este portal está temporariamente fora do ar')
         self.assertTrue(Plano.objects.filter(codigo='basico', preco_mensal='59.90').exists())
 
     def test_slug_reservado(self):

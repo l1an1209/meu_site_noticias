@@ -117,12 +117,31 @@ class AppNoticiaListView(AppAccessMixin, ListView):
         return ctx
 
 
+def _sync_galeria_noticia(request, noticia, extra_files):
+    ids = [pk for pk in request.POST.getlist('remover_foto') if str(pk).isdigit()]
+    if ids:
+        noticia.fotos.filter(pk__in=ids).delete()
+    ordem = noticia.fotos.count()
+    for arquivo in extra_files:
+        if not arquivo:
+            continue
+        foto = NoticiaImagem(noticia=noticia, ordem=ordem)
+        foto.imagem = arquivo
+        foto.save()
+        ordem += 1
+
+
 class AppNoticiaCreateView(AppAccessMixin, CreateView):
     template_name = 'plataforma/app/noticia_form.html'
+    form_class = NoticiaForm
+    papeis_permitidos = tuple(PAPEIS_NOTICIA)
+    app_active = 'noticias'
+    success_url = reverse_lazy('app_noticias')
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['portal'] = self.request.portal
+        kwargs['extra_files'] = self.request.FILES.getlist('fotos_galeria')
         return kwargs
 
     def form_valid(self, form):
@@ -131,6 +150,7 @@ class AppNoticiaCreateView(AppAccessMixin, CreateView):
         messages.success(self.request, 'Notícia publicada.')
         limpar_cache_portal(self.request.portal)
         response = super().form_valid(form)
+        _sync_galeria_noticia(self.request, form.instance, form.extra_files)
         log_audit(self.request, 'noticia_criar', objeto='Noticia', objeto_id=form.instance.pk)
         return response
 
@@ -151,6 +171,7 @@ class AppNoticiaUpdateView(AppAccessMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['portal'] = self.request.portal
+        kwargs['extra_files'] = self.request.FILES.getlist('fotos_galeria')
         return kwargs
 
     def get_queryset(self):
@@ -160,7 +181,9 @@ class AppNoticiaUpdateView(AppAccessMixin, UpdateView):
         messages.success(self.request, 'Notícia atualizada.')
         limpar_cache_portal(self.request.portal)
         log_audit(self.request, 'noticia_editar', objeto='Noticia', objeto_id=form.instance.pk)
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        _sync_galeria_noticia(self.request, form.instance, form.extra_files)
+        return response
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

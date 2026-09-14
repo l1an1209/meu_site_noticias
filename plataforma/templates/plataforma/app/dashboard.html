@@ -1,51 +1,78 @@
 {% extends "plataforma/app/base.html" %}
-{% block title %}Visão geral{% endblock %}
+{% block title %}Dashboard{% endblock %}
+{% block heading %}Dashboard{% endblock %}
 {% block content %}
+<div class="page-intro mb-4">
+    <h1 class="display-font">{{ saudacao }}, {{ site_name }}</h1>
+    <p>Veja o que está acontecendo no seu portal.</p>
+</div>
+
 <div class="stat-grid mb-4">
     <div class="stat-card"><span>Notícias</span><strong>{{ total_noticias }}</strong></div>
-    <div class="stat-card"><span>Categorias</span><strong>{{ total_categorias }}</strong></div>
+    <div class="stat-card"><span>Fotos</span><strong>{{ total_fotos }}</strong></div>
+    <div class="stat-card"><span>Vídeos</span><strong>{{ total_videos }}</strong></div>
     <div class="stat-card"><span>Envios pendentes</span><strong>{{ total_envios }}</strong></div>
-    <div class="stat-card"><span>Visualizações</span><strong>{{ visualizacoes }}</strong></div>
 </div>
+
 <div class="row g-3">
     <div class="col-lg-8">
-        <div class="ds-card p-3 p-md-4">
+        <div class="ds-card p-3 p-md-4 mb-3">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h6 mb-0">Últimas notícias</h2>
-                <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir btn-sm">Nova notícia</a>
+                <h2 class="h6 mb-0">Atividade recente</h2>
+                <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir btn-sm" data-loading="Publicando…">Nova notícia</a>
             </div>
             {% for n in recentes %}
-            <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+            <div class="d-flex justify-content-between gap-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
                 <div>
                     <a href="{% url 'app_noticia_editar' n.pk %}" class="fw-semibold text-decoration-none text-reset">{{ n.titulo }}</a>
-                    <div class="small text-muted">{{ n.data_publicacao|date:"d/m/Y H:i" }}</div>
+                    <div class="small text-muted">{{ n.data_publicacao|date:"d/m/Y H:i" }} · {{ n.visualizacoes }} leituras</div>
                 </div>
                 {% if n.destaque %}<span class="ds-badge">Destaque</span>{% endif %}
             </div>
             {% empty %}
             <div class="empty-state mb-0">
                 <i class="far fa-newspaper"></i>
-                <p class="mb-2">Nenhuma notícia cadastrada</p>
-                <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir">Publicar a primeira</a>
+                <p class="empty-title">Você ainda não publicou nenhuma notícia.</p>
+                <p>Publique a primeira matéria para o portal começar a aparecer no ar.</p>
+                <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir">Escrever notícia</a>
             </div>
             {% endfor %}
+        </div>
+        <div class="ds-card p-3 p-md-4">
+            <h2 class="h6 mb-3">Atalhos</h2>
+            <div class="shortcut-grid">
+                <a href="{% url 'app_noticia_nova' %}"><i class="fas fa-plus"></i> Publicar notícia</a>
+                <a href="{% url 'app_fotos' %}"><i class="fas fa-image"></i> Biblioteca de fotos</a>
+                <a href="{% url 'app_envios' %}"><i class="fas fa-inbox"></i> Revisar envios</a>
+                <a href="{% url 'app_aparencia' %}"><i class="fas fa-palette"></i> Identidade visual</a>
+            </div>
         </div>
     </div>
     <div class="col-lg-4">
         <div class="ds-card p-3 p-md-4 mb-3">
-            <h2 class="h6">Plano e armazenamento</h2>
-            <p class="mb-1">Plano: <strong>{{ plano_nome }}</strong></p>
+            <h2 class="h6">Assinatura</h2>
+            <p class="mb-1">Plano <strong>{{ plano_nome }}</strong></p>
             {% if assinatura %}
-            <p class="mb-1">Assinatura: <strong>{{ assinatura.get_status_display }}</strong></p>
+            <p class="mb-2">
+                <span class="sub-status is-{{ assinatura.status }} ds-badge
+                    {% if assinatura.status == 'ativa' %}ds-badge--ok
+                    {% elif assinatura.status == 'bloqueada' or assinatura.status == 'cancelada' %}ds-badge--danger
+                    {% elif assinatura.status == 'atrasada' %}ds-badge--danger
+                    {% else %}ds-badge--warn{% endif %}">
+                    {{ assinatura.get_status_display }}
+                </span>
+            </p>
             <p class="mb-0 text-muted small">Próxima cobrança: {{ assinatura.proximo_vencimento|date:"d/m/Y"|default:"—" }}</p>
+            <a href="{% url 'app_assinatura' %}" class="small d-inline-block mt-2">Ver detalhes</a>
             {% else %}
-            <p class="mb-0 text-muted small">Uso estimado: {{ storage_mb }} MB</p>
+            <p class="mb-0 text-muted small">Portal legado ou cortesia — sem cobrança Kiwify neste momento.</p>
             {% endif %}
         </div>
         <div class="ds-card p-3 p-md-4">
-            <h2 class="h6">Mídia</h2>
-            <p class="mb-1">Fotos de capa: {{ total_fotos }}</p>
-            <p class="mb-0">Vídeos: {{ total_videos }}</p>
+            <h2 class="h6">Resumo</h2>
+            <p class="mb-1">Categorias: <strong>{{ total_categorias }}</strong></p>
+            <p class="mb-1">Visualizações: <strong>{{ visualizacoes }}</strong></p>
+            <p class="mb-0 text-muted small">Armazenamento estimado: {{ storage_mb }} MB</p>
         </div>
     </div>
 </div>

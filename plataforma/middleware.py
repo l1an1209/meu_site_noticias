@@ -42,7 +42,7 @@ class TenantMiddleware:
                 and not request.is_platform_master
             ):
                 path = request.path or ''
-                if path.startswith('/webhooks/'):
+                if path.startswith('/webhooks/') or path.startswith('/comece'):
                     return self.get_response(request)
                 if path.startswith('/app/') or path.startswith('/painel/') or path.startswith('/master/'):
                     return render(request, 'errors/403.html', status=403)

@@ -4,15 +4,22 @@
 {% block subheading %}{{ item.email }}{% endblock %}
 {% block content %}
 <div class="ds-card p-4 mb-3">
+    <p class="section-kicker">Cliente</p>
     <p class="mb-1">Telefone: {{ item.telefone|default:"—" }}</p>
-    <p class="mb-0">Status: {{ item.get_status_display }} · Desde {{ item.criado_em|date:"d/m/Y" }}</p>
+    <p class="mb-0">Status: <span class="ds-badge {% if item.status == 'ativo' %}ds-badge--ok{% else %}ds-badge--muted{% endif %}">{{ item.get_status_display }}</span> · Desde {{ item.criado_em|date:"d/m/Y" }}</p>
 </div>
 <h2 class="h6">Portais</h2>
 {% for p in portais %}
-<p class="mb-1"><a href="{% url 'master_portal' p.pk %}">{{ p.nome }}</a> · {{ p.slug }} · {{ p.get_status_display }}</p>
-{% empty %}<p class="text-muted">Sem portal</p>{% endfor %}
+<div class="ds-card p-3 mb-2 d-flex justify-content-between flex-wrap gap-2">
+    <a href="{% url 'master_portal' p.pk %}">{{ p.nome }}</a>
+    <span class="text-muted small">{{ p.slug }} · {{ p.get_status_display }}</span>
+</div>
+{% empty %}<div class="empty-state"><p class="empty-title">Este cliente ainda não tem portal.</p></div>{% endfor %}
 <h2 class="h6 mt-4">Assinaturas</h2>
 {% for a in assinaturas %}
-<p class="mb-1">{{ a.portal.slug }} — {{ a.get_status_display }} — {{ a.plano.nome }}</p>
-{% empty %}<p class="text-muted">Sem assinatura</p>{% endfor %}
+<div class="ds-card p-3 mb-2">
+    <span class="sub-status is-{{ a.status }}">{{ a.get_status_display }}</span>
+    · {{ a.portal.slug }} · {{ a.plano.nome }}
+</div>
+{% empty %}<div class="empty-state"><p class="empty-title">Nenhuma assinatura neste cliente.</p></div>{% endfor %}
 {% endblock %}

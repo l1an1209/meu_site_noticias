@@ -20,7 +20,11 @@
     <tr>
         <td><a href="{% url 'master_portal' p.pk %}">{{ p.nome }}</a><div class="small text-muted">{{ p.slug }} · {{ p.cidade }}</div></td>
         <td>{{ p.cliente.email|default:p.cliente_email|default:"—" }}</td>
-        <td>{{ p.get_status_display }}</td>
+        <td>
+            {% if p.status == 'ativo' %}<span class="ds-badge ds-badge--ok">{{ p.get_status_display }}</span>
+            {% elif p.status == 'bloqueado' %}<span class="ds-badge ds-badge--danger">{{ p.get_status_display }}</span>
+            {% else %}<span class="ds-badge ds-badge--muted">{{ p.get_status_display }}</span>{% endif %}
+        </td>
         <td>{{ p.plano.nome|default:"—" }}</td>
         <td>{{ p.n_noticias }}</td>
         <td>{{ p.n_membros }}</td>

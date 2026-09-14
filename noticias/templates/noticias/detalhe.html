@@ -26,31 +26,28 @@
 {% block content %}
 <div class="row g-4">
     <div class="col-lg-8">
-        <article class="glass-card overflow-hidden article-card">
-            {% if noticia.imagem %}
-            <div class="position-relative article-hero-img">
-                <img src="{{ noticia.imagem.url }}" class="w-100" alt="{{ noticia.titulo }}">
-            {% else %}
-            <div class="position-relative article-hero-img">
-                <img src="{% noticia_capa noticia %}" class="w-100" alt="{{ noticia.titulo }}">
-            {% endif %}
-                <div class="article-hero-overlay">
-                    {% if noticia.categoria %}<span class="badge bg-primary mb-2">{{ noticia.categoria.nome }}</span>{% endif %}
-                    <h1 class="text-white display-font h2 mb-0">{{ noticia.titulo }}</h1>
-                </div>
+        <article class="article-shell">
+            <div class="article-hero-img">
+                {% if noticia.imagem %}
+                <img src="{{ noticia.imagem.url }}" alt="{{ noticia.titulo }}">
+                {% else %}
+                <img src="{% noticia_capa noticia %}" alt="{{ noticia.titulo }}">
+                {% endif %}
             </div>
-
             <div class="p-3 p-md-4 p-lg-5">
+                {% if noticia.categoria %}
+                <a class="article-kicker text-decoration-none" href="{% url 'noticias_por_categoria' noticia.categoria.slug %}">{{ noticia.categoria.nome }}</a>
+                {% endif %}
+                <h1 class="article-title display-font">{{ noticia.titulo }}</h1>
                 <div class="article-meta d-flex flex-wrap gap-2 gap-md-3 text-muted small mb-3 pb-3 border-bottom">
-                    {% if noticia.exclusivo_assinantes %}<span class="badge bg-warning text-dark"><i class="fas fa-star me-1"></i>Exclusivo assinantes</span>{% endif %}
-                    <span><i class="fas fa-map-marker-alt text-primary me-1"></i>{{ site_city }}</span>
-                    <span><i class="fas fa-user-check me-1"></i>{{ noticia.autor|default:"Redação" }}</span>
-                    <span><i class="far fa-calendar me-1"></i>{{ noticia.data_publicacao|date:"d/m/Y H:i" }}</span>
-                    <span><i class="far fa-eye me-1"></i>{{ noticia.visualizacoes }}</span>
+                    {% if noticia.exclusivo_assinantes %}<span class="ds-badge ds-badge--warn">Exclusivo assinantes</span>{% endif %}
+                    <span>{{ site_city }}</span>
+                    <span>{{ noticia.autor|default:"Redação" }}</span>
+                    <span>{{ noticia.data_publicacao|date:"d/m/Y H:i" }}</span>
+                    <span>{{ noticia.visualizacoes }} leituras</span>
                 </div>
 
                 {% if pode_ver_exclusivo %}
-                <!-- Ações: curtir, comentar, compartilhar -->
                 <div class="engagement-actions mb-4">
                     <div class="d-flex flex-wrap align-items-center gap-2">
                         {% if user.is_authenticated %}
@@ -78,11 +75,11 @@
 
                 {% if not pode_ver_exclusivo %}
                 <div class="exclusivo-wall rounded-4 p-4 p-lg-5 text-center mb-4">
-                    <i class="fas fa-lock fa-3x text-warning mb-3"></i>
+                    <i class="fas fa-lock fa-2x text-warning mb-3"></i>
                     <h2 class="h5 display-font">Conteúdo exclusivo para assinantes</h2>
                     <p class="text-muted mb-3">{{ noticia.resumo_curto|default:"Esta notícia é reservada para parceiros e assinantes do portal." }}</p>
-                    <a href="{% url 'parceria' %}" class="btn btn-warning rounded-pill me-2">Fechar parceria</a>
-                    <a href="{% url 'entrar' %}?next={{ request.path }}" class="btn btn-outline-primary rounded-pill">Já sou assinante</a>
+                    <a href="{% url 'parceria' %}" class="btn btn-contribuir me-2">Fechar parceria</a>
+                    <a href="{% url 'entrar' %}?next={{ request.path }}" class="btn btn-ds-ghost">Já sou assinante</a>
                 </div>
                 {% else %}
                 {% if noticia.tem_video %}
@@ -92,7 +89,7 @@
                     </video>
                 </div>
                 {% endif %}
-                <div class="article-body fs-5 lh-lg mb-4">{{ noticia.conteudo|linebreaks }}</div>
+                <div class="article-body mb-4">{{ noticia.conteudo|linebreaks }}</div>
                 {% if noticia.imagens_galeria|length > 1 %}
                 <div class="gallery-grid">
                     {% for foto in noticia.imagens_galeria %}
@@ -107,23 +104,17 @@
                 {% ad_slot 'article' %}
 
                 {% if pode_ver_exclusivo %}
-                <!-- Comentários -->
                 <section id="comentarios" class="comments-section mt-5 pt-4 border-top">
-                    <h2 class="display-font h5 mb-4">
-                        <i class="far fa-comments text-primary me-2"></i>
-                        Comentários ({{ comentarios|length }})
-                    </h2>
+                    <h2 class="display-font h5 mb-4">Comentários ({{ comentarios|length }})</h2>
 
                     {% if user.is_authenticated %}
                     <form method="post" action="{% url 'comentar' noticia.id %}" class="mb-4">
                         {% csrf_token %}
                         {{ comentario_form.texto }}
-                        <button type="submit" class="btn btn-contribuir rounded-pill mt-2 px-4">
-                            <i class="fas fa-paper-plane me-1"></i> Comentar
-                        </button>
+                        <button type="submit" class="btn btn-contribuir mt-2">Comentar</button>
                     </form>
                     {% else %}
-                    <div class="alert alert-light border rounded-4 mb-4">
+                    <div class="alert alert-info mb-4">
                         <a href="{% url 'entrar' %}?next={{ request.path }}">Entre</a> ou
                         <a href="{% url 'cadastro' %}">crie uma conta</a> para comentar.
                     </div>
@@ -136,7 +127,7 @@
                             <div class="comment-header">
                                 <strong>{{ c.usuario.username }}</strong>
                                 {% if c.usuario.perfil.is_assinante %}
-                                <span class="badge bg-warning text-dark ms-1">Assinante</span>
+                                <span class="ds-badge ds-badge--warn ms-1">Assinante</span>
                                 {% endif %}
                                 <small class="text-muted">{{ c.data_criacao|date:"d/m/Y H:i" }}</small>
                             </div>
@@ -144,14 +135,12 @@
                         </div>
                     </div>
                     {% empty %}
-                    <p class="text-muted">Seja o primeiro a comentar!</p>
+                    <p class="text-muted">Seja o primeiro a comentar.</p>
                     {% endfor %}
                 </section>
                 {% endif %}
 
-                <a href="{% url 'index' %}" class="btn btn-outline-secondary rounded-pill btn-sm mt-4">
-                    <i class="fas fa-arrow-left me-1"></i> Voltar
-                </a>
+                <a href="{% url 'index' %}" class="btn btn-ds-ghost btn-sm mt-4">Voltar às notícias</a>
 
                 {% if noticias_relacionadas %}
                 <hr class="my-5">
@@ -159,9 +148,9 @@
                 <div class="row g-3">
                     {% for rel in noticias_relacionadas %}
                     <div class="col-12 col-sm-6 col-md-4">
-                        <a href="{% url 'detalhe' rel.id %}" class="glass-card d-block text-decoration-none text-reset overflow-hidden h-100">
-                            <img src="{% noticia_capa rel %}" class="w-100 related-thumb" alt="">
-                            <div class="p-3"><h6 class="fw-semibold mb-0 small">{{ rel.titulo|truncatechars:48 }}</h6></div>
+                        <a href="{% url 'detalhe' rel.id %}" class="media-card h-100">
+                            <img src="{% noticia_capa rel %}" class="related-thumb" alt="">
+                            <div class="media-card__cap">{{ rel.titulo|truncatechars:48 }}</div>
                         </a>
                     </div>
                     {% endfor %}

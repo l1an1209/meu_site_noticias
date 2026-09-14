@@ -87,9 +87,15 @@
             {% empty %}
             <div class="empty-state">
                 <i class="far fa-newspaper"></i>
-                <h3 class="display-font">Comece a história de {{ site_city }}</h3>
-                <p>Publique a primeira notícia ou peça à comunidade para enviar.</p>
-                <a href="{% url 'contribuir' %}" class="btn btn-contribuir">Receber envios</a>
+                {% if busca %}
+                <h3 class="display-font empty-title">Nenhuma notícia para “{{ busca }}”</h3>
+                <p>Tente outro termo ou volte às últimas publicações.</p>
+                <a href="{% url 'index' %}" class="btn btn-contribuir">Ver todas</a>
+                {% else %}
+                <h3 class="display-font empty-title">Ainda não há notícias nesta seção</h3>
+                <p>Publique a primeira matéria ou peça à comunidade para enviar.</p>
+                <a href="{% url 'contribuir' %}" class="btn btn-contribuir">Enviar notícia</a>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

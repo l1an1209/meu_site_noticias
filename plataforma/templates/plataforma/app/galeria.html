@@ -5,12 +5,19 @@
 <div class="row g-2">
     {% for foto in fotos %}
     <div class="col-4 col-md-3 col-xl-2">
-        <a href="{% url 'app_noticia_editar' foto.noticia_id %}" class="d-block">
-            <img src="{{ foto.imagem.url }}" alt="" class="w-100 rounded-3" style="aspect-ratio:1;object-fit:cover">
+        <a href="{% url 'app_noticia_editar' foto.noticia_id %}" class="media-card">
+            <img src="{{ foto.imagem.url }}" alt="" style="aspect-ratio:1">
         </a>
     </div>
     {% empty %}
-    <div class="col-12"><div class="empty-state">Nenhuma foto na galeria</div></div>
+    <div class="col-12">
+        <div class="empty-state">
+            <i class="far fa-images"></i>
+            <p class="empty-title">A galeria deste portal ainda está vazia.</p>
+            <p>Fotos extras enviadas na matéria aparecem aqui.</p>
+            <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir">Adicionar fotos</a>
+        </div>
+    </div>
     {% endfor %}
 </div>
 {% include "noticias/partials/pagination.html" %}

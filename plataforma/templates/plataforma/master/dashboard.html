@@ -11,7 +11,7 @@
 </div>
 <div class="app-table-wrap">
 <table class="table align-middle">
-                <thead><tr><th>Portal</th><th>Cidade</th><th>Status</th><th>Plano</th><th>Cliente</th><th>Assinatura</th><th>Notícias</th><th>Armazenamento</th></tr></thead>
+    <thead><tr><th>Portal</th><th>Cidade</th><th>Status</th><th>Plano</th><th>Cliente</th><th>Assinatura</th><th>Notícias</th><th>Armazenamento</th></tr></thead>
     <tbody>
     {% for p in portais %}
     <tr>
@@ -31,6 +31,8 @@
         <td>{{ p.noticias_n }}</td>
         <td>{{ p.storage_mb }} MB</td>
     </tr>
+    {% empty %}
+    <tr><td colspan="8"><div class="empty-state my-3"><p class="empty-title">Nenhum portal cadastrado.</p></div></td></tr>
     {% endfor %}
     </tbody>
 </table>

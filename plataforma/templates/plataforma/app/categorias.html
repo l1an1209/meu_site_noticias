@@ -20,7 +20,13 @@
         </td>
     </tr>
     {% empty %}
-    <tr><td colspan="4"><div class="empty-state my-3">Nenhuma categoria cadastrada</div></td></tr>
+    <tr><td colspan="4">
+        <div class="empty-state my-3">
+            <p class="empty-title">Você ainda não criou categorias.</p>
+            <p>Use categorias para organizar o menu e as seções do portal.</p>
+            <a href="{% url 'app_categoria_nova' %}" class="btn btn-contribuir">Criar categoria</a>
+        </div>
+    </td></tr>
     {% endfor %}
     </tbody>
 </table>

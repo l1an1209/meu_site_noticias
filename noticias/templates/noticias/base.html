@@ -83,7 +83,7 @@
                 <button class="cat-nav__toggle d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#catNavMenu" aria-label="Menu">
                     <i class="fas fa-bars"></i>
                 </button>
-                <div class="collapse cat-nav__collapse show" id="catNavMenu">
+                <div class="collapse cat-nav__collapse" id="catNavMenu">
                     <ul class="cat-nav__list">
                         <li>
                             <a href="{% url 'index' %}" class="cat-nav__link {% if request.resolver_match.url_name == 'index' and not request.GET.q %}is-active{% endif %}">Início</a>

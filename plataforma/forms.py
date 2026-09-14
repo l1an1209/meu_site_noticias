@@ -1,8 +1,14 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
-from noticias.image_utils import validate_image_file, validate_video_file
+from noticias.image_utils import (
+    MAX_GALLERY_PHOTOS,
+    validate_gallery_files,
+    validate_image_file,
+    validate_video_file,
+)
 from noticias.models import Anuncio, Categoria, Noticia
 from plataforma.models import Membership, Portal
 
@@ -28,9 +34,10 @@ class NoticiaForm(forms.ModelForm):
             'exclusivo_assinantes': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
-    def __init__(self, *args, portal=None, **kwargs):
+    def __init__(self, *args, portal=None, extra_files=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.portal = portal
+        self.extra_files = extra_files or []
         if portal is not None:
             self.fields['categoria'].queryset = Categoria.all_objects.filter(portal=portal)
         else:
@@ -47,6 +54,22 @@ class NoticiaForm(forms.ModelForm):
 
     def clean_video(self):
         return validate_video_file(self.cleaned_data.get('video'))
+
+    def clean(self):
+        cleaned = super().clean()
+        try:
+            validate_gallery_files(self.extra_files)
+        except DjangoValidationError as exc:
+            self.add_error(None, exc)
+        extras = len(self.extra_files)
+        capa = 1 if cleaned.get('imagem') or (self.instance.pk and self.instance.imagem) else 0
+        atuais = self.instance.fotos.count() if self.instance.pk else 0
+        if capa + atuais + extras > MAX_GALLERY_PHOTOS:
+            self.add_error(
+                None,
+                f'Envie no máximo {MAX_GALLERY_PHOTOS} fotos (capa + galeria).',
+            )
+        return cleaned
 
 
 class CategoriaForm(forms.ModelForm):

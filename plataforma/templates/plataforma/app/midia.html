@@ -6,17 +6,24 @@
 <div class="row g-3">
     {% for n in noticias %}
     <div class="col-6 col-md-4 col-xl-3">
-        <a href="{% url 'app_noticia_editar' n.pk %}" class="ds-card d-block overflow-hidden text-decoration-none text-reset">
+        <a href="{% url 'app_noticia_editar' n.pk %}" class="media-card">
             {% if midia_tipo == 'videos' %}
             <div class="ratio ratio-16x9 bg-dark text-white d-flex align-items-center justify-content-center"><i class="fas fa-play"></i></div>
             {% elif n.imagem %}
-            <img src="{{ n.imagem.url }}" alt="" class="w-100" style="aspect-ratio:16/10;object-fit:cover">
+            <img src="{{ n.imagem.url }}" alt="">
             {% endif %}
-            <div class="p-2 small fw-semibold">{{ n.titulo|truncatechars:60 }}</div>
+            <div class="media-card__cap">{{ n.titulo|truncatechars:60 }}</div>
         </a>
     </div>
     {% empty %}
-    <div class="col-12"><div class="empty-state">Nenhum item nesta biblioteca</div></div>
+    <div class="col-12">
+        <div class="empty-state">
+            <i class="far fa-images"></i>
+            <p class="empty-title">{% if midia_tipo == 'videos' %}Você ainda não enviou nenhum vídeo.{% else %}Você ainda não enviou nenhuma foto de capa.{% endif %}</p>
+            <p>As mídias aparecem aqui quando você publica uma notícia com imagem ou vídeo.</p>
+            <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir">Publicar notícia</a>
+        </div>
+    </div>
     {% endfor %}
 </div>
 {% include "noticias/partials/pagination.html" %}
