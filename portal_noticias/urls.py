@@ -1,19 +1,4 @@
-"""
-URL configuration for portal_noticias project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+"""URL configuration for portal_noticias project."""
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include
@@ -21,14 +6,25 @@ from django.conf import settings
 from django.conf.urls.static import static
 from noticias.sitemaps import sitemaps
 from noticias.views_seo import RobotsTxtView
+from plataforma.views_vendas import PaginaVendasView
+from plataforma.views_webhooks import kiwify_webhook
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('webhooks/kiwify/', kiwify_webhook, name='webhook_kiwify'),
+    path('comece/', PaginaVendasView.as_view(), name='pagina_vendas'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', RobotsTxtView.as_view(), name='robots_txt'),
+    path('app/', include('plataforma.urls')),
+    path('master/', include('plataforma.urls_master')),
     path('', include('noticias.urls')),
 ]
 
-if settings.DEBUG:
+handler400 = 'plataforma.views_errors.handler400'
+handler403 = 'plataforma.views_errors.handler403'
+handler404 = 'plataforma.views_errors.handler404'
+handler500 = 'plataforma.views_errors.handler500'
+
+if settings.DEBUG or getattr(settings, 'SERVE_MEDIA', False):
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

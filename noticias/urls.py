@@ -1,15 +1,25 @@
 from django.urls import path
+from plataforma.views_app import AppAprovarEnvioView, AppEnviosView, AppRejeitarEnvioView
 from .views import (
     NoticiaListView,
     NoticiaDetailView,
     NoticiaPorCategoriaListView,
     NoticiaVideoListView,
     ContribuicaoCreateView,
-    PainelModeracaoView,
-    AprovarEnvioView,
-    RejeitarEnvioView,
 )
-from .views_auth import EntrarView, SairView, CadastroView, MinhaContaView, ParceriaView
+from .views_auth import (
+    AlterarSenhaConcluidoView,
+    AlterarSenhaView,
+    CadastroView,
+    EntrarView,
+    MinhaContaView,
+    ParceriaView,
+    RecuperarSenhaEnviadoView,
+    RecuperarSenhaView,
+    RedefinirSenhaConcluidoView,
+    RedefinirSenhaView,
+    SairView,
+)
 from .views_engagement import toggle_curtida, adicionar_comentario
 from .views_exclusivo import ExclusivoListView, ExclusivoDetailView
 from .views_experiencia import ExperienciaView, ClimaApiView
@@ -30,8 +40,14 @@ urlpatterns = [
     path('sair/', SairView.as_view(), name='sair'),
     path('cadastro/', CadastroView.as_view(), name='cadastro'),
     path('conta/', MinhaContaView.as_view(), name='conta'),
+    path('senha/esqueci/', RecuperarSenhaView.as_view(), name='password_reset'),
+    path('senha/enviado/', RecuperarSenhaEnviadoView.as_view(), name='password_reset_done'),
+    path('senha/redefinir/<uidb64>/<token>/', RedefinirSenhaView.as_view(), name='password_reset_confirm'),
+    path('senha/concluido/', RedefinirSenhaConcluidoView.as_view(), name='password_reset_complete'),
+    path('senha/alterar/', AlterarSenhaView.as_view(), name='password_change'),
+    path('senha/alterada/', AlterarSenhaConcluidoView.as_view(), name='password_change_done'),
     path('parceria/', ParceriaView.as_view(), name='parceria'),
-    path('painel/', PainelModeracaoView.as_view(), name='painel'),
-    path('painel/aprovar/<int:pk>/', AprovarEnvioView.as_view(), name='aprovar_envio'),
-    path('painel/rejeitar/<int:pk>/', RejeitarEnvioView.as_view(), name='rejeitar_envio'),
+    path('painel/', AppEnviosView.as_view(), name='painel'),
+    path('painel/aprovar/<int:pk>/', AppAprovarEnvioView.as_view(), name='aprovar_envio'),
+    path('painel/rejeitar/<int:pk>/', AppRejeitarEnvioView.as_view(), name='rejeitar_envio'),
 ]

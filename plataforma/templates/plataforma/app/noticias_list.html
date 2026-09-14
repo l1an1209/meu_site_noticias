@@ -1,0 +1,44 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Notícias{% endblock %}
+{% block heading %}Notícias{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" style="max-width:260px" type="search" name="q" value="{{ q }}" placeholder="Buscar…">
+    <select name="categoria" class="form-select" style="max-width:200px" onchange="this.form.submit()">
+        <option value="">Todas as categorias</option>
+        {% for c in categorias %}
+        <option value="{{ c.id }}" {% if request.GET.categoria == c.id|stringformat:'s' %}selected{% endif %}>{{ c.nome }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn btn-ds-ghost" type="submit">Filtrar</button>
+    <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir ms-auto">Nova notícia</a>
+</form>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th></th><th>Título</th><th>Categoria</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for n in noticias %}
+    <tr>
+        <td>{% if n.imagem %}<img class="thumb" src="{{ n.imagem.url }}" alt="">{% endif %}</td>
+        <td>
+            <div class="fw-semibold">{{ n.titulo }}</div>
+            <div class="small text-muted">{{ n.data_publicacao|date:"d/m/Y" }} · {{ n.visualizacoes }} leituras</div>
+        </td>
+        <td>{{ n.categoria.nome|default:"—" }}</td>
+        <td>
+            {% if n.destaque %}<span class="ds-badge">Destaque</span>{% endif %}
+            {% if n.exclusivo_assinantes %}<span class="ds-badge ds-badge--warn">Exclusivo</span>{% endif %}
+        </td>
+        <td class="text-end">
+            <a class="btn btn-sm btn-ds-ghost" href="{% url 'app_noticia_editar' n.pk %}">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'app_noticia_excluir' n.pk %}">Excluir</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5"><div class="empty-state my-3">Nenhuma notícia cadastrada</div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% include "noticias/partials/pagination.html" %}
+{% endblock %}

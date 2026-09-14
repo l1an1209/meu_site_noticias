@@ -1,0 +1,18 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}{{ item.nome }}{% endblock %}
+{% block heading %}{{ item.nome }}{% endblock %}
+{% block subheading %}{{ item.email }}{% endblock %}
+{% block content %}
+<div class="ds-card p-4 mb-3">
+    <p class="mb-1">Telefone: {{ item.telefone|default:"—" }}</p>
+    <p class="mb-0">Status: {{ item.get_status_display }} · Desde {{ item.criado_em|date:"d/m/Y" }}</p>
+</div>
+<h2 class="h6">Portais</h2>
+{% for p in portais %}
+<p class="mb-1"><a href="{% url 'master_portal' p.pk %}">{{ p.nome }}</a> · {{ p.slug }} · {{ p.get_status_display }}</p>
+{% empty %}<p class="text-muted">Sem portal</p>{% endfor %}
+<h2 class="h6 mt-4">Assinaturas</h2>
+{% for a in assinaturas %}
+<p class="mb-1">{{ a.portal.slug }} — {{ a.get_status_display }} — {{ a.plano.nome }}</p>
+{% empty %}<p class="text-muted">Sem assinatura</p>{% endfor %}
+{% endblock %}

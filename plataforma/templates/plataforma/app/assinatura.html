@@ -1,0 +1,32 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Minha assinatura{% endblock %}
+{% block heading %}Minha assinatura{% endblock %}
+{% block subheading %}Somente este portal{% endblock %}
+{% block content %}
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="ds-card p-4">
+            <h2 class="h6">Situação da conta</h2>
+            {% if assinatura %}
+            <p class="mb-1">Status: <strong>{{ assinatura.get_status_display }}</strong></p>
+            <p class="mb-1">Plano: <strong>{{ assinatura.plano.nome }}</strong>
+                — R$ {{ assinatura.plano.preco_mensal }}/mês</p>
+            <p class="mb-1">Início: {{ assinatura.iniciado_em|date:"d/m/Y"|default:"—" }}</p>
+            <p class="mb-0">Próxima cobrança: {{ assinatura.proximo_vencimento|date:"d/m/Y"|default:"—" }}</p>
+            {% else %}
+            <p class="text-muted mb-0">Este portal ainda não tem assinatura Kiwify (pode ser cortesia / legado).</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="ds-card p-4">
+            <h2 class="h6">Portal</h2>
+            <p class="mb-1">{{ site_name }}</p>
+            <p class="mb-1 small text-muted">{{ host_previsto }}</p>
+            {% if cliente_portal %}
+            <p class="mb-0 small">Titular: {{ cliente_portal.nome }} · {{ cliente_portal.email }}</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

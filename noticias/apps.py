@@ -4,16 +4,16 @@ from django.apps import AppConfig
 class NoticiasConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'noticias'
-    verbose_name = 'Portal Jiparaná'
+    verbose_name = 'Conteúdo do portal'
 
     def ready(self):
         import noticias.signals  # noqa: F401
         from django.contrib import admin
         from django.contrib.admin.sites import AdminSite
 
-        admin.site.site_header = 'Notícias Ji-Paraná — Painel'
-        admin.site.site_title = 'Ji-Paraná · Tempo real'
-        admin.site.index_title = 'Envios da comunidade e notícias'
+        admin.site.site_header = 'Plataforma de portais'
+        admin.site.site_title = 'Plataforma'
+        admin.site.index_title = 'Administração'
 
         original_get_app_list = AdminSite.get_app_list
 

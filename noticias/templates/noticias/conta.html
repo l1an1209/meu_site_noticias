@@ -45,6 +45,7 @@
                 <a href="{% url 'exclusivo' %}" class="btn btn-warning rounded-pill"><i class="fas fa-star me-1"></i> Área exclusiva</a>
                 {% endif %}
                 <a href="{% url 'contribuir' %}" class="btn btn-contribuir rounded-pill">Enviar conteúdo</a>
+                <a href="{% url 'password_change' %}" class="btn btn-outline-primary rounded-pill">Alterar senha</a>
                 <a href="{% url 'experiencia' %}" class="btn btn-outline-primary rounded-pill">Experiência ao vivo</a>
                 {% include "noticias/partials/logout_form.html" with btn_class="btn btn-outline-danger rounded-pill" %}
             </div>

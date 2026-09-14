@@ -2,7 +2,6 @@ import json
 from urllib.request import urlopen
 from urllib.parse import urlencode
 
-from django.conf import settings
 from django.http import JsonResponse
 from django.views.generic import TemplateView
 from django.views import View
@@ -14,21 +13,25 @@ class ExperienciaView(TemplateView):
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
-        ctx['cidade_lat'] = getattr(settings, 'SITE_LAT', -10.8854)
-        ctx['cidade_lon'] = getattr(settings, 'SITE_LON', -61.9516)
-        ctx['cidade_nome'] = settings.SITE_CITY
+        portal = getattr(self.request, 'portal', None)
+        ctx['cidade_lat'] = portal.latitude if portal and portal.latitude is not None else 0
+        ctx['cidade_lon'] = portal.longitude if portal and portal.longitude is not None else 0
+        ctx['cidade_nome'] = portal.cidade if portal else ''
         return ctx
 
 
 class ClimaApiView(View):
-    """Proxy do clima (Open-Meteo, sem chave) para Ji-Paraná ou coordenadas do usuário."""
+    """Proxy do clima (Open-Meteo) para as coordenadas do portal ou do usuário."""
 
     def get(self, request):
+        portal = getattr(request, 'portal', None)
+        default_lat = portal.latitude if portal and portal.latitude is not None else 0
+        default_lon = portal.longitude if portal and portal.longitude is not None else 0
         try:
-            lat = float(request.GET.get('lat', getattr(settings, 'SITE_LAT', -10.8854)))
-            lon = float(request.GET.get('lon', getattr(settings, 'SITE_LON', -61.9516)))
+            lat = float(request.GET.get('lat', default_lat))
+            lon = float(request.GET.get('lon', default_lon))
         except (TypeError, ValueError):
-            lat, lon = -10.8854, -61.9516
+            lat, lon = default_lat, default_lon
 
         params = urlencode({
             'latitude': lat,
@@ -47,7 +50,7 @@ class ClimaApiView(View):
                 'sensacao': current.get('apparent_temperature'),
                 'umidade': current.get('relative_humidity_2m'),
                 'codigo': current.get('weather_code'),
-                'cidade': settings.SITE_CITY,
+                'cidade': portal.cidade if portal else '',
             })
-        except Exception as e:
-            return JsonResponse({'ok': False, 'erro': str(e)}, status=502)
+        except Exception:
+            return JsonResponse({'ok': False, 'erro': 'Clima indisponível no momento.'}, status=502)

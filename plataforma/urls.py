@@ -1,0 +1,40 @@
+from django.urls import path
+
+from plataforma.views_app import (
+    AppAnuncioCreateView, AppAnuncioUpdateView, AppAparenciaView,
+    AppAprovarEnvioView, AppAutoresView, AppCategoriaCreateView,
+    AppCategoriaDeleteView, AppCategoriaListView, AppCategoriaUpdateView,
+    AppConfigView, AppEnviosView, AppFotosView, AppGaleriaView, AppHomeView,
+    AppNoticiaCreateView, AppNoticiaDeleteView, AppNoticiaListView,
+    AppNoticiaUpdateView, AppPublicidadeView, AppRejeitarEnvioView,
+    AppSeoView, AppUsuarioCreateView, AppUsuariosView, AppVideosView,
+    AppAssinaturaView,
+)
+
+urlpatterns = [
+    path('', AppHomeView.as_view(), name='app_home'),
+    path('noticias/', AppNoticiaListView.as_view(), name='app_noticias'),
+    path('noticias/nova/', AppNoticiaCreateView.as_view(), name='app_noticia_nova'),
+    path('noticias/<int:pk>/editar/', AppNoticiaUpdateView.as_view(), name='app_noticia_editar'),
+    path('noticias/<int:pk>/excluir/', AppNoticiaDeleteView.as_view(), name='app_noticia_excluir'),
+    path('categorias/', AppCategoriaListView.as_view(), name='app_categorias'),
+    path('categorias/nova/', AppCategoriaCreateView.as_view(), name='app_categoria_nova'),
+    path('categorias/<int:pk>/editar/', AppCategoriaUpdateView.as_view(), name='app_categoria_editar'),
+    path('categorias/<int:pk>/excluir/', AppCategoriaDeleteView.as_view(), name='app_categoria_excluir'),
+    path('fotos/', AppFotosView.as_view(), name='app_fotos'),
+    path('videos/', AppVideosView.as_view(), name='app_videos'),
+    path('galeria/', AppGaleriaView.as_view(), name='app_galeria'),
+    path('envios/', AppEnviosView.as_view(), name='app_envios'),
+    path('envios/<int:pk>/aprovar/', AppAprovarEnvioView.as_view(), name='app_aprovar_envio'),
+    path('envios/<int:pk>/rejeitar/', AppRejeitarEnvioView.as_view(), name='app_rejeitar_envio'),
+    path('autores/', AppAutoresView.as_view(), name='app_autores'),
+    path('usuarios/', AppUsuariosView.as_view(), name='app_usuarios'),
+    path('usuarios/novo/', AppUsuarioCreateView.as_view(), name='app_usuario_novo'),
+    path('publicidade/', AppPublicidadeView.as_view(), name='app_publicidade'),
+    path('publicidade/nova/', AppAnuncioCreateView.as_view(), name='app_anuncio_novo'),
+    path('publicidade/<int:pk>/editar/', AppAnuncioUpdateView.as_view(), name='app_anuncio_editar'),
+    path('assinatura/', AppAssinaturaView.as_view(), name='app_assinatura'),
+    path('seo/', AppSeoView.as_view(), name='app_seo'),
+    path('aparencia/', AppAparenciaView.as_view(), name='app_aparencia'),
+    path('configuracoes/', AppConfigView.as_view(), name='app_config'),
+]

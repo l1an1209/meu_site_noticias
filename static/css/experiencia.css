@@ -11,7 +11,7 @@
 .exp-bg {
     position: fixed;
     inset: 0;
-    background: linear-gradient(135deg, #0c1929 0%, #0d9488 40%, #ea580c 100%);
+    background: linear-gradient(135deg, var(--exp-navy, #0c1929) 0%, var(--exp-primary, #0d9488) 40%, var(--exp-accent, #ea580c) 100%);
     opacity: 0.95;
     z-index: 0;
 }
@@ -155,7 +155,7 @@
 }
 
 .btn-exp-primary {
-    background: linear-gradient(135deg, #0d9488, #0f766e);
+    background: linear-gradient(135deg, var(--exp-primary, #0d9488), var(--exp-navy, #0f766e));
     border: none;
     color: #fff;
     font-weight: 700;

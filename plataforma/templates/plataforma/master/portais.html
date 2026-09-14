@@ -1,0 +1,35 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Portais{% endblock %}
+{% block heading %}Clientes e portais{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" style="max-width:240px" type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar portal…">
+    <select name="status" class="form-select" style="max-width:160px" onchange="this.form.submit()">
+        <option value="">Todos os status</option>
+        <option value="ativo" {% if request.GET.status == 'ativo' %}selected{% endif %}>Ativo</option>
+        <option value="inativo" {% if request.GET.status == 'inativo' %}selected{% endif %}>Inativo</option>
+        <option value="bloqueado" {% if request.GET.status == 'bloqueado' %}selected{% endif %}>Bloqueado</option>
+    </select>
+    <button class="btn btn-ds-ghost" type="submit">Filtrar</button>
+</form>
+<div class="app-table-wrap">
+<table class="table">
+    <thead><tr><th>Portal</th><th>Cliente</th><th>Status</th><th>Plano</th><th>Notícias</th><th>Equipe</th></tr></thead>
+    <tbody>
+    {% for p in portais %}
+    <tr>
+        <td><a href="{% url 'master_portal' p.pk %}">{{ p.nome }}</a><div class="small text-muted">{{ p.slug }} · {{ p.cidade }}</div></td>
+        <td>{{ p.cliente.email|default:p.cliente_email|default:"—" }}</td>
+        <td>{{ p.get_status_display }}</td>
+        <td>{{ p.plano.nome|default:"—" }}</td>
+        <td>{{ p.n_noticias }}</td>
+        <td>{{ p.n_membros }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6"><div class="empty-state my-3">Nenhum portal</div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% include "noticias/partials/pagination.html" %}
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}{{ item.nome }}{% endblock %}
+{% block heading %}{{ item.nome }}{% endblock %}
+{% block subheading %}{{ item.slug }} · {{ item.host_previsto }}{% endblock %}
+{% block content %}
+<div class="stat-grid mb-4">
+    <div class="stat-card"><span>Notícias</span><strong>{{ n_noticias }}</strong></div>
+    <div class="stat-card"><span>Armazenamento</span><strong>{{ storage_mb }} MB</strong></div>
+    <div class="stat-card"><span>Plano</span><strong>{{ item.plano.nome|default:"—" }}</strong></div>
+    <div class="stat-card"><span>Status</span><strong>{{ item.get_status_display }}</strong></div>
+</div>
+<div class="ds-card p-4 mb-3">
+    <h2 class="h6">Cliente e assinatura</h2>
+    <p class="mb-1">Cliente: {{ item.cliente.nome|default:item.cliente_nome|default:"—" }}
+        · {{ item.cliente.email|default:item.cliente_email|default:"—" }}</p>
+    {% if assinatura %}
+    <p class="mb-1">Assinatura: {{ assinatura.get_status_display }} · pedido {{ assinatura.kiwify_order_id|default:"—" }}</p>
+    <p class="mb-0">Próxima cobrança: {{ assinatura.proximo_vencimento|date:"d/m/Y H:i"|default:"—" }}</p>
+    {% else %}
+    <p class="mb-0 text-muted">Sem assinatura Kiwify (cortesia/legado).</p>
+    {% endif %}
+</div>
+<div class="ds-card p-4 mb-3">
+    <h2 class="h6">Ações (não apagam conteúdo)</h2>
+    <form method="post" action="{% url 'master_portal_acao' item.pk %}" class="d-flex flex-wrap gap-2 mb-3">
+        {% csrf_token %}
+        {% if item.status == 'ativo' %}
+        <button class="btn btn-outline-danger" name="acao" value="bloquear">Bloquear</button>
+        {% else %}
+        <button class="btn btn-contribuir" name="acao" value="reativar">Reativar</button>
+        {% endif %}
+    </form>
+    <form method="post" action="{% url 'master_portal_acao' item.pk %}" class="d-flex flex-wrap gap-2 align-items-end">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="plano">
+        <div>
+            <label class="form-label small mb-1">Alterar plano</label>
+            <select name="plano_id" class="form-select">
+                {% for pl in planos %}
+                <option value="{{ pl.pk }}" {% if item.plano_id == pl.pk %}selected{% endif %}>{{ pl.nome }} — R$ {{ pl.preco_mensal }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-ds-ghost">Salvar plano</button>
+    </form>
+</div>
+<div class="ds-card p-4">
+    <h2 class="h6">Equipe</h2>
+    {% for m in membros %}
+    <div class="py-2 border-bottom">{{ m.usuario.username }} — {{ m.get_papel_display }}</div>
+    {% empty %}
+    <p class="text-muted mb-0">Sem membros</p>
+    {% endfor %}
+</div>
+{% endblock %}

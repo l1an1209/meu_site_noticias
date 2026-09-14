@@ -1,0 +1,31 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Clientes{% endblock %}
+{% block heading %}Clientes{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Nome, e-mail ou telefone" style="max-width:16rem">
+    <select class="form-select" name="status" style="max-width:10rem">
+        <option value="">Todos</option>
+        <option value="ativo" {% if request.GET.status == 'ativo' %}selected{% endif %}>Ativo</option>
+        <option value="inativo" {% if request.GET.status == 'inativo' %}selected{% endif %}>Inativo</option>
+    </select>
+    <button class="btn btn-ds-ghost">Buscar</button>
+</form>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th>Cliente</th><th>E-mail</th><th>Status</th><th>Portais</th></tr></thead>
+    <tbody>
+    {% for c in clientes %}
+    <tr>
+        <td><a class="fw-semibold text-reset text-decoration-none" href="{% url 'master_cliente' c.pk %}">{{ c.nome }}</a></td>
+        <td>{{ c.email }}</td>
+        <td>{{ c.get_status_display }}</td>
+        <td>{{ c.n_portais }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4" class="text-muted">Nenhum cliente ainda.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

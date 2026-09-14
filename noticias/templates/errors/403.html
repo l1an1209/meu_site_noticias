@@ -1,0 +1,10 @@
+{% extends "noticias/base.html" %}
+{% block title %}Acesso negado — {{ site_name }}{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <p class="ds-badge ds-badge--danger mb-3">403</p>
+    <h1 class="display-font h2">Você não tem permissão</h1>
+    <p class="text-muted mx-auto" style="max-width:28rem">Esta área é restrita à equipe deste portal ou à plataforma.</p>
+    <a href="{% url 'index' %}" class="btn btn-contribuir">Ir para o site</a>
+</div>
+{% endblock %}

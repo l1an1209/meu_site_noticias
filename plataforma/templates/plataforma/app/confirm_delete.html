@@ -1,0 +1,13 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Excluir{% endblock %}
+{% block heading %}Confirmar exclusão{% endblock %}
+{% block content %}
+<div class="ds-card p-4" style="max-width:560px">
+    <p>Esta ação não pode ser desfeita. Excluir <strong>{{ object }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Excluir definitivamente</button>
+        <a class="btn btn-ds-ghost" href="javascript:history.back()">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "noticias/base.html" %}
+{% block title %}Crie o portal de notícias da sua cidade{% endblock %}
+{% block meta_description %}Publique notícias da sua cidade com identidade própria. Planos a partir de R$ 59,90/mês.{% endblock %}
+{% block content %}
+<section class="py-4 py-lg-5">
+    <div class="text-center mx-auto" style="max-width:40rem">
+        <p class="ds-badge mb-3">SaaS para portais locais</p>
+        <h1 class="display-font h1">O jornal da sua cidade, no ar em minutos</h1>
+        <p class="lead text-muted">Você publica. A plataforma isola cada portal, com painel próprio, mídia e aparência da sua marca.</p>
+        <a href="#planos" class="btn btn-contribuir btn-lg">Ver planos</a>
+    </div>
+</section>
+<section class="row g-3 mb-5">
+    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Identidade local</h2><p class="text-muted mb-0">Nome, cores, logo e SEO do seu município — sem misturar com outro cliente.</p></div></div>
+    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Redação completa</h2><p class="text-muted mb-0">Notícias, fotos, vídeos, categorias e envios da comunidade.</p></div></div>
+    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Assinatura mensal</h2><p class="text-muted mb-0">Pagamento pela Kiwify. Portal criado automaticamente após a aprovação.</p></div></div>
+</section>
+<section id="planos" class="mb-5">
+    <h2 class="display-font h3 text-center mb-4">Planos</h2>
+    <div class="row g-3">
+        {% for plano in planos_venda %}
+        <div class="col-md-4">
+            <div class="ds-card p-4 h-100 d-flex flex-column">
+                <h3 class="h5">{{ plano.nome }}</h3>
+                <p class="display-font h2 mb-1">R$ {{ plano.preco_mensal }}<span class="fs-6 text-muted">/mês</span></p>
+                <p class="text-muted">{{ plano.descricao }}</p>
+                <ul class="small flex-grow-1">
+                    {% for item in plano.lista_recursos %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                {% if plano.checkout_url %}
+                <a class="btn btn-contribuir w-100" href="{{ plano.checkout_url }}" rel="noopener">Assinar na Kiwify</a>
+                {% else %}
+                <span class="btn btn-outline-secondary w-100 disabled">Checkout em configuração</span>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-center text-muted">Planos serão publicados em breve.</p>
+        {% endfor %}
+    </div>
+</section>
+<section class="mb-5">
+    <h2 class="display-font h4 mb-3">Perguntas frequentes</h2>
+    <div class="ds-card p-4 mb-2"><strong>O que acontece depois do pagamento?</strong><p class="mb-0 text-muted">A Kiwify avisa a plataforma. Criamos seu portal, o usuário administrador e enviamos o acesso por e-mail.</p></div>
+    <div class="ds-card p-4 mb-2"><strong>Posso cancelar?</strong><p class="mb-0 text-muted">Sim. O portal deixa de aceitar acesso, mas notícias e mídia não são apagadas. Dá para reativar.</p></div>
+    <div class="ds-card p-4"><strong>Já tenho um domínio?</strong><p class="mb-0 text-muted">Nesta fase o endereço é o subdomínio da plataforma. Domínio próprio entra na próxima etapa.</p></div>
+</section>
+{% endblock %}

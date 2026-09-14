@@ -1,24 +1,70 @@
-from django.contrib.auth import logout
-from django.contrib.auth.views import LoginView
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import CreateView, TemplateView
-from django.views import View
-from django.urls import reverse_lazy
-from django.shortcuts import redirect
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import (
+    LoginView,
+    PasswordChangeDoneView,
+    PasswordChangeView,
+    PasswordResetCompleteView,
+    PasswordResetConfirmView,
+    PasswordResetDoneView,
+    PasswordResetView,
+)
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views import View
+from django.views.generic import CreateView, TemplateView
+
+from plataforma.security import log_audit, throttle_blocked, throttle_response
+
 from .forms import CadastroForm, LoginForm
 from .models import Perfil
 
 
-class EntrarView(LoginView):
+class PortalAuthContextMixin:
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        portal = getattr(self.request, 'portal', None)
+        if portal is not None:
+            ctx['site_name'] = portal.nome
+        return ctx
+
+    def get_form(self, form_class=None):
+        get_form = getattr(super(), 'get_form', None)
+        if get_form is None:
+            return None
+        form = get_form(form_class)
+        if form is None:
+            return form
+        for field in form.fields.values():
+            widget = field.widget
+            input_type = getattr(widget, 'input_type', '')
+            if input_type == 'checkbox':
+                continue
+            css = widget.attrs.get('class', '')
+            if 'form-control' not in css:
+                widget.attrs['class'] = f'{css} form-control'.strip()
+        return form
+
+
+class EntrarView(PortalAuthContextMixin, LoginView):
     template_name = 'noticias/entrar.html'
     authentication_form = LoginForm
     redirect_authenticated_user = True
 
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'POST' and throttle_blocked(
+            request,
+            'login',
+            settings.LOGIN_THROTTLE_LIMIT,
+            settings.LOGIN_THROTTLE_WINDOW,
+        ):
+            return throttle_response()
+        return super().dispatch(request, *args, **kwargs)
+
     def get_success_url(self):
-        next_url = self.request.GET.get('next')
-        return next_url or str(reverse_lazy('index'))
+        return self.get_redirect_url() or str(reverse_lazy('index'))
 
 
 class SairView(View):
@@ -47,11 +93,19 @@ class CadastroView(CreateView):
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             return redirect('conta')
+        if request.method == 'POST' and throttle_blocked(
+            request,
+            'cadastro',
+            settings.SENSITIVE_THROTTLE_LIMIT,
+            settings.SENSITIVE_THROTTLE_WINDOW,
+        ):
+            return throttle_response()
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         response = super().form_valid(form)
         login(self.request, self.object, backend='django.contrib.auth.backends.ModelBackend')
+        log_audit(self.request, 'cadastro', objeto='User', objeto_id=self.object.pk)
         messages.success(
             self.request,
             'Conta criada! Agora você pode curtir, comentar e participar do portal.',
@@ -74,3 +128,54 @@ class MinhaContaView(LoginRequiredMixin, TemplateView):
 
 class ParceriaView(TemplateView):
     template_name = 'noticias/parceria.html'
+
+
+class RecuperarSenhaView(PortalAuthContextMixin, PasswordResetView):
+    template_name = 'noticias/auth/password_reset_form.html'
+    email_template_name = 'noticias/auth/password_reset_email.txt'
+    subject_template_name = 'noticias/auth/password_reset_subject.txt'
+    success_url = reverse_lazy('password_reset_done')
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'POST' and throttle_blocked(
+            request,
+            'password_reset',
+            settings.SENSITIVE_THROTTLE_LIMIT,
+            settings.SENSITIVE_THROTTLE_WINDOW,
+        ):
+            return throttle_response()
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        portal = getattr(self.request, 'portal', None)
+        self.extra_email_context = {
+            'site_name': portal.nome if portal else 'Portal',
+        }
+        return super().form_valid(form)
+
+
+class RecuperarSenhaEnviadoView(PortalAuthContextMixin, PasswordResetDoneView):
+    template_name = 'noticias/auth/password_reset_done.html'
+
+
+class RedefinirSenhaView(PortalAuthContextMixin, PasswordResetConfirmView):
+    template_name = 'noticias/auth/password_reset_confirm.html'
+    success_url = reverse_lazy('password_reset_complete')
+
+
+class RedefinirSenhaConcluidoView(PortalAuthContextMixin, PasswordResetCompleteView):
+    template_name = 'noticias/auth/password_reset_complete.html'
+
+
+class AlterarSenhaView(PortalAuthContextMixin, PasswordChangeView):
+    template_name = 'noticias/auth/password_change_form.html'
+    success_url = reverse_lazy('password_change_done')
+
+    def form_valid(self, form):
+        log_audit(self.request, 'senha_alterar', objeto='User', objeto_id=self.request.user.pk)
+        messages.success(self.request, 'Senha alterada. Use a nova senha no próximo acesso.')
+        return super().form_valid(form)
+
+
+class AlterarSenhaConcluidoView(PortalAuthContextMixin, PasswordChangeDoneView):
+    template_name = 'noticias/auth/password_change_done.html'

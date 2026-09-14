@@ -27,8 +27,10 @@ class ExclusivoDetailView(NoticiaDetailView):
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect(f'/entrar/?next={request.path}')
-        perfil = getattr(request.user, 'perfil', None)
-        if not request.user.is_staff and (not perfil or not perfil.is_assinante):
-            messages.warning(request, 'Conteúdo exclusivo para assinantes.')
-            return redirect('parceria')
+        from plataforma.permissions import is_platform_master
+        if not is_platform_master(request.user) and not getattr(request, 'membership', None):
+            perfil = getattr(request.user, 'perfil', None)
+            if not perfil or not perfil.is_assinante:
+                messages.warning(request, 'Conteúdo exclusivo para assinantes.')
+                return redirect('parceria')
         return super(NoticiaDetailView, self).dispatch(request, *args, **kwargs)

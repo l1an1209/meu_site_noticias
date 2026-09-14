@@ -3,23 +3,30 @@ from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 
 
-def _destinatarios_admin():
+def _destinatarios_admin(portal=None):
     emails = set()
     extra = getattr(settings, 'NOTIFY_EMAILS', [])
     if extra:
         emails.update(e for e in extra if e)
+    if portal and portal.email:
+        emails.add(portal.email)
     User = get_user_model()
-    for user in User.objects.filter(is_staff=True, is_active=True):
-        if user.email:
-            emails.add(user.email)
+    if portal is not None:
+        for membro in portal.membros.filter(ativo=True).select_related('usuario'):
+            if membro.usuario.email:
+                emails.add(membro.usuario.email)
+    else:
+        for user in User.objects.filter(is_staff=True, is_active=True):
+            if user.email:
+                emails.add(user.email)
     return list(emails)
 
 
-def enviar_notificacao_admin(assunto, mensagem):
-    destinatarios = _destinatarios_admin()
+def enviar_notificacao_admin(assunto, mensagem, portal=None):
+    destinatarios = _destinatarios_admin(portal)
     if not destinatarios:
         return False
-    remetente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@jiparana.local')
+    remetente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@plataforma.local')
     try:
         send_mail(
             assunto,
@@ -36,32 +43,38 @@ def enviar_notificacao_admin(assunto, mensagem):
 def notificar_comentario(comentario):
     noticia = comentario.noticia
     usuario = comentario.usuario
-    assunto = f'[Ji-Paraná] Novo comentário: {noticia.titulo[:50]}'
+    portal = getattr(noticia, 'portal', None)
+    marca = portal.nome if portal else 'Portal'
+    assunto = f'[{marca}] Novo comentário: {noticia.titulo[:50]}'
     mensagem = (
-        f'Novo comentário no portal {settings.SITE_NAME}\n\n'
+        f'Novo comentário no portal {marca}\n\n'
         f'Notícia: {noticia.titulo}\n'
         f'Usuário: {usuario.get_username()}\n'
         f'Comentário:\n{comentario.texto}\n\n'
         f'---\nPainel: /painel/ | Admin: comentários'
     )
-    return enviar_notificacao_admin(assunto, mensagem)
+    return enviar_notificacao_admin(assunto, mensagem, portal)
 
 
 def notificar_curtida(curtida):
     noticia = curtida.noticia
     usuario = curtida.usuario
-    assunto = f'[Ji-Paraná] Nova curtida: {noticia.titulo[:50]}'
+    portal = getattr(noticia, 'portal', None)
+    marca = portal.nome if portal else 'Portal'
+    assunto = f'[{marca}] Nova curtida: {noticia.titulo[:50]}'
     mensagem = (
-        f'Nova curtida no portal {settings.SITE_NAME}\n\n'
+        f'Nova curtida no portal {marca}\n\n'
         f'Notícia: {noticia.titulo}\n'
         f'Usuário: {usuario.get_username()}\n'
         f'Total de curtidas: {noticia.curtidas.count()}\n'
     )
-    return enviar_notificacao_admin(assunto, mensagem)
+    return enviar_notificacao_admin(assunto, mensagem, portal)
 
 
 def notificar_novo_envio(contribuicao):
-    assunto = f'[Ji-Paraná] Novo envio para análise: {contribuicao.titulo[:50]}'
+    portal = getattr(contribuicao, 'portal', None)
+    marca = portal.nome if portal else 'Portal'
+    assunto = f'[{marca}] Novo envio para análise: {contribuicao.titulo[:50]}'
     midia = []
     if contribuicao.imagem:
         midia.append('foto')
@@ -76,4 +89,4 @@ def notificar_novo_envio(contribuicao):
         f'Mídia: {", ".join(midia) or "texto apenas"}\n\n'
         f'Analise em: /painel/'
     )
-    return enviar_notificacao_admin(assunto, mensagem)
+    return enviar_notificacao_admin(assunto, mensagem, portal)

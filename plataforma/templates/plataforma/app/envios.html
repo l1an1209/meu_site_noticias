@@ -1,0 +1,37 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Envios{% endblock %}
+{% block heading %}Envios da comunidade{% endblock %}
+{% block content %}
+<div class="app-toolbar">
+    <a class="btn btn-sm {% if filtro_status == 'pendente' %}btn-contribuir{% else %}btn-ds-ghost{% endif %}" href="?status=pendente">Pendentes ({{ contagem_pendente }})</a>
+    <a class="btn btn-sm {% if filtro_status == 'aprovado' %}btn-contribuir{% else %}btn-ds-ghost{% endif %}" href="?status=aprovado">Publicados ({{ contagem_aprovado }})</a>
+    <a class="btn btn-sm {% if filtro_status == 'rejeitado' %}btn-contribuir{% else %}btn-ds-ghost{% endif %}" href="?status=rejeitado">Recusados ({{ contagem_rejeitado }})</a>
+</div>
+{% for envio in envios %}
+<div class="ds-card p-3 p-md-4 mb-3">
+    <div class="d-flex justify-content-between gap-3 flex-wrap">
+        <div>
+            <h2 class="h5 mb-1">{{ envio.titulo }}</h2>
+            <p class="text-muted small mb-2">{{ envio.nome }} · {{ envio.email }} · {{ envio.get_tipo_display }}</p>
+            <p class="mb-0">{{ envio.conteudo|truncatechars:280 }}</p>
+        </div>
+        <span class="ds-badge {% if envio.status == 'pendente' %}ds-badge--warn{% elif envio.status == 'aprovado' %}ds-badge--ok{% else %}ds-badge--danger{% endif %}">{{ envio.get_status_display }}</span>
+    </div>
+    {% if envio.status == 'pendente' %}
+    <div class="d-flex gap-2 mt-3">
+        <form method="post" action="{% url 'aprovar_envio' envio.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-contribuir btn-sm" type="submit">Aprovar e publicar</button>
+        </form>
+        <form method="post" action="{% url 'rejeitar_envio' envio.pk %}">
+            {% csrf_token %}
+            <button class="btn btn-outline-danger btn-sm" type="submit">Recusar</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+{% empty %}
+<div class="empty-state">Nenhum envio neste filtro</div>
+{% endfor %}
+{% include "noticias/partials/pagination.html" %}
+{% endblock %}

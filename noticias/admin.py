@@ -10,6 +10,8 @@ from .models import (
     NoticiaImagem, ContribuicaoImagem,
 )
 from .utils_noticia import criar_noticia_de_contribuicao
+from plataforma.admin_mixins import SuperuserOnlyAdminMixin, TenantAdminMixin
+from plataforma.permissions import is_platform_master
 
 
 class PerfilInline(admin.StackedInline):
@@ -18,7 +20,7 @@ class PerfilInline(admin.StackedInline):
     fields = ('tipo_conta', 'telefone', 'is_assinante', 'bio')
 
 
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(SuperuserOnlyAdminMixin, BaseUserAdmin):
     inlines = (PerfilInline,)
 
 
@@ -72,7 +74,7 @@ class NoticiaImagemInline(admin.TabularInline):
 
 
 @admin.register(Comentario)
-class ComentarioAdmin(admin.ModelAdmin):
+class ComentarioAdmin(TenantAdminMixin, admin.ModelAdmin):
     list_display = ('noticia', 'usuario', 'texto_resumo', 'ativo', 'data_criacao')
     list_filter = ('ativo', 'data_criacao')
     search_fields = ('texto', 'usuario__username', 'noticia__titulo')
@@ -84,19 +86,19 @@ class ComentarioAdmin(admin.ModelAdmin):
 
 
 @admin.register(Curtida)
-class CurtidaAdmin(admin.ModelAdmin):
+class CurtidaAdmin(TenantAdminMixin, admin.ModelAdmin):
     list_display = ('noticia', 'usuario', 'data_criacao')
     list_filter = ('data_criacao',)
 
 
 @admin.register(Contribuicao)
-class ContribuicaoAdmin(admin.ModelAdmin):
+class ContribuicaoAdmin(TenantAdminMixin, admin.ModelAdmin):
     """Onde você vê o que moradores e lojas enviaram — NÃO fica em Categorias."""
     list_display = (
         'status_badge', 'titulo', 'nome', 'tipo', 'categoria',
-        'email', 'telefone', 'qtd_fotos', 'data_envio',
+        'portal', 'email', 'telefone', 'qtd_fotos', 'data_envio',
     )
-    list_filter = ('status', 'tipo', 'categoria', 'data_envio')
+    list_filter = ('status', 'tipo', 'categoria', 'portal', 'data_envio')
     search_fields = ('titulo', 'conteudo', 'nome', 'email', 'telefone')
     readonly_fields = ('data_envio', 'preview_imagem', 'preview_video')
     list_per_page = 25
@@ -118,14 +120,14 @@ class ContribuicaoAdmin(admin.ModelAdmin):
     )
 
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        if request.GET.get('status__exact') is None and 'change' not in request.path:
-            return qs
-        return qs
+        return super().get_queryset(request)
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        pendentes = Contribuicao.objects.filter(status='pendente').count()
+        if is_platform_master(request.user):
+            pendentes = Contribuicao.all_objects.filter(status='pendente').count()
+        else:
+            pendentes = Contribuicao.objects.filter(status='pendente').count()
         extra_context['subtitle'] = (
             f'⚠️ {pendentes} envio(s) aguardando sua análise — '
             'marque na lista e use a ação "Aprovar e publicar"'
@@ -178,7 +180,7 @@ class ContribuicaoAdmin(admin.ModelAdmin):
             aprovadas += 1
         self.message_user(
             request,
-            f'{aprovadas} envio(s) publicado(s) no portal Jiparaná.',
+            f'{aprovadas} envio(s) publicado(s) no portal.',
             messages.SUCCESS,
         )
 
@@ -189,8 +191,9 @@ class ContribuicaoAdmin(admin.ModelAdmin):
 
 
 @admin.register(Anuncio)
-class AnuncioAdmin(admin.ModelAdmin):
-    list_display = ('slot', 'titulo_interno', 'ativo', 'tem_preview')
+class AnuncioAdmin(TenantAdminMixin, admin.ModelAdmin):
+    list_display = ('slot', 'portal', 'titulo_interno', 'ativo', 'tem_preview')
+    list_filter = ('portal', 'ativo')
     list_editable = ('ativo',)
     fieldsets = (
         (None, {
@@ -211,8 +214,9 @@ class AnuncioAdmin(admin.ModelAdmin):
 
 
 @admin.register(Categoria)
-class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'slug', 'num_noticias')
+class CategoriaAdmin(TenantAdminMixin, admin.ModelAdmin):
+    list_display = ('nome', 'slug', 'portal', 'num_noticias')
+    list_filter = ('portal',)
     prepopulated_fields = {'slug': ('nome',)}
     search_fields = ('nome',)
 
@@ -222,15 +226,15 @@ class CategoriaAdmin(admin.ModelAdmin):
 
 
 @admin.register(Noticia)
-class NoticiaAdmin(admin.ModelAdmin):
+class NoticiaAdmin(TenantAdminMixin, admin.ModelAdmin):
     list_display = (
-        'titulo', 'categoria', 'autor', 'data_publicacao', 'status_pub',
+        'titulo', 'portal', 'categoria', 'autor', 'data_publicacao', 'status_pub',
         'qtd_fotos', 'visualizacoes', 'exclusivo_assinantes', 'destaque',
     )
-    list_filter = ('categoria', 'exclusivo_assinantes', 'destaque', 'data_publicacao')
+    list_filter = ('portal', 'categoria', 'exclusivo_assinantes', 'destaque', 'data_publicacao')
     fieldsets = (
         (None, {
-            'fields': ('titulo', 'resumo', 'conteudo', 'categoria', 'autor', 'destaque', 'exclusivo_assinantes'),
+            'fields': ('titulo', 'resumo', 'conteudo', 'categoria', 'autor', 'destaque', 'exclusivo_assinantes', 'portal'),
         }),
         ('Mídia', {
             'fields': ('imagem', 'video'),

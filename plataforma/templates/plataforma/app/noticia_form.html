@@ -1,0 +1,79 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}{{ page_title|default:'Notícia' }}{% endblock %}
+{% block heading %}{{ page_title|default:'Notícia' }}{% endblock %}
+{% block subheading %}Conteúdo deste portal{% endblock %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="js-loading-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="ds-card p-3 p-md-4 mb-3">
+                <p class="text-muted small mb-3">Conteúdo</p>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.titulo.label }}</label>
+                    {{ form.titulo }}
+                    {% if form.titulo.errors %}<div class="text-danger small">{{ form.titulo.errors }}</div>{% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.resumo.label }}</label>
+                    {{ form.resumo }}
+                    {% if form.resumo.errors %}<div class="text-danger small">{{ form.resumo.errors }}</div>{% endif %}
+                </div>
+                <div>
+                    <label class="form-label">{{ form.conteudo.label }}</label>
+                    {{ form.conteudo }}
+                    {% if form.conteudo.errors %}<div class="text-danger small">{{ form.conteudo.errors }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="ds-card p-3 p-md-4">
+                <p class="text-muted small mb-3">Mídia</p>
+                <div class="d-flex gap-3 align-items-start mb-3 flex-wrap">
+                    <div class="preview-box">
+                        {% if form.instance.imagem %}
+                        <img src="{{ form.instance.imagem.url }}" alt="">
+                        {% else %}
+                        <span class="small text-muted">Capa</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <label class="form-label">{{ form.imagem.label }}</label>
+                        {{ form.imagem }}
+                        {% if form.imagem.errors %}<div class="text-danger small">{{ form.imagem.errors }}</div>{% endif %}
+                        <p class="small text-muted mb-0 mt-1">JPEG, PNG, WebP ou GIF. A validação de segurança da etapa 5 permanece.</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">{{ form.video.label }}</label>
+                    {{ form.video }}
+                    {% if form.video.errors %}<div class="text-danger small">{{ form.video.errors }}</div>{% endif %}
+                    {% if form.instance.video %}
+                    <p class="small text-muted mb-0 mt-1">Vídeo atual: {{ form.instance.video.name }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="ds-card p-3 p-md-4 mb-3">
+                <p class="text-muted small mb-3">Publicação</p>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.categoria.label }}</label>
+                    {{ form.categoria }}
+                    {% if form.categoria.errors %}<div class="text-danger small">{{ form.categoria.errors }}</div>{% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">{{ form.autor.label }}</label>
+                    {{ form.autor }}
+                    {% if form.autor.errors %}<div class="text-danger small">{{ form.autor.errors }}</div>{% endif %}
+                </div>
+                <div class="form-check mb-2">{{ form.destaque }} <label class="form-check-label">{{ form.destaque.label }}</label></div>
+                <div class="form-check">{{ form.exclusivo_assinantes }} <label class="form-check-label">{{ form.exclusivo_assinantes.label }}</label></div>
+            </div>
+            <div class="d-grid gap-2">
+                <button class="btn btn-contribuir" type="submit">Publicar</button>
+                <a class="btn btn-ds-ghost" href="{% url 'app_noticias' %}">Cancelar</a>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}

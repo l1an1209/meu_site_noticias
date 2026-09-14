@@ -1,17 +1,84 @@
-from django.conf import settings
 from django.views.generic import ListView, DetailView, CreateView
 from django.views import View
 from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.decorators import login_required
 from django.db.models import Count, F, Prefetch, Q
 from django.core.cache import cache
 from django.urls import reverse_lazy
 from django.contrib import messages
 from .models import Noticia, Categoria, Contribuicao, Curtida, Comentario, NoticiaImagem
 from .forms import ContribuicaoForm, ComentarioForm
-from .utils import limpar_cache_portal
+from .utils import cache_key_portal, limpar_cache_portal
 from .utils_noticia import criar_noticia_de_contribuicao, anexar_fotos_envio
+from .mixins import PortalRoleRequiredMixin
+from plataforma.permissions import PAPEIS_MODERACAO, is_platform_master
+
+
+def _qs_noticias():
+    return (
+        Noticia.objects.select_related('categoria')
+        .prefetch_related(
+            Prefetch('fotos', queryset=NoticiaImagem.objects.order_by('ordem', 'id')),
+        )
+        .annotate(
+            _curtidas_count=Count('curtidas', distinct=True),
+            _comentarios_count=Count(
+                'comentarios', filter=Q(comentarios__ativo=True), distinct=True
+            ),
+            _fotos_count=Count('fotos', distinct=True),
+        )
+    )
+
+
+class NoticiasBaseMixin:
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        portal = getattr(self.request, 'portal', None)
+
+        cat_key = cache_key_portal('categorias_sidebar', portal)
+        categorias = cache.get(cat_key)
+        if categorias is None:
+            categorias = list(
+                Categoria.objects.annotate(num_noticias=Count('noticias')).order_by('nome')
+            )
+            cache.set(cat_key, categorias, 300)
+
+        pop_key = cache_key_portal('noticias_populares', portal)
+        populares = cache.get(pop_key)
+        if populares is None:
+            populares = list(Noticia.objects.order_by('-visualizacoes')[:5])
+            cache.set(pop_key, populares, 300)
+
+        dest_key = cache_key_portal('noticias_destaques_v2', portal)
+        destaques = cache.get(dest_key)
+        if destaques is None:
+            destaques = list(
+                Noticia.objects.filter(destaque=True).order_by('-data_publicacao')[:5]
+            )
+            if len(destaques) < 5:
+                ids = [n.id for n in destaques]
+                extras = list(
+                    Noticia.objects.exclude(id__in=ids).order_by('-data_publicacao')[: 5 - len(destaques)]
+                )
+                destaques = destaques + extras
+            cache.set(dest_key, destaques, 300)
+
+        context['categorias'] = categorias
+        context['noticias_populares'] = populares
+        context['noticias_destaques'] = destaques
+        context['manchete_urgente'] = destaques[0] if destaques else None
+        context['ordenacao_atual'] = self.request.GET.get('ordenacao', '-data_publicacao')
+        context['busca'] = self.request.GET.get('q', '').strip()
+        context['total_noticias'] = Noticia.objects.count()
+        return context
+
+    def _usuario_ve_exclusivo(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        if is_platform_master(user) or getattr(self.request, 'membership', None):
+            return True
+        perfil = getattr(user, 'perfil', None)
+        return bool(perfil and perfil.is_assinante)
 
 
 def _qs_noticias():
@@ -100,8 +167,8 @@ class NoticiaListView(NoticiasBaseMixin, ListView):
 
         busca = self.request.GET.get('q', '').strip()
         if busca:
-            queryset = queryset.filter(titulo__icontains=busca) | queryset.filter(
-                conteudo__icontains=busca
+            queryset = queryset.filter(
+                Q(titulo__icontains=busca) | Q(conteudo__icontains=busca)
             )
         if not self._usuario_ve_exclusivo():
             queryset = queryset.filter(exclusivo_assinantes=False)
@@ -160,7 +227,8 @@ class NoticiaDetailView(NoticiasBaseMixin, DetailView):
         perfil = getattr(self.request.user, 'perfil', None) if self.request.user.is_authenticated else None
         context['pode_ver_exclusivo'] = (
             not noticia.exclusivo_assinantes
-            or self.request.user.is_staff
+            or is_platform_master(self.request.user)
+            or bool(getattr(self.request, 'membership', None))
             or (perfil and perfil.is_assinante)
         )
         context['noticias_relacionadas'] = (
@@ -233,9 +301,24 @@ class ContribuicaoCreateView(CreateView):
     template_name = 'noticias/contribuir.html'
     success_url = reverse_lazy('contribuir')
 
+    def dispatch(self, request, *args, **kwargs):
+        from django.conf import settings
+        from plataforma.security import throttle_blocked, throttle_response
+        if request.method == 'POST' and throttle_blocked(
+            request,
+            'contribuir',
+            settings.SENSITIVE_THROTTLE_LIMIT,
+            settings.SENSITIVE_THROTTLE_WINDOW,
+        ):
+            return throttle_response()
+        return super().dispatch(request, *args, **kwargs)
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['extra_files'] = self.request.FILES.getlist('fotos')
+        portal = getattr(self.request, 'portal', None)
+        kwargs['cidade'] = portal.cidade if portal else ''
+        kwargs['portal'] = portal
         return kwargs
 
     def form_valid(self, form):
@@ -243,12 +326,16 @@ class ContribuicaoCreateView(CreateView):
         if not form.instance.imagem and extras:
             form.instance.imagem = extras.pop(0)
         form.instance.status = 'pendente'
+        form.instance.portal = self.request.portal
+        portal = self.request.portal
+        nome = portal.nome if portal else 'portal'
+        cidade = portal.cidade if portal else 'sua cidade'
         messages.success(
             self.request,
-            f'Envio recebido! Sua publicação está na fila de análise do {settings.SITE_NAME}. '
-            f'A equipe de {settings.SITE_CITY} revisa em breve — obrigado por participar.',
+            f'Envio recebido! Sua publicação está na fila de análise do {nome}. '
+            f'A equipe de {cidade} revisa em breve — obrigado por participar.',
         )
-        limpar_cache_portal()
+        limpar_cache_portal(self.request.portal)
         response = super().form_valid(form)
         anexar_fotos_envio(self.object, extras)
         return response
@@ -259,18 +346,14 @@ class ContribuicaoCreateView(CreateView):
         return context
 
 
-class StaffRequiredMixin(UserPassesTestMixin):
-    def test_func(self):
-        return self.request.user.is_staff
-
-
-class PainelModeracaoView(StaffRequiredMixin, ListView):
-    """Painel simples para você ver envios — além do /admin/"""
+class PainelModeracaoView(PortalRoleRequiredMixin, ListView):
+    """Painel de envios do portal atual (admin/moderador ou master)."""
     model = Contribuicao
     template_name = 'noticias/painel.html'
     context_object_name = 'envios'
     paginate_by = 15
     login_url = reverse_lazy('entrar')
+    papeis_permitidos = tuple(PAPEIS_MODERACAO)
 
     def get_queryset(self):
         status = self.request.GET.get('status', 'pendente')
@@ -287,21 +370,23 @@ class PainelModeracaoView(StaffRequiredMixin, ListView):
         return context
 
 
-class AprovarEnvioView(StaffRequiredMixin, View):
+class AprovarEnvioView(PortalRoleRequiredMixin, View):
     login_url = reverse_lazy('entrar')
+    papeis_permitidos = tuple(PAPEIS_MODERACAO)
 
     def post(self, request, pk):
         contrib = get_object_or_404(Contribuicao, pk=pk, status='pendente')
         criar_noticia_de_contribuicao(contrib)
         contrib.status = 'aprovado'
         contrib.save(update_fields=['status'])
-        limpar_cache_portal()
+        limpar_cache_portal(request.portal)
         messages.success(request, f'"{contrib.titulo}" publicado no portal!')
         return redirect('painel')
 
 
-class RejeitarEnvioView(StaffRequiredMixin, View):
+class RejeitarEnvioView(PortalRoleRequiredMixin, View):
     login_url = reverse_lazy('entrar')
+    papeis_permitidos = tuple(PAPEIS_MODERACAO)
 
     def post(self, request, pk):
         contrib = get_object_or_404(Contribuicao, pk=pk, status='pendente')

@@ -1,0 +1,25 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Publicidade{% endblock %}
+{% block heading %}Publicidade{% endblock %}
+{% block content %}
+<div class="app-toolbar">
+    <a href="{% url 'app_anuncio_novo' %}" class="btn btn-contribuir">Novo espaço</a>
+</div>
+<div class="app-table-wrap">
+<table class="table">
+    <thead><tr><th>Posição</th><th>Anunciante</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+    {% for a in anuncios %}
+    <tr>
+        <td>{{ a.get_slot_display }}</td>
+        <td>{{ a.titulo_interno }}</td>
+        <td>{% if a.ativo %}<span class="ds-badge ds-badge--ok">No ar</span>{% else %}<span class="ds-badge ds-badge--muted">Pausado</span>{% endif %}</td>
+        <td class="text-end"><a class="btn btn-sm btn-ds-ghost" href="{% url 'app_anuncio_editar' a.pk %}">Editar</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4"><div class="empty-state my-3">Nenhum anúncio cadastrado</div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

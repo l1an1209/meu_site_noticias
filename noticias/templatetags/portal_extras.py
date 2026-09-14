@@ -2,6 +2,7 @@ from django import template
 from django.core.cache import cache
 from django.conf import settings
 from ..models import Anuncio
+from ..utils import cache_key_portal
 
 register = template.Library()
 
@@ -24,9 +25,11 @@ def query_string(context, page=None, **kwargs):
     return f'?{encoded}' if encoded else '?'
 
 
-@register.inclusion_tag('noticias/partials/ad_slot.html')
-def ad_slot(slot):
-    cache_key = f'anuncio_{slot}'
+@register.inclusion_tag('noticias/partials/ad_slot.html', takes_context=True)
+def ad_slot(context, slot):
+    request = context.get('request')
+    portal = getattr(request, 'portal', None) if request else None
+    cache_key = cache_key_portal(f'anuncio_{slot}', portal)
     anuncio = cache.get(cache_key)
     if anuncio is None:
         try:

@@ -1,0 +1,43 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Aparência{% endblock %}
+{% block heading %}Aparência do portal{% endblock %}
+{% block subheading %}As mudanças valem somente para {{ site_name }}{% endblock %}
+{% block content %}
+<div class="ds-card p-4">
+    <form method="post" enctype="multipart/form-data" class="js-loading-form">
+        {% csrf_token %}
+        <div class="row g-4">
+            <div class="col-md-8">
+                {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">{{ field.label }}</label>
+                    {% if field.name == 'logo' or field.name == 'favicon' or field.name == 'imagem_compartilhamento' %}
+                    <div class="d-flex gap-3 align-items-center">
+                        <div class="preview-box">
+                            {% if field.value %}<img src="{{ field.value.url }}" alt="">{% else %}<span class="text-muted small">Prévia</span>{% endif %}
+                        </div>
+                        {{ field }}
+                    </div>
+                    {% elif 'cor_' in field.name %}
+                    <div class="color-row">{{ field }}</div>
+                    {% else %}
+                    {{ field }}
+                    {% endif %}
+                    {% if field.errors %}<div class="text-danger small">{{ field.errors }}</div>{% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="col-md-4">
+                <div class="ds-card p-3" style="border-color: var(--primary)">
+                    <div class="small text-muted mb-2">Prévia das cores</div>
+                    <div class="rounded-3 mb-2" style="height:48px;background:var(--primary)"></div>
+                    <div class="rounded-3 mb-2" style="height:48px;background:var(--brand-navy)"></div>
+                    <div class="rounded-3" style="height:48px;background:var(--accent)"></div>
+                    <p class="small text-muted mt-3 mb-0">Salve e abra o site público para ver logo, SEO e rodapé deste tenant.</p>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-contribuir" type="submit">Salvar identidade</button>
+    </form>
+</div>
+{% endblock %}

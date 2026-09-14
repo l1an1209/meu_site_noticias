@@ -1,0 +1,36 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Assinaturas{% endblock %}
+{% block heading %}Assinaturas{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Cliente ou slug" style="max-width:16rem">
+    <select class="form-select" name="status" style="max-width:14rem">
+        <option value="">Todos os status</option>
+        <option value="ativa">Ativa</option>
+        <option value="pagamento_pendente">Pendente</option>
+        <option value="atrasada">Atrasada</option>
+        <option value="aguardando_pagamento">Aguardando</option>
+        <option value="cancelada">Cancelada</option>
+        <option value="bloqueada">Bloqueada</option>
+    </select>
+    <button class="btn btn-ds-ghost">Filtrar</button>
+</form>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th>Cliente</th><th>Portal</th><th>Plano</th><th>Status</th><th>Próxima cobrança</th></tr></thead>
+    <tbody>
+    {% for a in assinaturas %}
+    <tr>
+        <td><a href="{% url 'master_cliente' a.cliente_id %}">{{ a.cliente.nome }}</a></td>
+        <td><a href="{% url 'master_portal' a.portal_id %}">{{ a.portal.slug }}</a></td>
+        <td>{{ a.plano.nome }}</td>
+        <td>{{ a.get_status_display }}</td>
+        <td>{{ a.proximo_vencimento|date:"d/m/Y"|default:"—" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-muted">Nenhuma assinatura.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

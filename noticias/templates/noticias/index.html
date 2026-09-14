@@ -1,17 +1,17 @@
 {% extends "noticias/base.html" %}
 {% load static portal_extras %}
 
-{% block title %}{% if categoria %}{{ categoria.nome }} — {% endif %}{{ site_name }} | {{ site_slogan }}{% endblock %}
+{% block title %}{% if pagina_videos %}Vídeos — {{ site_name }}{% elif categoria %}{{ categoria.nome }} — {{ site_name }}{% else %}{{ site_seo_title }}{% endif %}{% endblock %}
 
 {% block content %}
-{% if manchete_urgente and not categoria and not busca and page_obj.number == 1 %}
+{% if manchete_urgente and not categoria and not busca and not pagina_videos and page_obj.number == 1 %}
 <div class="urgente-bar">
     <span class="urgente-bar__label">Última hora</span>
     <a href="{% url 'detalhe' manchete_urgente.id %}" class="urgente-bar__text">{{ manchete_urgente.titulo }}</a>
 </div>
 {% endif %}
 
-{% if not categoria and not busca and noticias_destaques and page_obj.number == 1 %}
+{% if not categoria and not busca and not pagina_videos and noticias_destaques and page_obj.number == 1 %}
 <section class="mosaic-hero" aria-label="Destaques">
     {% with principal=noticias_destaques.0 %}
     <a href="{% url 'detalhe' principal.id %}" class="mosaic-hero__main">
@@ -36,12 +36,12 @@
         {% endfor %}
     </div>
 </section>
-{% elif categoria or busca %}
+{% elif categoria or busca or pagina_videos %}
 <div class="page-head mb-4">
     <h1 class="page-head__title display-font">
-        {% if busca %}Busca: {{ busca }}{% else %}{{ categoria.nome }}{% endif %}
+        {% if pagina_videos %}Vídeos{% elif busca %}Busca: {{ busca }}{% else %}{{ categoria.nome }}{% endif %}
     </h1>
-    <p class="page-head__sub text-muted mb-0">{{ site_region }} — notícias em tempo real</p>
+    <p class="page-head__sub text-muted mb-0">{% if site_tagline %}{{ site_tagline }}{% else %}{{ site_region }}{% if site_slogan %} — {{ site_slogan }}{% endif %}{% endif %}</p>
 </div>
 {% endif %}
 
@@ -83,6 +83,7 @@
                     </div>
                 </div>
             </article>
+            {% if forloop.counter|divisibleby:3 %}{% ad_slot 'feed' %}{% endif %}
             {% empty %}
             <div class="empty-state">
                 <i class="far fa-newspaper"></i>
@@ -94,6 +95,46 @@
         </div>
 
         {% include "noticias/partials/pagination.html" %}
+
+        {% if not categoria and not busca and page_obj.number == 1 %}
+            {% if noticias_com_video %}
+            <section class="video-rail" aria-label="Vídeos">
+                <div class="feed-head">
+                    <h2 class="feed-head__title display-font">Vídeos</h2>
+                    <a href="{% url 'videos' %}" class="btn-ds-ghost btn btn-sm">Ver todos</a>
+                </div>
+                <div class="video-rail__grid">
+                    {% for v in noticias_com_video %}
+                    <a href="{% url 'detalhe' v.id %}" class="media-tile">
+                        <img src="{% noticia_capa v %}" alt="">
+                        <div class="media-tile__body">
+                            <span class="ds-badge mb-2" style="width:fit-content;background:#fff;color:#0f172a"><i class="fas fa-play"></i> Vídeo</span>
+                            <h3>{{ v.titulo|truncatechars:70 }}</h3>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
+            {% for bloco in blocos_categoria %}
+            <section class="cat-rail">
+                <div class="feed-head">
+                    <h2 class="feed-head__title display-font">{{ bloco.categoria.nome }}</h2>
+                    <a href="{% url 'noticias_por_categoria' bloco.categoria.slug %}" class="btn-ds-ghost btn btn-sm">Ver seção</a>
+                </div>
+                <div class="cat-rail__grid">
+                    {% for n in bloco.noticias %}
+                    <a href="{% url 'detalhe' n.id %}" class="media-tile">
+                        <img src="{% noticia_capa n %}" alt="">
+                        <div class="media-tile__body">
+                            <h3>{{ n.titulo|truncatechars:70 }}</h3>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        {% endif %}
     </div>
     <div class="col-lg-4">
         {% include "noticias/partials/sidebar.html" %}

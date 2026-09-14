@@ -1,0 +1,22 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Planos{% endblock %}
+{% block heading %}Planos comerciais{% endblock %}
+{% block content %}
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th>Plano</th><th>Preço</th><th>Kiwify produto</th><th>Checkout</th><th></th></tr></thead>
+    <tbody>
+    {% for p in planos %}
+    <tr>
+        <td>{{ p.nome }} <div class="small text-muted">{{ p.codigo }}</div></td>
+        <td>R$ {{ p.preco_mensal }}</td>
+        <td class="small">{{ p.kiwify_product_id|default:"—" }}</td>
+        <td class="small">{% if p.checkout_url %}Sim{% else %}Não{% endif %}</td>
+        <td><a href="{% url 'master_plano' p.pk %}">Editar</a></td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<p class="small text-muted mt-3">Preços e links de checkout são configuráveis. O webhook usa o token em KIWIFY_WEBHOOK_SECRET.</p>
+{% endblock %}

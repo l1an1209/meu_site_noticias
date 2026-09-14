@@ -3,7 +3,7 @@ from django.dispatch import receiver
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from .models import Anuncio, Contribuicao, Perfil, Comentario, Curtida
-from .utils import limpar_cache_portal
+from .utils import cache_key_portal, limpar_cache_portal
 from .services.email_notify import notificar_comentario, notificar_curtida, notificar_novo_envio
 
 
@@ -15,18 +15,21 @@ def criar_perfil_usuario(sender, instance, created, **kwargs):
 
 @receiver([post_save, post_delete], sender=Anuncio)
 def limpar_cache_anuncio(sender, instance, **kwargs):
-    cache_keys = [
-        f'anuncio_{instance.slot}',
-        'anuncio_top', 'anuncio_sidebar', 'anuncio_article',
-        'anuncio_feed', 'anuncio_mobile',
-    ]
-    cache.delete_many(cache_keys)
+    portal = getattr(instance, 'portal', None)
+    cache.delete_many([
+        cache_key_portal(f'anuncio_{instance.slot}', portal),
+        cache_key_portal('anuncio_top', portal),
+        cache_key_portal('anuncio_sidebar', portal),
+        cache_key_portal('anuncio_article', portal),
+        cache_key_portal('anuncio_feed', portal),
+        cache_key_portal('anuncio_mobile', portal),
+    ])
 
 
 @receiver(post_save, sender=Contribuicao)
 def limpar_nav_apos_envio(sender, instance, created, **kwargs):
     if instance.status == 'pendente':
-        limpar_cache_portal()
+        limpar_cache_portal(getattr(instance, 'portal', None))
     if created and instance.status == 'pendente':
         notificar_novo_envio(instance)
 

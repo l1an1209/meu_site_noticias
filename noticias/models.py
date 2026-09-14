@@ -2,19 +2,47 @@ from django.conf import settings
 from django.db import models
 from django.utils.text import slugify
 
+from plataforma.defaults import assign_default_portal
+from plataforma.managers import TenantManager
+
 from .image_utils import (
     is_new_upload,
     optimize_image_field,
+    upload_path_anuncio,
     upload_path_contrib,
     upload_path_contrib_galeria,
     upload_path_galeria,
+    upload_path_noticia,
+    upload_path_video_contrib,
+    upload_path_video_noticia,
 )
 
 class Categoria(models.Model):
+    portal = models.ForeignKey(
+        'plataforma.Portal',
+        on_delete=models.CASCADE,
+        related_name='categorias',
+        db_index=True,
+    )
     nome = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True, blank=True)
+    slug = models.SlugField(blank=True)
+
+    objects = TenantManager()
+    all_objects = models.Manager()
+
+    class Meta:
+        ordering = ['nome']
+        verbose_name = 'Categoria'
+        verbose_name_plural = 'Categorias'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['portal', 'slug'],
+                name='uniq_categoria_portal_slug',
+            ),
+        ]
 
     def save(self, *args, **kwargs):
+        assign_default_portal(self)
         if not self.slug:
             self.slug = slugify(self.nome)
         super().save(*args, **kwargs)
@@ -23,19 +51,25 @@ class Categoria(models.Model):
         return self.nome
 
 class Noticia(models.Model):
+    portal = models.ForeignKey(
+        'plataforma.Portal',
+        on_delete=models.CASCADE,
+        related_name='noticias',
+        db_index=True,
+    )
     titulo = models.CharField(max_length=200)
     conteudo = models.TextField()
     resumo = models.CharField(max_length=300, blank=True)
     autor = models.CharField(max_length=100, blank=True, default='Redação')
     data_publicacao = models.DateTimeField(auto_now_add=True)
     imagem = models.ImageField(
-        upload_to='noticias/',
+        upload_to=upload_path_noticia,
         blank=True,
         null=True,
         help_text='Foto principal (capa) da notícia.',
     )
     video = models.FileField(
-        upload_to='noticias/videos/',
+        upload_to=upload_path_video_noticia,
         blank=True,
         null=True,
         help_text='Vídeo da notícia (MP4, WebM).',
@@ -53,9 +87,22 @@ class Noticia(models.Model):
     )
     visualizacoes = models.PositiveIntegerField(default=0)
     destaque = models.BooleanField(default=False)
+    criado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='noticias_criadas',
+    )
+
+    objects = TenantManager()
+    all_objects = models.Manager()
 
     class Meta:
         ordering = ['-data_publicacao']
+        indexes = [
+            models.Index(fields=['portal', '-data_publicacao']),
+        ]
 
     def __str__(self):
         return self.titulo
@@ -108,6 +155,8 @@ class Noticia(models.Model):
         return extra + (1 if self.imagem else 0)
 
     def save(self, *args, **kwargs):
+        if not getattr(self, '_optimizing', False):
+            assign_default_portal(self)
         if getattr(self, '_optimizing', False):
             super().save(*args, **kwargs)
             return
@@ -130,6 +179,12 @@ class Contribuicao(models.Model):
         ('rejeitado', 'Não publicado'),
     ]
 
+    portal = models.ForeignKey(
+        'plataforma.Portal',
+        on_delete=models.CASCADE,
+        related_name='contribuicoes',
+        db_index=True,
+    )
     titulo = models.CharField(max_length=200, verbose_name='Título')
     conteudo = models.TextField(verbose_name='Texto completo')
     nome = models.CharField(max_length=100, verbose_name='Nome ou loja')
@@ -145,7 +200,7 @@ class Contribuicao(models.Model):
     )
     imagem = models.ImageField(upload_to=upload_path_contrib, blank=True, null=True)
     video = models.FileField(
-        upload_to='contribuicoes/videos/',
+        upload_to=upload_path_video_contrib,
         blank=True,
         null=True,
         verbose_name='Vídeo (opcional)',
@@ -160,10 +215,16 @@ class Contribuicao(models.Model):
     data_envio = models.DateTimeField(auto_now_add=True, verbose_name='Data do envio')
     observacao_admin = models.TextField(blank=True, verbose_name='Sua observação (interna)')
 
+    objects = TenantManager()
+    all_objects = models.Manager()
+
     class Meta:
         ordering = ['-data_envio']
         verbose_name = 'Envio aguardando análise'
         verbose_name_plural = 'Envios da comunidade (analisar aqui)'
+        indexes = [
+            models.Index(fields=['portal', 'status', '-data_envio']),
+        ]
 
     def __str__(self):
         return f'{self.titulo} — {self.nome}'
@@ -179,6 +240,8 @@ class Contribuicao(models.Model):
         return fotos
 
     def save(self, *args, **kwargs):
+        if not getattr(self, '_optimizing', False):
+            assign_default_portal(self)
         if getattr(self, '_optimizing', False):
             super().save(*args, **kwargs)
             return
@@ -199,7 +262,13 @@ class Anuncio(models.Model):
         ('mobile', 'Entre conteúdos no celular'),
     ]
 
-    slot = models.CharField(max_length=20, choices=SLOT_CHOICES, unique=True, verbose_name='Posição')
+    portal = models.ForeignKey(
+        'plataforma.Portal',
+        on_delete=models.CASCADE,
+        related_name='anuncios',
+        db_index=True,
+    )
+    slot = models.CharField(max_length=20, choices=SLOT_CHOICES, verbose_name='Posição')
     titulo_interno = models.CharField(max_length=100, verbose_name='Nome do anunciante')
     ativo = models.BooleanField(default=False, verbose_name='Exibir no site')
     codigo_html = models.TextField(
@@ -207,15 +276,28 @@ class Anuncio(models.Model):
         help_text='Cole aqui o código do Google AdSense ou HTML do parceiro.',
         verbose_name='Código HTML (AdSense)',
     )
-    imagem = models.ImageField(upload_to='anuncios/', blank=True, null=True)
+    imagem = models.ImageField(upload_to=upload_path_anuncio, blank=True, null=True)
     link = models.URLField(blank=True, verbose_name='Link ao clicar na imagem')
+
+    objects = TenantManager()
+    all_objects = models.Manager()
 
     class Meta:
         verbose_name = 'Anúncio'
         verbose_name_plural = 'Anúncios (espaços reservados)'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['portal', 'slot'],
+                name='uniq_anuncio_portal_slot',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.get_slot_display()} — {self.titulo_interno}'
+
+    def save(self, *args, **kwargs):
+        assign_default_portal(self)
+        super().save(*args, **kwargs)
 
     @property
     def tem_conteudo(self):

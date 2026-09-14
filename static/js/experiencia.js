@@ -1,5 +1,5 @@
 (function () {
-    const cfg = window.JIPA_CONFIG || {};
+    const cfg = window.PORTAL_EXPERIENCIA || {};
     const horaEl = document.getElementById('horaLocal');
     const localEl = document.getElementById('localText');
     const coordsEl = document.getElementById('coordsText');
@@ -66,10 +66,11 @@
                 btnGeo.innerHTML = '<i class="fas fa-check me-1"></i> Localização ativa';
             },
             () => {
-                definirCoords(cfg.latPadrao, cfg.lonPadrao, cfg.cidade + ', RO');
+                const lugar = [cfg.cidade, cfg.estado].filter(Boolean).join(', ');
+                definirCoords(cfg.latPadrao, cfg.lonPadrao, lugar);
                 btnGeo.disabled = false;
                 btnGeo.innerHTML = '<i class="fas fa-crosshairs me-1"></i> Usar minha localização';
-                alert('Permita localização ou usamos Ji-Paraná como padrão.');
+                alert('Permita a localização ou usamos a cidade do portal como padrão.');
             },
             { enableHighAccuracy: true, timeout: 12000 }
         );
@@ -90,7 +91,9 @@
 
     atualizarRelogio();
     setInterval(atualizarRelogio, 1000);
-    definirCoords(cfg.latPadrao, cfg.lonPadrao, cfg.cidade + ', RO');
+    definirCoords(cfg.latPadrao, cfg.lonPadrao, [cfg.cidade, cfg.estado].filter(Boolean).join(', '));
 
-    sessionStorage.setItem('jiparana_experiencia_vista', '1');
+    if (cfg.slug) {
+        sessionStorage.setItem('experiencia_vista_' + cfg.slug, '1');
+    }
 })();

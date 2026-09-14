@@ -1,0 +1,39 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Master{% endblock %}
+{% block heading %}Painel da plataforma{% endblock %}
+{% block subheading %}Visão de todos os tenants{% endblock %}
+{% block content %}
+<div class="stat-grid mb-4">
+    <div class="stat-card"><span>Portais</span><strong>{{ total_portais }}</strong></div>
+    <div class="stat-card"><span>Ativos</span><strong>{{ portais_ativos }}</strong></div>
+    <div class="stat-card"><span>Clientes</span><strong>{{ total_clientes }}</strong></div>
+    <div class="stat-card"><span>Assinaturas ativas</span><strong>{{ assinaturas_ativas }}</strong></div>
+</div>
+<div class="app-table-wrap">
+<table class="table align-middle">
+                <thead><tr><th>Portal</th><th>Cidade</th><th>Status</th><th>Plano</th><th>Cliente</th><th>Assinatura</th><th>Notícias</th><th>Armazenamento</th></tr></thead>
+    <tbody>
+    {% for p in portais %}
+    <tr>
+        <td>
+            <a href="{% url 'master_portal' p.pk %}" class="fw-semibold text-reset text-decoration-none">{{ p.nome }}</a>
+            <div class="small text-muted">{{ p.slug }}</div>
+        </td>
+        <td>{{ p.cidade }}/{{ p.estado }}</td>
+        <td>
+            {% if p.status == 'ativo' %}<span class="ds-badge ds-badge--ok">Ativo</span>
+            {% elif p.status == 'bloqueado' %}<span class="ds-badge ds-badge--danger">Bloqueado</span>
+            {% else %}<span class="ds-badge ds-badge--muted">{{ p.get_status_display }}</span>{% endif %}
+        </td>
+        <td>{{ p.plano.nome|default:"—" }}</td>
+        <td>{{ p.cliente.email|default:p.cliente_email|default:"—" }}</td>
+        <td>{{ p.get_pagamento_status_display }}</td>
+        <td>{{ p.noticias_n }}</td>
+        <td>{{ p.storage_mb }} MB</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+<p class="small text-muted mt-3 mb-0">Membros de equipe no total: {{ total_membros }}</p>
+{% endblock %}

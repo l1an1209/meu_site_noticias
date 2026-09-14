@@ -1,0 +1,52 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Visão geral{% endblock %}
+{% block content %}
+<div class="stat-grid mb-4">
+    <div class="stat-card"><span>Notícias</span><strong>{{ total_noticias }}</strong></div>
+    <div class="stat-card"><span>Categorias</span><strong>{{ total_categorias }}</strong></div>
+    <div class="stat-card"><span>Envios pendentes</span><strong>{{ total_envios }}</strong></div>
+    <div class="stat-card"><span>Visualizações</span><strong>{{ visualizacoes }}</strong></div>
+</div>
+<div class="row g-3">
+    <div class="col-lg-8">
+        <div class="ds-card p-3 p-md-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="h6 mb-0">Últimas notícias</h2>
+                <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir btn-sm">Nova notícia</a>
+            </div>
+            {% for n in recentes %}
+            <div class="d-flex justify-content-between gap-3 py-2 border-bottom">
+                <div>
+                    <a href="{% url 'app_noticia_editar' n.pk %}" class="fw-semibold text-decoration-none text-reset">{{ n.titulo }}</a>
+                    <div class="small text-muted">{{ n.data_publicacao|date:"d/m/Y H:i" }}</div>
+                </div>
+                {% if n.destaque %}<span class="ds-badge">Destaque</span>{% endif %}
+            </div>
+            {% empty %}
+            <div class="empty-state mb-0">
+                <i class="far fa-newspaper"></i>
+                <p class="mb-2">Nenhuma notícia cadastrada</p>
+                <a href="{% url 'app_noticia_nova' %}" class="btn btn-contribuir">Publicar a primeira</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="ds-card p-3 p-md-4 mb-3">
+            <h2 class="h6">Plano e armazenamento</h2>
+            <p class="mb-1">Plano: <strong>{{ plano_nome }}</strong></p>
+            {% if assinatura %}
+            <p class="mb-1">Assinatura: <strong>{{ assinatura.get_status_display }}</strong></p>
+            <p class="mb-0 text-muted small">Próxima cobrança: {{ assinatura.proximo_vencimento|date:"d/m/Y"|default:"—" }}</p>
+            {% else %}
+            <p class="mb-0 text-muted small">Uso estimado: {{ storage_mb }} MB</p>
+            {% endif %}
+        </div>
+        <div class="ds-card p-3 p-md-4">
+            <h2 class="h6">Mídia</h2>
+            <p class="mb-1">Fotos de capa: {{ total_fotos }}</p>
+            <p class="mb-0">Vídeos: {{ total_videos }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@ from .models import Noticia, NoticiaImagem
 
 def criar_noticia_de_contribuicao(contrib):
     noticia = Noticia.objects.create(
+        portal=contrib.portal,
         titulo=contrib.titulo,
         conteudo=contrib.conteudo,
         categoria=contrib.categoria,

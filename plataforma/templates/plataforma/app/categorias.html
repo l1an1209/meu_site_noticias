@@ -1,0 +1,28 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Categorias{% endblock %}
+{% block heading %}Categorias{% endblock %}
+{% block content %}
+<div class="app-toolbar">
+    <a href="{% url 'app_categoria_nova' %}" class="btn btn-contribuir">Nova categoria</a>
+</div>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th>Nome</th><th>Slug</th><th>Notícias</th><th></th></tr></thead>
+    <tbody>
+    {% for c in categorias %}
+    <tr>
+        <td class="fw-semibold">{{ c.nome }}</td>
+        <td class="text-muted">{{ c.slug }}</td>
+        <td>{{ c.num }}</td>
+        <td class="text-end">
+            <a class="btn btn-sm btn-ds-ghost" href="{% url 'app_categoria_editar' c.pk %}">Editar</a>
+            <a class="btn btn-sm btn-outline-danger" href="{% url 'app_categoria_excluir' c.pk %}">Excluir</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="4"><div class="empty-state my-3">Nenhuma categoria cadastrada</div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

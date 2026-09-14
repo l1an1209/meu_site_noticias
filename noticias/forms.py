@@ -2,8 +2,13 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
-from .models import Contribuicao, Comentario, Perfil
-from .image_utils import validate_gallery_files, validate_image_file, MAX_GALLERY_PHOTOS
+from .image_utils import (
+    MAX_GALLERY_PHOTOS,
+    validate_gallery_files,
+    validate_image_file,
+    validate_video_file,
+)
+from .models import Categoria, Comentario, Contribuicao, Perfil
 
 
 class ContribuicaoForm(forms.ModelForm):
@@ -32,7 +37,7 @@ class ContribuicaoForm(forms.ModelForm):
             'conteudo': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 8,
-                'placeholder': 'Conte o que está acontecendo em Jiparaná...',
+                'placeholder': 'Conte o que está acontecendo na sua cidade...',
             }),
             'nome': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -44,7 +49,7 @@ class ContribuicaoForm(forms.ModelForm):
             }),
             'telefone': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '(69) 99999-9999',
+                'placeholder': '(00) 00000-0000',
             }),
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'categoria': forms.Select(attrs={'class': 'form-select'}),
@@ -55,11 +60,26 @@ class ContribuicaoForm(forms.ModelForm):
             }),
         }
 
-    def __init__(self, *args, extra_files=None, **kwargs):
+    def __init__(self, *args, extra_files=None, cidade='', portal=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.extra_files = extra_files or []
+        self.portal = portal
         self.fields['categoria'].required = True
         self.fields['categoria'].empty_label = 'Escolha a categoria'
+        if portal is not None:
+            self.fields['categoria'].queryset = Categoria.all_objects.filter(portal=portal)
+        else:
+            self.fields['categoria'].queryset = Categoria.objects.none()
+        if cidade:
+            self.fields['conteudo'].widget.attrs['placeholder'] = (
+                f'Conte o que está acontecendo em {cidade}...'
+            )
+
+    def clean_categoria(self):
+        categoria = self.cleaned_data.get('categoria')
+        if categoria and self.portal and categoria.portal_id != self.portal.pk:
+            raise forms.ValidationError('Categoria inválida para este portal.')
+        return categoria
 
     def clean_imagem(self):
         return validate_image_file(self.cleaned_data.get('imagem'))
@@ -79,10 +99,7 @@ class ContribuicaoForm(forms.ModelForm):
         return cleaned
 
     def clean_video(self):
-        video = self.cleaned_data.get('video')
-        if video and video.size > 50 * 1024 * 1024:
-            raise forms.ValidationError('O vídeo deve ter no máximo 50 MB.')
-        return video
+        return validate_video_file(self.cleaned_data.get('video'))
 
 
 class CadastroForm(UserCreationForm):
@@ -100,7 +117,7 @@ class CadastroForm(UserCreationForm):
         required=False,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
-            'placeholder': '(69) 99999-9999',
+            'placeholder': '(00) 00000-0000',
         }),
     )
 
