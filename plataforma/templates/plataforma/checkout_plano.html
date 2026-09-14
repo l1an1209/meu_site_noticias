@@ -1,0 +1,44 @@
+{% extends "plataforma/sales_base.html" %}
+{% block title %}{{ cta_plano }} — {{ plano.nome }}{% endblock %}
+{% block content %}
+<section class="py-4 py-lg-5" data-plano-codigo="{{ plano.codigo }}" data-plano-preco="{{ plano.preco_mensal }}">
+    <p class="sales-kicker mb-2">Contratação</p>
+    <h1 class="display-font h2 mb-2">{{ cta_plano }}</h1>
+    <p class="text-muted mb-4">Você escolheu o plano <strong>{{ plano.nome }}</strong>. O pagamento acontece na Kiwify com este plano — não é possível trocar nesta etapa.</p>
+
+    <div class="ds-card p-4 p-lg-5 mx-auto" style="max-width:32rem">
+        {% if plano.codigo == 'profissional' %}
+        <p class="ds-badge ds-badge--info mb-3">Recomendado</p>
+        {% endif %}
+        <h2 class="h4 mb-1">{{ plano.nome }}</h2>
+        <p class="price mb-3">R$ {{ plano.preco_mensal }}<span class="fs-6 text-muted fw-normal">/mês</span></p>
+        <p class="text-muted">{{ plano.descricao }}</p>
+        <ul class="small ps-3 mb-4">
+            {% for item in plano.lista_recursos %}
+            <li class="mb-1">{{ item }}</li>
+            {% endfor %}
+        </ul>
+
+        {% if plano.checkout_url %}
+        <a class="btn btn-contribuir btn-lg w-100"
+           data-checkout-plano="{{ plano.codigo }}"
+           href="{{ plano.checkout_url }}"
+           rel="noopener noreferrer">Pagar o {{ plano.nome }} na Kiwify</a>
+        <p class="small text-muted mt-3 mb-0">Você será enviado ao checkout Kiwify deste plano. O portal só é criado depois do pagamento aprovado.</p>
+        {% else %}
+        <p class="btn btn-ds-ghost w-100 disabled mb-0" data-checkout-plano="{{ plano.codigo }}" data-checkout-pendente="1">
+            Checkout do {{ plano.nome }} em configuração
+        </p>
+        <p class="small text-muted mt-3 mb-0">
+            O link de pagamento deste plano ainda não foi cadastrado.
+            No painel Master, informe o <strong>checkout_url</strong> e o ID de produto/plano Kiwify em
+            <code>{{ plano.codigo }}</code>. Nenhum cliente ou portal é criado nesta tela.
+        </p>
+        {% endif %}
+    </div>
+
+    <p class="text-center mt-4 mb-0">
+        <a href="{% url 'pagina_vendas' %}#planos" class="small">Voltar à comparação de planos</a>
+    </p>
+</section>
+{% endblock %}

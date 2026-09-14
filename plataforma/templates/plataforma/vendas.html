@@ -30,7 +30,9 @@
         {% for plano in planos_venda %}
         <div class="col-md-4">
             <div class="ds-card plan-card {% if plano.codigo == 'profissional' %}plan-card--featured{% endif %}">
-                {% if plano.codigo == 'profissional' %}<p class="ds-badge ds-badge--info mb-2">Mais escolhido</p>{% endif %}
+                {% if plano.codigo == 'profissional' %}
+                <p class="ds-badge ds-badge--info mb-2">Recomendado</p>
+                {% endif %}
                 <h3 class="h5">{{ plano.nome }}</h3>
                 <p class="price mb-1">R$ {{ plano.preco_mensal }}<span class="fs-6 text-muted fw-normal">/mês</span></p>
                 <p class="text-muted">{{ plano.descricao }}</p>
@@ -39,11 +41,9 @@
                     <li class="mb-1">{{ item }}</li>
                     {% endfor %}
                 </ul>
-                {% if plano.checkout_url %}
-                <a class="btn btn-contribuir w-100" href="{{ plano.checkout_url }}" rel="noopener">Assinar na Kiwify</a>
-                {% else %}
-                <span class="btn btn-ds-ghost w-100 disabled">Checkout em configuração</span>
-                {% endif %}
+                <a class="btn btn-contribuir w-100"
+                   data-plano="{{ plano.codigo }}"
+                   href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com o {{ plano.nome }}</a>
             </div>
         </div>
         {% empty %}

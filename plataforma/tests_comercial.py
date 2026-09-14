@@ -223,6 +223,60 @@ class ComercialKiwifyTests(TestCase):
         self.assertContains(resp, 'sales-hero')
         self.assertNotContains(resp, 'Este portal está temporariamente fora do ar')
         self.assertTrue(Plano.objects.filter(codigo='basico', preco_mensal='59.90').exists())
+        self.assertContains(resp, 'Começar com o Básico')
+        self.assertContains(resp, 'Começar com o Profissional')
+        self.assertContains(resp, 'Começar com o Premium')
+        self.assertContains(resp, 'Recomendado')
+        html = resp.content.decode()
+        self.assertIn(reverse('pagina_checkout_plano', args=['basico']), html)
+        self.assertIn(reverse('pagina_checkout_plano', args=['profissional']), html)
+        self.assertIn(reverse('pagina_checkout_plano', args=['premium']), html)
+        self.assertNotIn(reverse('pagina_checkout_plano', args=['inicial']), html)
+
+    def test_checkout_identifica_cada_plano_sem_confundir(self):
+        urls = {
+            'basico': 'https://pay.kiwify.com.br/ck-basico',
+            'profissional': 'https://pay.kiwify.com.br/ck-pro',
+            'premium': 'https://pay.kiwify.com.br/ck-premium',
+        }
+        nomes = {
+            'basico': 'Básico',
+            'profissional': 'Profissional',
+            'premium': 'Premium',
+        }
+        precos = {
+            'basico': '59,90',
+            'profissional': '79,90',
+            'premium': '99,90',
+        }
+        for codigo, url in urls.items():
+            Plano.objects.filter(codigo=codigo).update(checkout_url=url)
+
+        for codigo, nome in nomes.items():
+            resp = self.client.get(
+                reverse('pagina_checkout_plano', args=[codigo]),
+                HTTP_HOST='localhost',
+            )
+            self.assertEqual(resp.status_code, 200, codigo)
+            html = resp.content.decode()
+            self.assertContains(resp, f'Começar com o {nome}')
+            self.assertContains(resp, precos[codigo])
+            self.assertIn(f'data-plano-codigo="{codigo}"', html)
+            self.assertIn(f'data-checkout-plano="{codigo}"', html)
+            self.assertIn(urls[codigo], html)
+            self.assertIn(f'Pagar o {nome} na Kiwify', html)
+            for outro, outro_url in urls.items():
+                if outro == codigo:
+                    continue
+                self.assertNotIn(outro_url, html)
+                self.assertNotIn(f'data-checkout-plano="{outro}"', html)
+                self.assertNotIn(f'data-plano-codigo="{outro}"', html)
+                self.assertNotContains(resp, f'Começar com o {nomes[outro]}')
+
+        resp = self.client.get('/comece/inicial/', HTTP_HOST='localhost')
+        self.assertEqual(resp.status_code, 404)
+        resp = self.client.get('/comece/plano-inventado/', HTTP_HOST='localhost')
+        self.assertEqual(resp.status_code, 404)
 
     def test_slug_reservado(self):
         self.assertFalse(slug_disponivel('admin'))

@@ -338,6 +338,7 @@ body.has-mobile-nav {
 .plan-card--featured {
     border-color: var(--primary, #0f766e);
     box-shadow: var(--ds-shadow-md);
+    position: relative;
 }
 .plan-card .price {
     font-family: var(--ds-serif);

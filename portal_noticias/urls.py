@@ -6,12 +6,13 @@ from django.conf import settings
 from django.conf.urls.static import static
 from noticias.sitemaps import sitemaps
 from noticias.views_seo import RobotsTxtView
-from plataforma.views_vendas import PaginaVendasView
+from plataforma.views_vendas import PaginaCheckoutPlanoView, PaginaVendasView
 from plataforma.views_webhooks import kiwify_webhook
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('webhooks/kiwify/', kiwify_webhook, name='webhook_kiwify'),
+    path('comece/<slug:codigo>/', PaginaCheckoutPlanoView.as_view(), name='pagina_checkout_plano'),
     path('comece/', PaginaVendasView.as_view(), name='pagina_vendas'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', RobotsTxtView.as_view(), name='robots_txt'),
