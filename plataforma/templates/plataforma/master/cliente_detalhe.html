@@ -6,7 +6,30 @@
 <div class="ds-card p-4 mb-3">
     <p class="section-kicker">Cliente</p>
     <p class="mb-1">Telefone: {{ item.telefone|default:"—" }}</p>
-    <p class="mb-0">Status: <span class="ds-badge {% if item.status == 'ativo' %}ds-badge--ok{% else %}ds-badge--muted{% endif %}">{{ item.get_status_display }}</span> · Desde {{ item.criado_em|date:"d/m/Y" }}</p>
+    <p class="mb-1">Status: <span class="ds-badge {% if item.status == 'ativo' %}ds-badge--ok{% else %}ds-badge--muted{% endif %}">{{ item.get_status_display }}</span> · Desde {{ item.criado_em|date:"d/m/Y" }}</p>
+    <p class="mb-1">Usuário: {{ usuario.username|default:"ainda sem usuário" }}</p>
+    <p class="mb-2">
+        E-mail:
+        {% if ultimo_email and ultimo_email.status == 'enviado' %}🟢 Enviado
+        {% elif ultimo_email and ultimo_email.status == 'falhou' %}🔴 Falhou
+        {% elif ultimo_email and ultimo_email.status == 'nao_configurado' %}🔴 Falhou
+        {% else %}⚪ Não enviado{% endif %}
+        {% if ultimo_email %}
+        · {{ ultimo_email.get_tipo_display }}
+            · {% if ultimo_email.enviado_em %}{{ ultimo_email.enviado_em|date:"d/m/Y H:i" }}{% else %}{{ ultimo_email.criado_em|date:"d/m/Y H:i" }}{% endif %}
+        · {{ tentativas_acesso }} tentativa{{ tentativas_acesso|pluralize }}
+        {% endif %}
+    </p>
+    {% if usuario %}
+        {% if ultimo_email and ultimo_email.status == 'enviado' %}
+        <span class="ds-badge ds-badge--ok me-2">Enviado</span>
+        {% endif %}
+        {% if ultimo_email and ultimo_email.status == 'falhou' %}
+        <a class="btn btn-contribuir" href="{% url 'master_cliente_reenviar' item.pk %}">Tentar novamente</a>
+        {% else %}
+        <a class="btn btn-ds-ghost" href="{% url 'master_cliente_reenviar' item.pk %}">Reenviar acesso</a>
+        {% endif %}
+    {% endif %}
 </div>
 <h2 class="h6">Portais</h2>
 {% for p in portais %}
@@ -18,8 +41,38 @@
 <h2 class="h6 mt-4">Assinaturas</h2>
 {% for a in assinaturas %}
 <div class="ds-card p-3 mb-2">
-    <span class="sub-status is-{{ a.status }}">{{ a.get_status_display }}</span>
-    · {{ a.portal.slug }} · {{ a.plano.nome }}
+    <span class="sub-status is-{{ a.status }} ds-badge
+        {% if a.status == 'ativa' %}ds-badge--ok
+        {% elif a.status == 'pagamento_pendente' or a.status == 'aguardando_pagamento' %}ds-badge--warn
+        {% elif a.status == 'atrasada' %}ds-badge--warn
+        {% else %}ds-badge--danger{% endif %}">
+        {% if a.status == 'ativa' %}🟢 Ativa
+        {% elif a.status == 'pagamento_pendente' or a.status == 'aguardando_pagamento' %}🟡 Pagamento pendente
+        {% elif a.status == 'atrasada' %}🟠 Atrasada
+        {% elif a.status == 'cancelada' %}🔴 Cancelada
+        {% elif a.status == 'bloqueada' %}🔴 Bloqueada
+        {% else %}{{ a.get_status_display }}{% endif %}
+    </span>
+    · {{ a.portal.slug }} · {{ a.plano.nome }} · R$ {{ a.plano.preco_mensal }}
+    <div class="small text-muted mt-1">
+        Início: {{ a.iniciado_em|date:"d/m/Y H:i"|default:"—" }}
+        · Próxima cobrança: {{ a.proximo_vencimento|date:"d/m/Y H:i"|default:"—" }}
+        · Pedido: {{ a.kiwify_order_id|default:"—" }}
+        · Assinatura Kiwify: {{ a.kiwify_subscription_id|default:"—" }}
+    </div>
 </div>
 {% empty %}<div class="empty-state"><p class="empty-title">Nenhuma assinatura neste cliente.</p></div>{% endfor %}
+<h2 class="h6 mt-4">Linha do tempo</h2>
+{% if timeline %}
+<ol class="ops-timeline">
+    {% for ev in timeline %}
+    <li>
+        <time>{{ ev.quando|date:"d/m H:i" }}</time>
+        <span>{{ ev.texto }}</span>
+    </li>
+    {% endfor %}
+</ol>
+{% else %}
+<p class="text-muted">Ainda não há eventos registrados para este cliente.</p>
+{% endif %}
 {% endblock %}

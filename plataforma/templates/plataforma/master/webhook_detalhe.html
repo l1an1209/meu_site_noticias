@@ -1,0 +1,31 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Webhook{% endblock %}
+{% block heading %}{{ item.tipo }}{% endblock %}
+{% block subheading %}{{ item.criado_em|date:"d/m/Y H:i" }} · {{ item.id_externo }}{% endblock %}
+{% block content %}
+<div class="ds-card p-4 mb-3">
+    <p class="mb-1">
+        Status:
+        {% if item.status == 'processado' %}🟢 Processado
+        {% elif item.status == 'erro' %}🔴 Falhou
+        {% elif item.status == 'recebido' %}🟡 Pendente
+        {% else %}{{ item.get_status_display }}{% endif %}
+        · {{ item.tentativas }} tentativa{{ item.tentativas|pluralize }}
+    </p>
+    <p class="mb-1">Pedido: {{ item.order_id_publico }} · Assinatura: {{ item.subscription_id_publico|default:"—" }}</p>
+    {% if assinatura %}
+    <p class="mb-1">Cliente: <a href="{% url 'master_cliente' assinatura.cliente_id %}">{{ assinatura.cliente.email }}</a>
+        · <a href="{% url 'master_assinaturas' %}?q={{ assinatura.kiwify_order_id }}">Ver assinatura</a></p>
+    {% endif %}
+    {% if item.erro %}<p class="text-danger mb-1">{{ item.erro }}</p>{% endif %}
+    {% if item.processado and item.status == 'processado' %}
+    <p class="mb-0">Este evento já foi processado.</p>
+    {% else %}
+    <a class="btn btn-contribuir mt-2" href="{% url 'master_webhook_reprocessar' item.pk %}">Processar novamente</a>
+    {% endif %}
+</div>
+<div class="ds-card p-4">
+    <h2 class="h6">Payload (dados mascarados)</h2>
+    <pre class="small mb-0 ops-payload">{{ payload_seguro }}</pre>
+</div>
+{% endblock %}

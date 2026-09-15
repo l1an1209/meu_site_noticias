@@ -1,0 +1,25 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Saúde do sistema{% endblock %}
+{% block heading %}Saúde do sistema{% endblock %}
+{% block subheading %}Diagnóstico operacional. O SMTP não envia e-mail automaticamente nesta página.{% endblock %}
+{% block content %}
+<div class="ds-card p-0 overflow-hidden">
+    {% for check in checks %}
+    <div class="d-flex justify-content-between flex-wrap gap-2 p-3 border-bottom">
+        <div>
+            <strong>
+                {% if check.nivel == 'ok' %}🟢
+                {% elif check.nivel == 'atencao' %}🟡
+                {% else %}🔴{% endif %}
+                {{ check.titulo }}
+            </strong>
+            <div class="small text-muted">{{ check.detalhe }}</div>
+        </div>
+        <span class="ds-badge {% if check.nivel == 'ok' %}ds-badge--ok{% elif check.nivel == 'atencao' %}ds-badge--warn{% else %}ds-badge--danger{% endif %}">
+            {% if check.nivel == 'ok' %}OK{% elif check.nivel == 'atencao' %}Atenção{% else %}Falha{% endif %}
+        </span>
+    </div>
+    {% endfor %}
+</div>
+<p class="small text-muted mt-3 mb-0">Para validar o Gmail/SMTP de verdade, use Configuração de e-mail → Enviar e-mail de teste.</p>
+{% endblock %}

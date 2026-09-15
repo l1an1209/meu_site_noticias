@@ -1,0 +1,13 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}{{ titulo }}{% endblock %}
+{% block heading %}{{ titulo }}{% endblock %}
+{% block content %}
+<div class="ds-card p-4" style="max-width:560px">
+    <p class="mb-3">{{ mensagem }}</p>
+    <form method="post" action="{{ action }}" class="js-loading-form">
+        {% csrf_token %}
+        <button class="btn btn-contribuir" type="submit">Confirmar</button>
+        <a class="btn btn-ds-ghost" href="{{ voltar|default:'javascript:history.back()' }}">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

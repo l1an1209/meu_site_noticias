@@ -18,7 +18,7 @@ from django.views.generic import CreateView, TemplateView
 
 from plataforma.security import log_audit, throttle_blocked, throttle_response
 
-from .forms import CadastroForm, LoginForm
+from .forms import CadastroForm, LoginForm, RecuperarSenhaForm
 from .models import Perfil
 
 
@@ -135,6 +135,7 @@ class RecuperarSenhaView(PortalAuthContextMixin, PasswordResetView):
     email_template_name = 'noticias/auth/password_reset_email.txt'
     subject_template_name = 'noticias/auth/password_reset_subject.txt'
     success_url = reverse_lazy('password_reset_done')
+    form_class = RecuperarSenhaForm
 
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'POST' and throttle_blocked(

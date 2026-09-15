@@ -1,0 +1,176 @@
+/* Design system — tokens e componentes reutilizáveis (público + painéis) */
+:root {
+    --ds-font: 'Inter', system-ui, -apple-system, sans-serif;
+    --ds-serif: 'Source Serif 4', 'Playfair Display', Georgia, serif;
+    --ds-radius-sm: 8px;
+    --ds-radius: 12px;
+    --ds-radius-lg: 16px;
+    --ds-radius-pill: 999px;
+    --ds-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+    --ds-shadow-md: 0 4px 20px rgba(15, 23, 42, 0.08);
+    --ds-space-1: 0.25rem;
+    --ds-space-2: 0.5rem;
+    --ds-space-3: 0.75rem;
+    --ds-space-4: 1rem;
+    --ds-space-5: 1.5rem;
+    --ds-space-6: 2rem;
+    --ds-space-8: 3rem;
+    --ds-text: #0f172a;
+    --ds-muted: #64748b;
+    --ds-border: #e8edf3;
+    --ds-bg: #f6f7f9;
+    --ds-surface: #ffffff;
+    --ds-danger: #dc2626;
+    --ds-warning: #d97706;
+    --ds-success: #059669;
+    --ds-info: #2563eb;
+}
+
+body {
+    font-family: var(--ds-font);
+    color: var(--ds-text);
+    -webkit-font-smoothing: antialiased;
+}
+
+.h-display,
+.display-font {
+    font-family: var(--ds-serif);
+    font-weight: 650;
+    letter-spacing: -0.03em;
+}
+
+/* Botões */
+.btn-ds,
+.btn-contribuir {
+    --bs-btn-border-radius: var(--ds-radius-pill);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    padding: 0.55rem 1.25rem;
+    border: 0;
+    background: var(--primary, #0d9488);
+    color: #fff;
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+.btn-ds:hover,
+.btn-contribuir:hover {
+    filter: brightness(0.94);
+    color: #fff;
+    transform: translateY(-1px);
+}
+.btn-ds-ghost {
+    background: transparent;
+    color: var(--brand-navy, #1a365d);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius-pill);
+    font-weight: 600;
+    padding: 0.5rem 1.1rem;
+}
+.btn-ds-ghost:hover {
+    background: var(--ds-bg);
+    color: var(--brand-navy, #1a365d);
+}
+
+/* Inputs */
+.form-control,
+.form-select {
+    border-radius: var(--ds-radius-sm);
+    border-color: var(--ds-border);
+    padding: 0.65rem 0.85rem;
+    font-size: 0.95rem;
+}
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--primary, #0d9488);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary, #0d9488) 22%, transparent);
+}
+
+/* Cards / badges / alerts */
+.ds-card {
+    background: var(--ds-surface);
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius);
+    box-shadow: var(--ds-shadow);
+}
+.ds-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--ds-radius-pill);
+    background: color-mix(in srgb, var(--primary, #0d9488) 12%, #fff);
+    color: var(--brand-navy, #0f172a);
+}
+.ds-badge--ok { background: #ecfdf5; color: #047857; }
+.ds-badge--warn { background: #fffbeb; color: #b45309; }
+.ds-badge--danger { background: #fef2f2; color: #b91c1c; }
+.ds-badge--muted { background: #f1f5f9; color: #475569; }
+
+.alert {
+    border: 0;
+    border-radius: var(--ds-radius);
+    box-shadow: var(--ds-shadow);
+}
+
+.dropdown-menu {
+    border: 1px solid var(--ds-border);
+    border-radius: var(--ds-radius);
+    box-shadow: var(--ds-shadow-md);
+    padding: 0.35rem;
+}
+.dropdown-item {
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.modal-content {
+    border: 0;
+    border-radius: var(--ds-radius-lg);
+    box-shadow: var(--ds-shadow-md);
+}
+
+.table {
+    --bs-table-bg: transparent;
+}
+.table thead th {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ds-muted);
+    font-weight: 700;
+    border-bottom-width: 1px;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1.5rem;
+    color: var(--ds-muted);
+    background: var(--ds-surface);
+    border: 1px dashed var(--ds-border);
+    border-radius: var(--ds-radius-lg);
+}
+.empty-state i { font-size: 2rem; margin-bottom: 0.75rem; opacity: 0.45; }
+
+.skeleton {
+    background: linear-gradient(90deg, #eef2f6 25%, #f8fafc 50%, #eef2f6 75%);
+    background-size: 200% 100%;
+    animation: ds-shimmer 1.2s ease infinite;
+    border-radius: 8px;
+}
+@keyframes ds-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+.pagination-modern .page-link {
+    border: 0;
+    margin: 0 0.15rem;
+    border-radius: 10px;
+    color: var(--ds-text);
+}
+.pagination-modern .page-item.active .page-link {
+    background: var(--primary, #0d9488);
+}

@@ -1,0 +1,34 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Auditoria{% endblock %}
+{% block heading %}Auditoria{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Ação, objeto ou usuário" style="max-width:18rem">
+    <button class="btn btn-ds-ghost">Filtrar</button>
+</form>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th>Data</th><th>Usuário</th><th>Ação</th><th>Objeto</th><th>Portal</th></tr></thead>
+    <tbody>
+    {% for r in registros %}
+    <tr>
+        <td>{{ r.criado_em|date:"d/m/Y H:i" }}</td>
+        <td>{{ r.usuario.username|default:"sistema" }}</td>
+        <td>{{ r.acao }}</td>
+        <td>{{ r.objeto }} {% if r.objeto_id %}#{{ r.objeto_id }}{% endif %}</td>
+        <td>{% if r.portal %}<a href="{% url 'master_portal' r.portal_id %}">{{ r.portal.slug }}</a>{% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5"><div class="empty-state my-3"><p class="empty-title">Nenhum registro.</p></div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% if is_paginated %}
+<div class="d-flex gap-2 mt-3">
+    {% if page_obj.has_previous %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="align-self-center small text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

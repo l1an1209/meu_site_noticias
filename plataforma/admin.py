@@ -1,6 +1,6 @@
 from django.contrib import admin
 from plataforma.admin_mixins import SuperuserOnlyAdminMixin
-from .models import AuditLog, Assinatura, Cliente, Membership, Plano, Portal, WebhookEvent
+from .models import AuditLog, Assinatura, Cliente, EmailLog, Membership, Plano, Portal, WebhookEvent
 
 
 @admin.register(Plano)
@@ -98,13 +98,31 @@ class AssinaturaAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
 
 @admin.register(WebhookEvent)
 class WebhookEventAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
-    list_display = ('criado_em', 'provedor', 'tipo', 'id_externo', 'status', 'processado')
+    list_display = ('criado_em', 'provedor', 'tipo', 'id_externo', 'status', 'processado', 'tentativas')
     list_filter = ('provedor', 'status', 'tipo')
     search_fields = ('id_externo', 'tipo')
     readonly_fields = (
         'provedor', 'tipo', 'id_externo', 'payload', 'status',
-        'processado', 'erro', 'criado_em', 'processado_em',
+        'processado', 'erro', 'tentativas', 'criado_em', 'processado_em',
     )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(EmailLog)
+class EmailLogAdmin(SuperuserOnlyAdminMixin, admin.ModelAdmin):
+    list_display = ('criado_em', 'tipo', 'destinatario', 'status', 'tentativas', 'cliente')
+    list_filter = ('tipo', 'status')
+    search_fields = ('destinatario', 'assunto')
+    readonly_fields = (
+        'cliente', 'usuario', 'portal', 'tipo', 'destinatario', 'assunto',
+        'status', 'erro', 'tentativas', 'enviado_em', 'criado_em', 'atualizado_em',
+    )
+    date_hierarchy = 'criado_em'
 
     def has_add_permission(self, request):
         return False

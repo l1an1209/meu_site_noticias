@@ -292,3 +292,39 @@
     .stat-grid { grid-template-columns: 1fr; }
     .app-topbar { padding: 0.7rem 0.85rem; }
 }
+
+.ops-problems {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.ops-problems li {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #eef2f6;
+}
+.ops-timeline {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.ops-timeline li {
+    display: grid;
+    grid-template-columns: 6.5rem 1fr;
+    gap: 0.75rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #eef2f6;
+}
+.ops-timeline time {
+    color: #64748b;
+    font-size: 0.85rem;
+}
+.ops-payload {
+    white-space: pre-wrap;
+    word-break: break-word;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 1rem;
+}

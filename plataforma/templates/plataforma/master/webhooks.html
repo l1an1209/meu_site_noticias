@@ -1,0 +1,53 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Webhooks{% endblock %}
+{% block heading %}Webhooks{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="order_id ou tipo" style="max-width:16rem">
+    <select class="form-select" name="status" style="max-width:12rem">
+        <option value="">Todos</option>
+        <option value="processado" {% if request.GET.status == 'processado' %}selected{% endif %}>Processado</option>
+        <option value="erro" {% if request.GET.status == 'erro' %}selected{% endif %}>Falhou</option>
+        <option value="recebido" {% if request.GET.status == 'recebido' %}selected{% endif %}>Pendente</option>
+        <option value="ignorado" {% if request.GET.status == 'ignorado' %}selected{% endif %}>Ignorado</option>
+    </select>
+    <button class="btn btn-ds-ghost">Filtrar</button>
+</form>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead><tr><th>Data</th><th>Tipo</th><th>Pedido</th><th>Assinatura</th><th>Cliente</th><th>Status</th><th>Tentativas</th><th></th></tr></thead>
+    <tbody>
+    {% for e in eventos %}
+    <tr>
+        <td>{{ e.criado_em|date:"d/m/Y H:i" }}</td>
+        <td>{{ e.tipo }}</td>
+        <td>{{ e.order_id_publico }}</td>
+        <td>{{ e.subscription_id_publico|default:"—" }}</td>
+        <td>
+            {% if e.assinatura_rel %}
+            <a href="{% url 'master_cliente' e.assinatura_rel.cliente_id %}">{{ e.assinatura_rel.cliente.email }}</a>
+            {% else %}—{% endif %}
+        </td>
+        <td>
+            {% if e.status == 'processado' %}🟢 Processado
+            {% elif e.status == 'erro' %}🔴 Falhou
+            {% elif e.status == 'recebido' %}🟡 Pendente
+            {% else %}{{ e.get_status_display }}{% endif %}
+        </td>
+        <td>{{ e.tentativas }}</td>
+        <td><a href="{% url 'master_webhook' e.pk %}">Ver detalhes</a></td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="8"><div class="empty-state my-3"><p class="empty-title">Nenhum webhook recebido.</p></div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% if is_paginated %}
+<div class="d-flex gap-2 mt-3">
+    {% if page_obj.has_previous %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="align-self-center small text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

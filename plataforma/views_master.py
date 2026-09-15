@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
-from django.db.models import Count, Q
+from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.views import View
@@ -9,9 +9,13 @@ from django.views.generic import DetailView, ListView, TemplateView, UpdateView
 
 from noticias.models import Noticia
 from plataforma.metrics import format_mb, storage_bytes_portal
-from plataforma.models import Assinatura, Cliente, Membership, Plano, Portal
+from plataforma.models import Assinatura, Cliente, EmailLog, Membership, Plano, Portal, WebhookEvent
 from plataforma.permissions import is_platform_master
+from plataforma.security import log_audit
+from plataforma.services.acesso import usuario_do_cliente
 from plataforma.services.onboarding import master_alterar_plano, master_definir_status_portal
+from plataforma.services.saude import problemas_operacao
+from plataforma.services.timeline import timeline_cliente
 
 
 class MasterRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -40,14 +44,27 @@ class MasterHomeView(MasterRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         portais = Portal.objects.select_related('plano', 'cliente')
+        ativas = Assinatura.objects.filter(status=Assinatura.STATUS_ATIVA)
+        receita = ativas.aggregate(total=Sum('plano__preco_mensal'))['total']
         ctx.update({
             'total_portais': portais.count(),
             'portais_ativos': portais.filter(status=Portal.STATUS_ATIVO).count(),
             'portais_bloqueados': portais.filter(status=Portal.STATUS_BLOQUEADO).count(),
             'total_noticias': Noticia.all_objects.count(),
             'total_membros': Membership.objects.count(),
-            'total_clientes': Cliente.objects.count(),
-            'assinaturas_ativas': Assinatura.objects.filter(status=Assinatura.STATUS_ATIVA).count(),
+            'total_clientes': Cliente.objects.filter(status=Cliente.STATUS_ATIVO).count(),
+            'assinaturas_ativas': ativas.count(),
+            'pagamentos_pendentes': Assinatura.objects.filter(
+                status__in=[Assinatura.STATUS_PENDENTE, Assinatura.STATUS_AGUARDANDO],
+            ).count(),
+            'assinaturas_atrasadas': Assinatura.objects.filter(
+                status=Assinatura.STATUS_ATRASADA,
+            ).count(),
+            'clientes_bloqueados': Cliente.objects.filter(status=Cliente.STATUS_INATIVO).count(),
+            'emails_falha': EmailLog.objects.filter(status=EmailLog.STATUS_FALHOU).count(),
+            'webhooks_erro': WebhookEvent.objects.filter(status=WebhookEvent.STATUS_ERRO).count(),
+            'receita_recorrente': receita,
+            'problemas': problemas_operacao(),
             'portais': list(portais[:50]),
         })
         for p in ctx['portais']:
@@ -104,7 +121,16 @@ class MasterClientesView(MasterRequiredMixin, ListView):
     app_active = 'clientes'
 
     def get_queryset(self):
-        qs = Cliente.objects.annotate(n_portais=Count('portais', distinct=True)).order_by('nome')
+        ultimo = EmailLog.objects.filter(
+            Q(cliente_id=OuterRef('pk')) | Q(destinatario=OuterRef('email')),
+        ).order_by('-criado_em')
+        qs = Cliente.objects.annotate(
+            n_portais=Count('portais', distinct=True),
+            ultimo_email_status=Subquery(ultimo.values('status')[:1]),
+            ultimo_email_tipo=Subquery(ultimo.values('tipo')[:1]),
+            ultimo_email_em=Subquery(ultimo.values('enviado_em')[:1]),
+            ultimo_email_tentativas=Subquery(ultimo.values('tentativas')[:1]),
+        ).order_by('nome')
         q = self.request.GET.get('q', '').strip()
         if q:
             qs = qs.filter(Q(nome__icontains=q) | Q(email__icontains=q) | Q(telefone__icontains=q))
@@ -124,6 +150,12 @@ class MasterClienteDetailView(MasterRequiredMixin, DetailView):
         ctx = super().get_context_data(**kwargs)
         ctx['portais'] = self.object.portais.select_related('plano')
         ctx['assinaturas'] = self.object.assinaturas.select_related('portal', 'plano')
+        ctx['usuario'] = usuario_do_cliente(self.object)
+        ctx['ultimo_email'] = self.object.emails.order_by('-criado_em').first()
+        ctx['tentativas_acesso'] = self.object.emails.filter(
+            tipo__in=[EmailLog.TIPO_ONBOARDING, EmailLog.TIPO_REENVIO],
+        ).count()
+        ctx['timeline'] = timeline_cliente(self.object)
         return ctx
 
 
@@ -145,6 +177,8 @@ class MasterAssinaturasView(MasterRequiredMixin, ListView):
                 Q(cliente__email__icontains=q)
                 | Q(cliente__nome__icontains=q)
                 | Q(portal__slug__icontains=q)
+                | Q(kiwify_order_id__icontains=q)
+                | Q(kiwify_subscription_id__icontains=q)
             )
         return qs
 
@@ -173,6 +207,10 @@ class MasterPlanoUpdateView(MasterRequiredMixin, UpdateView):
         return ctx
 
     def form_valid(self, form):
+        log_audit(
+            self.request, 'plano_alterar', objeto='Plano', objeto_id=self.object.pk,
+            detalhes={'codigo': self.object.codigo},
+        )
         messages.success(self.request, 'Plano atualizado.')
         return super().form_valid(form)
 

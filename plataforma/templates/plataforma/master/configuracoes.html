@@ -1,0 +1,20 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Configuração de e-mail{% endblock %}
+{% block heading %}Configuração de e-mail{% endblock %}
+{% block subheading %}Teste SMTP somente para operadores Master{% endblock %}
+{% block content %}
+<div class="ds-card p-4 mb-3" style="max-width:640px">
+    <p class="mb-2">
+        {% if smtp.nivel == 'ok' %}🟢 SMTP configurado
+        {% elif smtp.nivel == 'atencao' %}🟡 {{ smtp.titulo }}
+        {% else %}🔴 {{ smtp.titulo }}{% endif %}
+    </p>
+    <p class="small text-muted">{{ smtp.detalhe }}</p>
+    <form method="post" action="{% url 'master_email_teste' %}">
+        {% csrf_token %}
+        <label class="form-label" for="destino">E-mail de destino</label>
+        <input class="form-control mb-3" id="destino" name="destino" type="email" value="{{ destino }}" required>
+        <button class="btn btn-contribuir" type="submit">Enviar e-mail de teste</button>
+    </form>
+</div>
+{% endblock %}

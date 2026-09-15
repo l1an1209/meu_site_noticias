@@ -5,8 +5,8 @@ from django.utils.text import slugify
 from django.utils.timezone import now
 
 from noticias.models import Categoria
-from noticias.services.email_notify import enviar_notificacao_admin
-from plataforma.models import Assinatura, Cliente, Membership, Plano, Portal
+from plataforma.models import Assinatura, Cliente, EmailLog, Membership, Plano, Portal
+from plataforma.services.acesso import enviar_acesso
 from plataforma.security import log_audit
 from plataforma.services.kiwify import extrair_assinatura_kiwify, extrair_cliente
 from plataforma.slugs import gerar_slug_portal
@@ -77,37 +77,14 @@ def _sincronizar_portal_pagamento(portal, assinatura):
     ])
 
 
-def _enviar_acesso(usuario, senha, portal, gerou_senha):
-    host = portal.host_previsto
-    linhas = [
-        f'Olá, {usuario.get_short_name() or usuario.username}.',
-        '',
-        f'Seu portal {portal.nome} está pronto.',
-        f'Endereço futuro: https://{host}/',
-        f'Painel: https://{host}/app/',
-        f'Usuário: {usuario.username}',
-    ]
-    if gerou_senha:
-        linhas.append(f'Senha temporária: {senha}')
-        linhas.append('Altere a senha no primeiro acesso em /senha/alterar/')
-    else:
-        linhas.append('Use a senha da sua conta existente.')
-    linhas.extend(['', 'Se o DNS ainda não estiver no ar, acesse pelo Host configurado no ambiente de testes.'])
-    enviar_notificacao_admin(
-        f'[{portal.nome}] Acesso ao seu portal',
-        '\n'.join(linhas),
+def _enviar_acesso(usuario, portal, request=None, cliente=None):
+    return enviar_acesso(
+        usuario,
         portal,
+        request=request,
+        tipo=EmailLog.TIPO_ONBOARDING,
+        cliente=cliente,
     )
-    if usuario.email:
-        from django.conf import settings
-        from django.core.mail import send_mail
-        send_mail(
-            f'Acesso ao {portal.nome}',
-            '\n'.join(linhas),
-            getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@plataforma.local'),
-            [usuario.email],
-            fail_silently=True,
-        )
 
 
 @transaction.atomic
@@ -161,17 +138,13 @@ def provisionar_pagamento_aprovado(payload, request=None):
     )
 
     user = User.objects.filter(email__iexact=dados_cli['email']).first()
-    senha = None
-    gerou = False
     if user is None:
-        senha = get_random_string(12)
         user = User.objects.create_user(
             username=_username_de_email(dados_cli['email']),
             email=dados_cli['email'],
-            password=senha,
+            password=get_random_string(12),
             first_name=dados_cli['nome'][:30],
         )
-        gerou = True
 
     Membership.objects.get_or_create(
         usuario=user,
@@ -198,7 +171,15 @@ def provisionar_pagamento_aprovado(payload, request=None):
         portal=portal,
         detalhes={'email': cliente.email, 'slug': portal.slug},
     )
-    _enviar_acesso(user, senha, portal, gerou)
+    usuario = user
+    portal_ref = portal
+    cliente_ref = cliente
+    req = request
+
+    def _enviar():
+        _enviar_acesso(usuario, portal_ref, request=req, cliente=cliente_ref)
+
+    transaction.on_commit(_enviar)
     return {
         'criado': True,
         'portal': portal,

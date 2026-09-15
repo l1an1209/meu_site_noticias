@@ -3,39 +3,57 @@
 {% block heading %}Assinaturas{% endblock %}
 {% block content %}
 <form class="app-toolbar" method="get">
-    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Cliente ou slug" style="max-width:16rem">
+    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Cliente, slug, pedido ou assinatura" style="max-width:18rem">
     <select class="form-select" name="status" style="max-width:14rem">
         <option value="">Todos os status</option>
-        <option value="ativa">Ativa</option>
-        <option value="pagamento_pendente">Pendente</option>
-        <option value="atrasada">Atrasada</option>
-        <option value="aguardando_pagamento">Aguardando</option>
-        <option value="cancelada">Cancelada</option>
-        <option value="bloqueada">Bloqueada</option>
+        <option value="ativa" {% if request.GET.status == 'ativa' %}selected{% endif %}>Ativa</option>
+        <option value="pagamento_pendente" {% if request.GET.status == 'pagamento_pendente' %}selected{% endif %}>Pendente</option>
+        <option value="atrasada" {% if request.GET.status == 'atrasada' %}selected{% endif %}>Atrasada</option>
+        <option value="aguardando_pagamento" {% if request.GET.status == 'aguardando_pagamento' %}selected{% endif %}>Aguardando</option>
+        <option value="cancelada" {% if request.GET.status == 'cancelada' %}selected{% endif %}>Cancelada</option>
+        <option value="bloqueada" {% if request.GET.status == 'bloqueada' %}selected{% endif %}>Bloqueada</option>
     </select>
     <button class="btn btn-ds-ghost">Filtrar</button>
 </form>
 <div class="app-table-wrap">
 <table class="table align-middle">
-    <thead><tr><th>Cliente</th><th>Portal</th><th>Plano</th><th>Status</th><th>Próxima cobrança</th></tr></thead>
+    <thead><tr><th>Cliente</th><th>Portal</th><th>Plano</th><th>Valor</th><th>Status</th><th>Início</th><th>Próxima cobrança</th><th>Kiwify</th></tr></thead>
     <tbody>
     {% for a in assinaturas %}
     <tr>
         <td><a href="{% url 'master_cliente' a.cliente_id %}">{{ a.cliente.nome }}</a></td>
         <td><a href="{% url 'master_portal' a.portal_id %}">{{ a.portal.slug }}</a></td>
         <td>{{ a.plano.nome }}</td>
+        <td>R$ {{ a.plano.preco_mensal }}</td>
         <td>
             <span class="sub-status is-{{ a.status }} ds-badge
                 {% if a.status == 'ativa' %}ds-badge--ok
-                {% elif a.status == 'bloqueada' or a.status == 'cancelada' or a.status == 'atrasada' %}ds-badge--danger
-                {% else %}ds-badge--warn{% endif %}">{{ a.get_status_display }}</span>
+                {% elif a.status == 'pagamento_pendente' or a.status == 'aguardando_pagamento' %}ds-badge--warn
+                {% elif a.status == 'atrasada' %}ds-badge--warn
+                {% else %}ds-badge--danger{% endif %}">
+                {% if a.status == 'ativa' %}🟢 Ativa
+                {% elif a.status == 'pagamento_pendente' or a.status == 'aguardando_pagamento' %}🟡 Pagamento pendente
+                {% elif a.status == 'atrasada' %}🟠 Atrasada
+                {% elif a.status == 'cancelada' %}🔴 Cancelada
+                {% elif a.status == 'bloqueada' %}🔴 Bloqueada
+                {% else %}{{ a.get_status_display }}{% endif %}
+            </span>
         </td>
+        <td>{{ a.iniciado_em|date:"d/m/Y"|default:"—" }}</td>
         <td>{{ a.proximo_vencimento|date:"d/m/Y"|default:"—" }}</td>
+        <td class="small">{{ a.kiwify_subscription_id|default:a.kiwify_order_id|default:"—" }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="5"><div class="empty-state my-3"><p class="empty-title">Nenhuma assinatura encontrada.</p></div></td></tr>
+    <tr><td colspan="8"><div class="empty-state my-3"><p class="empty-title">Nenhuma assinatura encontrada.</p></div></td></tr>
     {% endfor %}
     </tbody>
 </table>
 </div>
+{% if is_paginated %}
+<div class="d-flex gap-2 mt-3">
+    {% if page_obj.has_previous %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="align-self-center small text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError as DjangoValidationError
 from .image_utils import (
@@ -186,3 +186,36 @@ class ComentarioForm(forms.ModelForm):
             }),
         }
         labels = {'texto': ''}
+
+
+class RecuperarSenhaForm(PasswordResetForm):
+    def send_mail(
+        self,
+        subject_template_name,
+        email_template_name,
+        context,
+        from_email,
+        to_email,
+        html_email_template_name=None,
+    ):
+        from django.template import loader
+
+        from plataforma.models import Cliente, EmailLog
+        from plataforma.services.email import enviar_email
+
+        assunto = ''.join(loader.render_to_string(subject_template_name, context).splitlines())
+        corpo = loader.render_to_string(email_template_name, context)
+        html = None
+        if html_email_template_name:
+            html = loader.render_to_string(html_email_template_name, context)
+        cliente = Cliente.objects.filter(email__iexact=to_email).first()
+        usuario = User.objects.filter(email__iexact=to_email).first()
+        enviar_email(
+            to_email,
+            assunto,
+            corpo,
+            html=html,
+            tipo=EmailLog.TIPO_RECUPERACAO,
+            cliente=cliente,
+            usuario=usuario,
+        )

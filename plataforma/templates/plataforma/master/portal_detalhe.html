@@ -25,7 +25,7 @@
     <form method="post" action="{% url 'master_portal_acao' item.pk %}" class="d-flex flex-wrap gap-2 mb-3">
         {% csrf_token %}
         {% if item.status == 'ativo' %}
-        <button class="btn btn-outline-danger" name="acao" value="bloquear">Bloquear</button>
+        <button class="btn btn-outline-danger" name="acao" value="bloquear" onclick="return confirm('Bloquear este portal? O conteúdo será preservado.');">Bloquear</button>
         {% else %}
         <button class="btn btn-contribuir" name="acao" value="reativar">Reativar</button>
         {% endif %}

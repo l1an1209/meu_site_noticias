@@ -3,22 +3,12 @@ import logging
 
 from django.db import transaction
 from django.http import JsonResponse
-from django.utils.timezone import now
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
 from plataforma.models import WebhookEvent
-from plataforma.services.kiwify import (
-    classificar_evento,
-    tipo_evento,
-    webhook_autentico,
-)
-from plataforma.services.onboarding import (
-    cancelar_ou_bloquear,
-    marcar_atrasada,
-    marcar_pendente,
-    provisionar_pagamento_aprovado,
-)
+from plataforma.services.kiwify import tipo_evento, webhook_autentico
+from plataforma.services.webhooks import processar_evento
 
 logger = logging.getLogger('plataforma.kiwify')
 
@@ -57,41 +47,18 @@ def kiwify_webhook(request):
         if event.processado:
             return JsonResponse({'ok': True, 'duplicado': True})
 
-        classe = classificar_evento(tipo)
-        try:
-            if classe == 'aprovado':
-                provisionar_pagamento_aprovado(payload, request=request)
-            elif classe == 'pendente':
-                marcar_pendente(payload, request=request)
-            elif classe == 'atrasada':
-                marcar_atrasada(payload, request=request)
-            elif classe == 'cancelada':
-                cancelar_ou_bloquear(payload, request=request, bloquear=True)
+        resultado = processar_evento(event, payload=payload, request=request)
+        if resultado.get('duplicado'):
+            return JsonResponse({'ok': True, 'duplicado': True})
+        if resultado.get('ok'):
+            corpo = {'ok': True, 'tipo': tipo, 'novo': created}
+            if resultado.get('ignorado'):
+                corpo['ignorado'] = True
             else:
-                event.status = WebhookEvent.STATUS_IGNORADO
-                event.processado = True
-                event.processado_em = now()
-                event.payload = payload
-                event.save(update_fields=['status', 'processado', 'processado_em', 'payload'])
-                return JsonResponse({'ok': True, 'ignorado': True, 'tipo': tipo})
-
-            event.status = WebhookEvent.STATUS_PROCESSADO
-            event.processado = True
-            event.processado_em = now()
-            event.payload = payload
-            event.erro = ''
-            event.save(update_fields=['status', 'processado', 'processado_em', 'payload', 'erro'])
-            return JsonResponse({'ok': True, 'tipo': tipo, 'classe': classe, 'novo': created})
-        except ValueError as exc:
-            event.status = WebhookEvent.STATUS_ERRO
-            event.erro = str(exc)[:2000]
-            event.payload = payload
-            event.save(update_fields=['status', 'erro', 'payload'])
-            return JsonResponse({'ok': False, 'erro': str(exc)}, status=400)
-        except Exception as exc:
-            logger.exception('Falha no webhook Kiwify')
-            event.status = WebhookEvent.STATUS_ERRO
-            event.erro = str(exc)[:2000]
-            event.payload = payload
-            event.save(update_fields=['status', 'erro', 'payload'])
+                corpo['classe'] = resultado.get('classe')
+            return JsonResponse(corpo)
+        status = resultado.get('http', 500)
+        erro = resultado.get('erro', 'falha ao processar')
+        if status == 500:
             return JsonResponse({'ok': False, 'erro': 'falha ao processar'}, status=500)
+        return JsonResponse({'ok': False, 'erro': erro}, status=status)

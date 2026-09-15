@@ -1,0 +1,35 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Busca{% endblock %}
+{% block heading %}Busca{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" name="q" value="{{ q }}" placeholder="Nome, e-mail, usuário, domínio, pedido" style="max-width:22rem">
+    <button class="btn btn-ds-ghost">Buscar</button>
+</form>
+{% if q and q|length < 2 %}
+<p class="text-muted">Digite pelo menos 2 caracteres.</p>
+{% endif %}
+{% if q|length >= 2 %}
+<h2 class="h6 mt-4">Clientes</h2>
+{% for c in clientes %}
+<div class="ds-card p-3 mb-2"><a href="{% url 'master_cliente' c.pk %}">{{ c.nome }}</a> · {{ c.email }}</div>
+{% empty %}<p class="text-muted">Nenhum cliente.</p>{% endfor %}
+<h2 class="h6 mt-4">Portais</h2>
+{% for p in portais %}
+<div class="ds-card p-3 mb-2"><a href="{% url 'master_portal' p.pk %}">{{ p.nome }}</a> · {{ p.slug }} {% if p.custom_domain %}· {{ p.custom_domain }}{% endif %}</div>
+{% empty %}<p class="text-muted">Nenhum portal.</p>{% endfor %}
+<h2 class="h6 mt-4">Assinaturas / pedidos</h2>
+{% for a in assinaturas %}
+<div class="ds-card p-3 mb-2">
+    <a href="{% url 'master_cliente' a.cliente_id %}">{{ a.cliente.email }}</a>
+    · pedido {{ a.kiwify_order_id|default:"—" }}
+    · assinatura {{ a.kiwify_subscription_id|default:"—" }}
+    · <a href="{% url 'master_portal' a.portal_id %}">{{ a.portal.slug }}</a>
+</div>
+{% empty %}<p class="text-muted">Nenhuma assinatura.</p>{% endfor %}
+<h2 class="h6 mt-4">Usuários</h2>
+{% for u in usuarios %}
+<div class="ds-card p-3 mb-2">{{ u.username }} · {{ u.email }}</div>
+{% empty %}<p class="text-muted">Nenhum usuário.</p>{% endfor %}
+{% endif %}
+{% endblock %}

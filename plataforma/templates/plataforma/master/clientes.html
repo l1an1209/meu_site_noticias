@@ -13,12 +13,19 @@
 </form>
 <div class="app-table-wrap">
 <table class="table align-middle">
-    <thead><tr><th>Cliente</th><th>E-mail</th><th>Status</th><th>Portais</th></tr></thead>
+    <thead><tr><th>Cliente</th><th>E-mail</th><th>Envio</th><th>Status</th><th>Portais</th></tr></thead>
     <tbody>
     {% for c in clientes %}
     <tr>
         <td><a class="fw-semibold text-reset text-decoration-none" href="{% url 'master_cliente' c.pk %}">{{ c.nome }}</a></td>
         <td>{{ c.email }}</td>
+        <td>
+            {% if c.ultimo_email_status == 'enviado' %}🟢 Enviado
+            {% elif c.ultimo_email_status == 'falhou' %}🔴 Falhou
+            {% elif c.ultimo_email_status == 'nao_configurado' %}🔴 Falhou
+            {% else %}⚪ Não enviado{% endif %}
+            {% if c.ultimo_email_em %}<div class="small text-muted">{{ c.ultimo_email_em|date:"d/m/Y H:i" }} · {{ c.ultimo_email_tipo }} · {{ c.ultimo_email_tentativas }} tentativa{{ c.ultimo_email_tentativas|pluralize }}</div>{% endif %}
+        </td>
         <td>
             {% if c.status == 'ativo' %}<span class="ds-badge ds-badge--ok">{{ c.get_status_display }}</span>
             {% else %}<span class="ds-badge ds-badge--muted">{{ c.get_status_display }}</span>{% endif %}
@@ -26,9 +33,16 @@
         <td>{{ c.n_portais }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="4"><div class="empty-state my-3"><p class="empty-title">Nenhum cliente cadastrado ainda.</p></div></td></tr>
+    <tr><td colspan="5"><div class="empty-state my-3"><p class="empty-title">Nenhum cliente cadastrado ainda.</p></div></td></tr>
     {% endfor %}
     </tbody>
 </table>
 </div>
+{% if is_paginated %}
+<div class="d-flex gap-2 mt-3">
+    {% if page_obj.has_previous %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="align-self-center small text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ request.GET.status }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</div>
+{% endif %}
 {% endblock %}

@@ -1,6 +1,8 @@
 from django.conf import settings
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
+
+from plataforma.models import EmailLog
+from plataforma.services.email import enviar_email
 
 
 def _destinatarios_admin(portal=None):
@@ -26,18 +28,17 @@ def enviar_notificacao_admin(assunto, mensagem, portal=None):
     destinatarios = _destinatarios_admin(portal)
     if not destinatarios:
         return False
-    remetente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@plataforma.local')
-    try:
-        send_mail(
+    ok = True
+    for dest in destinatarios:
+        resultado = enviar_email(
+            dest,
             assunto,
             mensagem,
-            remetente,
-            destinatarios,
-            fail_silently=False,
+            tipo=EmailLog.TIPO_ADMIN,
+            portal=portal,
         )
-        return True
-    except Exception:
-        return False
+        ok = ok and resultado.ok
+    return ok
 
 
 def notificar_comentario(comentario):

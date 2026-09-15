@@ -32,7 +32,12 @@
                     <div class="text-muted small">{% block subheading %}{{ site_name }}{% if site_city %} · {{ site_city }}{% endif %}{% endblock %}</div>
                 </div>
             </div>
-            <div class="d-flex gap-2 flex-wrap">
+            <div class="d-flex gap-2 flex-wrap align-items-center">
+                {% if is_master_shell %}
+                <form class="d-flex" method="get" action="{% url 'master_busca' %}">
+                    <input class="form-control form-control-sm" name="q" value="{{ request.GET.q }}" placeholder="Cliente, e-mail, portal, pedido" style="min-width:12rem">
+                </form>
+                {% endif %}
                 <a href="{% url 'index' %}" class="btn btn-sm btn-ds-ghost">Ver site</a>
                 {% if request.is_platform_master %}<a href="{% url 'master_home' %}" class="btn btn-sm btn-ds-ghost">Master</a>{% endif %}
             </div>
