@@ -1,6 +1,8 @@
+from django.views import View
 from django.views.generic import DetailView, TemplateView
 
 from plataforma.models import Plano
+from plataforma.resolvers import resolve_portal_from_host
 
 
 class PaginaVendasView(TemplateView):
@@ -11,6 +13,28 @@ class PaginaVendasView(TemplateView):
         ctx['planos_venda'] = Plano.objects.filter(ativo=True).exclude(preco_mensal=0)
         ctx['is_sales_page'] = True
         return ctx
+
+
+class PaginaHomeSaaSView(TemplateView):
+    """Landing comercial da plataforma. Não é o jornal de um tenant."""
+
+    template_name = 'plataforma/home.html'
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['is_sales_page'] = True
+        ctx['product_name'] = 'Portal de Notícias'
+        return ctx
+
+
+class HomePublicaView(View):
+    """`/` no host da plataforma = landing SaaS. `/` no host do cliente = portal."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if resolve_portal_from_host(request.get_host()) is None:
+            return PaginaHomeSaaSView.as_view()(request, *args, **kwargs)
+        from noticias.views import NoticiaListView
+        return NoticiaListView.as_view()(request, *args, **kwargs)
 
 
 class PaginaCheckoutPlanoView(DetailView):

@@ -1,8 +1,13 @@
 {% extends "plataforma/app/base.html" %}
+{% load urls_portal %}
 {% block title %}{{ item.nome }}{% endblock %}
 {% block heading %}{{ item.nome }}{% endblock %}
 {% block subheading %}{{ item.slug }} · {{ item.host_previsto }}{% endblock %}
 {% block content %}
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a class="btn btn-contribuir" href="{{ item|url_site_portal }}" target="_blank" rel="noopener noreferrer">Abrir site</a>
+    <a class="btn btn-ds-ghost" href="{{ item|url_painel_portal }}" target="_blank" rel="noopener noreferrer">Abrir painel</a>
+</div>
 <div class="stat-grid mb-4">
     <div class="stat-card"><span>Notícias</span><strong>{{ n_noticias }}</strong></div>
     <div class="stat-card"><span>Armazenamento</span><strong>{{ storage_mb }} MB</strong></div>

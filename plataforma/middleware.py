@@ -3,7 +3,13 @@ from django.utils.deprecation import MiddlewareMixin
 
 from .context import bind_request_tenant, clear_tenant_context, set_current_portal
 from .models import Membership
-from .resolvers import resolve_portal_for_request
+from .resolvers import resolve_portal_for_request, resolve_portal_from_host
+from .services.pos_login import portal_para_app_em_host_plataforma
+
+
+def _path_de_app(path):
+    path = path or ''
+    return path.startswith('/app/') or path == '/app' or path.startswith('/painel/')
 
 
 class TenantMiddleware:
@@ -20,13 +26,24 @@ class TenantMiddleware:
         request.is_platform_master = False
         try:
             portal, used_fallback = resolve_portal_for_request(request)
+            user = getattr(request, 'user', None)
+            if user is not None and getattr(user, 'is_authenticated', False):
+                request.is_platform_master = bool(user.is_superuser)
+
+            # /app/ em host de plataforma: não usar o portal legado do fallback.
+            if (
+                _path_de_app(request.path)
+                and resolve_portal_from_host(request.get_host()) is None
+                and not request.is_platform_master
+            ):
+                portal = portal_para_app_em_host_plataforma(request)
+                used_fallback = False
+
             request.portal = portal
             request.portal_from_compat_fallback = used_fallback
             set_current_portal(portal)
 
-            user = getattr(request, 'user', None)
             if user is not None and getattr(user, 'is_authenticated', False):
-                request.is_platform_master = bool(user.is_superuser)
                 if portal is not None:
                     request.membership = (
                         Membership.objects.filter(

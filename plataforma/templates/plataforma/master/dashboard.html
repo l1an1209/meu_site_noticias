@@ -1,4 +1,5 @@
 {% extends "plataforma/app/base.html" %}
+{% load urls_portal %}
 {% block title %}Master{% endblock %}
 {% block heading %}Painel da plataforma{% endblock %}
 {% block subheading %}Visão de todos os tenants{% endblock %}
@@ -39,7 +40,7 @@
     <tr>
         <td>
             <a href="{% url 'master_portal' p.pk %}" class="fw-semibold text-reset text-decoration-none">{{ p.nome }}</a>
-            <div class="small text-muted">{{ p.slug }}</div>
+            <div class="small text-muted">{{ p.slug }} · <a href="{{ p|url_site_portal }}" target="_blank" rel="noopener noreferrer">Abrir site</a></div>
         </td>
         <td>{{ p.cidade }}/{{ p.estado }}</td>
         <td>

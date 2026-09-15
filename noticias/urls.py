@@ -1,7 +1,8 @@
 from django.urls import path
 from plataforma.views_app import AppAprovarEnvioView, AppEnviosView, AppRejeitarEnvioView
+from plataforma.views_pos_login import AcessoPortalIndisponivelView, SelecionarPortalView
+from plataforma.views_vendas import HomePublicaView
 from .views import (
-    NoticiaListView,
     NoticiaDetailView,
     NoticiaPorCategoriaListView,
     NoticiaVideoListView,
@@ -25,7 +26,7 @@ from .views_exclusivo import ExclusivoListView, ExclusivoDetailView
 from .views_experiencia import ExperienciaView, ClimaApiView
 
 urlpatterns = [
-    path('', NoticiaListView.as_view(), name='index'),
+    path('', HomePublicaView.as_view(), name='index'),
     path('videos/', NoticiaVideoListView.as_view(), name='videos'),
     path('experiencia/', ExperienciaView.as_view(), name='experiencia'),
     path('api/clima/', ClimaApiView.as_view(), name='api_clima'),
@@ -39,6 +40,9 @@ urlpatterns = [
     path('entrar/', EntrarView.as_view(), name='entrar'),
     path('sair/', SairView.as_view(), name='sair'),
     path('cadastro/', CadastroView.as_view(), name='cadastro'),
+    path('criar-conta/', CadastroView.as_view(), name='criar_conta'),
+    path('selecionar-portal/', SelecionarPortalView.as_view(), name='selecionar_portal'),
+    path('acesso-indisponivel/', AcessoPortalIndisponivelView.as_view(), name='acesso_portal_indisponivel'),
     path('conta/', MinhaContaView.as_view(), name='conta'),
     path('senha/esqueci/', RecuperarSenhaView.as_view(), name='password_reset'),
     path('senha/enviado/', RecuperarSenhaEnviadoView.as_view(), name='password_reset_done'),

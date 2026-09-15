@@ -8,6 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 
 from plataforma.models import EmailLog
 from plataforma.services.email import EmailResult, FAILED, enviar_email
+from plataforma.urls_portal import host_publico_portal, url_app_portal, url_publica_portal
 
 User = get_user_model()
 
@@ -19,7 +20,9 @@ def _base_url(request=None, portal=None):
     if request is not None:
         return request.build_absolute_uri('/').rstrip('/')
     if portal is not None:
-        return f'https://{portal.host_previsto}'.rstrip('/')
+        host = host_publico_portal(portal)
+        if host:
+            return f'https://{host}'.rstrip('/')
     return 'https://localhost'
 
 
@@ -34,12 +37,16 @@ def enviar_acesso(usuario, portal, request=None, tipo=EmailLog.TIPO_ONBOARDING, 
     if not usuario or not usuario.email:
         return EmailResult(FAILED, 'Usuário sem e-mail.')
     link = link_redefinicao(usuario, request=request, portal=portal)
-    host = portal.host_previsto if portal else ''
     nome_portal = portal.nome if portal else 'seu portal'
+    site = url_publica_portal(portal) if portal else ''
+    painel = url_app_portal(portal) if portal else ''
     corpo = (
         f'Olá, {usuario.get_short_name() or usuario.username}.\n\n'
-        f'Seu portal {nome_portal} está pronto.\n'
-        f'Painel: https://{host}/app/\n'
+        f'Seu portal foi criado com sucesso.\n\n'
+        f'Acessar meu site\n'
+        f'{site}\n\n'
+        f'Administrar meu portal\n'
+        f'{painel}\n\n'
         f'Usuário: {usuario.username}\n\n'
         f'Defina sua senha neste link (válido por cerca de uma hora):\n'
         f'{link}\n\n'

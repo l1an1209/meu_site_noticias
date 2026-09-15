@@ -17,6 +17,7 @@ from django.views import View
 from django.views.generic import CreateView, TemplateView
 
 from plataforma.security import log_audit, throttle_blocked, throttle_response
+from plataforma.services.pos_login import destino_pos_login
 
 from .forms import CadastroForm, LoginForm, RecuperarSenhaForm
 from .models import Perfil
@@ -64,7 +65,7 @@ class EntrarView(PortalAuthContextMixin, LoginView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
-        return self.get_redirect_url() or str(reverse_lazy('index'))
+        return destino_pos_login(self.request, self.request.user)
 
 
 class SairView(View):
@@ -88,7 +89,6 @@ class SairView(View):
 class CadastroView(CreateView):
     form_class = CadastroForm
     template_name = 'noticias/cadastro.html'
-    success_url = reverse_lazy('index')
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -103,14 +103,14 @@ class CadastroView(CreateView):
         return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        response = super().form_valid(form)
+        self.object = form.save()
         login(self.request, self.object, backend='django.contrib.auth.backends.ModelBackend')
         log_audit(self.request, 'cadastro', objeto='User', objeto_id=self.object.pk)
         messages.success(
             self.request,
             'Conta criada! Agora você pode curtir, comentar e participar do portal.',
         )
-        return response
+        return redirect(destino_pos_login(self.request, self.object))
 
 
 class MinhaContaView(LoginRequiredMixin, TemplateView):

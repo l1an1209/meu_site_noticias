@@ -21,9 +21,15 @@ from plataforma.metrics import format_mb, storage_bytes_portal
 from plataforma.models import Membership, Portal
 from plataforma.permissions import (
     PAPEIS_ANUNCIO, PAPEIS_CATEGORIA, PAPEIS_MODERACAO, PAPEIS_NOTICIA,
-    has_portal_role,
+    has_portal_role, is_platform_master,
 )
+from plataforma.resolvers import resolve_portal_from_host
 from plataforma.security import log_audit, safe_redirect
+from plataforma.services.pos_login import (
+    app_url_for_portal,
+    portais_administraveis,
+    portais_indisponiveis,
+)
 
 User = get_user_model()
 
@@ -44,9 +50,20 @@ class AppAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
     raise_exception = False
 
     def handle_no_permission(self):
-        if self.request.user.is_authenticated:
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
+        if is_platform_master(self.request.user):
+            return redirect('master_home')
+        administraveis = list(portais_administraveis(self.request.user))
+        if len(administraveis) > 1:
+            return redirect('selecionar_portal')
+        if len(administraveis) == 1:
+            if resolve_portal_from_host(self.request.get_host()) is None:
+                return redirect(app_url_for_portal(self.request, administraveis[0]))
             raise PermissionDenied(self.get_permission_denied_message())
-        return super().handle_no_permission()
+        if portais_indisponiveis(self.request.user).exists():
+            return redirect('acesso_portal_indisponivel')
+        return redirect('pagina_vendas')
 
     def test_func(self):
         if getattr(self.request, 'portal', None) is None:

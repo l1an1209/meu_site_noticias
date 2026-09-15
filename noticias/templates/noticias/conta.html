@@ -1,6 +1,114 @@
 {% extends "noticias/base.html" %}
 
-{% block title %}Minha conta — {{ site_name }}{% endblock %}
+{% block title %}Minha conta — Portal SaaS{% endblock %}
+{% block meta_description %}Gerencie sua conta e seu portal de notícias.{% endblock %}
+{% block og_title %}Minha conta — Portal SaaS{% endblock %}
+{% block og_description %}Gerencie sua conta e seu portal de notícias.{% endblock %}
+{% block og_image %}{% endblock %}
+{% block og_site_name %}Portal SaaS{% endblock %}
+{% block tw_title %}Minha conta — Portal SaaS{% endblock %}
+{% block tw_description %}Gerencie sua conta e seu portal de notícias.{% endblock %}
+{% block tenant_icons %}{% endblock %}
+{% block json_ld %}{% endblock %}
+
+{% block body_nav_class %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-saas-header {
+        padding: 1.75rem 1.25rem 1.5rem;
+        border-bottom: 1px solid #eef0f3;
+        background: #fff;
+        text-align: center;
+    }
+    .login-saas-header__inner {
+        max-width: 28rem;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.7rem;
+    }
+    .login-saas-header__brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.7rem;
+    }
+    .login-saas-mark {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: 0.7rem;
+        background: #0f172a;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+    }
+    .login-saas-header strong {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+    .login-saas-header p {
+        margin: 0;
+        max-width: 22rem;
+        color: #64748b;
+        font-size: 0.9rem;
+        line-height: 1.45;
+    }
+    .login-saas-footer {
+        padding: 1.5rem 1.25rem 2rem;
+        text-align: center;
+        color: #64748b;
+        font-size: 0.85rem;
+        line-height: 1.45;
+    }
+    .login-saas-footer strong {
+        display: block;
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 700;
+        margin-bottom: 0.2rem;
+    }
+    .login-saas-footer p {
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block top_strip %}{% endblock %}
+
+{% block masthead %}
+<header class="login-saas-header">
+    <div class="login-saas-header__inner">
+        <div class="login-saas-header__brand">
+            <span class="login-saas-mark" aria-hidden="true">P</span>
+            <strong>Portal SaaS</strong>
+        </div>
+        <p>Gerencie sua conta e seu portal de notícias.</p>
+    </div>
+</header>
+{% endblock %}
+
+{% block cat_nav %}{% endblock %}
+
+{% block site_footer %}
+<footer class="login-saas-footer">
+    <strong>Portal SaaS</strong>
+    <p>Gerencie sua conta e seu portal de notícias.</p>
+</footer>
+{% endblock %}
+
+{% block mobile_nav %}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -41,25 +149,9 @@
             </div>
 
             <div class="d-flex flex-wrap gap-2">
-                {% if perfil.is_assinante %}
-                <a href="{% url 'exclusivo' %}" class="btn btn-warning rounded-pill"><i class="fas fa-star me-1"></i> Área exclusiva</a>
-                {% endif %}
-                <a href="{% url 'contribuir' %}" class="btn btn-contribuir rounded-pill">Enviar conteúdo</a>
                 <a href="{% url 'password_change' %}" class="btn btn-outline-primary rounded-pill">Alterar senha</a>
-                <a href="{% url 'experiencia' %}" class="btn btn-outline-primary rounded-pill">Experiência ao vivo</a>
                 {% include "noticias/partials/logout_form.html" with btn_class="btn btn-outline-danger rounded-pill" %}
             </div>
-
-            {% if not perfil.is_assinante %}
-            <div class="alert alert-warning rounded-4 mt-4 mb-0">
-                <strong>Parceria / assinatura:</strong> lojas e parceiros podem ter conteúdo exclusivo.
-                <a href="{% url 'parceria' %}" class="alert-link">Saiba como fechar parceria</a>.
-            </div>
-            {% else %}
-            <div class="alert alert-success rounded-4 mt-4 mb-0">
-                <i class="fas fa-check-circle me-2"></i>Você tem acesso de <strong>assinante parceiro</strong>.
-            </div>
-            {% endif %}
         </div>
     </div>
 </div>

@@ -18,12 +18,14 @@
     <meta property="og:url" content="{% block og_url %}{{ request.build_absolute_uri }}{% endblock %}">
     <meta property="og:image" content="{% block og_image %}{% if site_og_image_abs %}{{ site_og_image_abs }}{% elif site_og_image_url %}{{ request.scheme }}://{{ request.get_host }}{{ site_og_image_url }}{% endif %}{% endblock %}">
     <meta property="og:locale" content="pt_BR">
-    <meta property="og:site_name" content="{{ site_name }}">
+    <meta property="og:site_name" content="{% block og_site_name %}{{ site_name }}{% endblock %}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block tw_title %}{{ site_seo_title }}{% endblock %}">
     <meta name="twitter:description" content="{% block tw_description %}{{ site_description }}{% endblock %}">
+    {% block tenant_icons %}
     {% if site_favicon_url %}<link rel="icon" href="{{ site_favicon_url }}">{% endif %}
     {% if site_logo_url %}<link rel="apple-touch-icon" href="{{ site_logo_url }}">{% endif %}
+    {% endblock %}
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
@@ -42,15 +44,18 @@
             --accent: {{ site_cor_destaque }};
         }
     </style>
+    {% block json_ld %}
     {% if site_json_ld %}
     <script type="application/ld+json">{{ site_json_ld|safe }}</script>
     {% endif %}
+    {% endblock %}
     {% block extra_css %}{% endblock %}
     {% block extra_head %}{% endblock %}
 </head>
-<body class="{% block body_class %}{% endblock %} has-mobile-nav">
+<body class="{% block body_class %}{% endblock %}{% block body_nav_class %} has-mobile-nav{% endblock %}">
     <div id="scrollProgress"></div>
 
+    {% block top_strip %}
     <div class="top-strip">
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="top-strip__loc"><i class="fas fa-map-marker-alt me-1"></i>{% if site_region %}{{ site_region }}{% else %}{{ site_city }}{% endif %}{% if site_state %}, {{ site_state }}{% endif %}</span>
@@ -58,7 +63,9 @@
             <span class="top-strip__live"><span class="live-dot" aria-hidden="true"></span>{{ site_slogan }}</span>
         </div>
     </div>
+    {% endblock %}
 
+    {% block masthead %}
     <header class="masthead">
         <div class="container">
             <a href="{% url 'index' %}" class="masthead__brand">
@@ -76,7 +83,9 @@
             </div>
         </div>
     </header>
+    {% endblock %}
 
+    {% block cat_nav %}
     <nav class="cat-nav sticky-top" aria-label="Categorias">
         <div class="container-fluid px-lg-4">
             <div class="cat-nav__row">
@@ -128,6 +137,7 @@
             </div>
         </div>
     </nav>
+    {% endblock %}
 
     {% ad_slot 'top' %}
 
@@ -148,6 +158,7 @@
         </div>
     </main>
 
+    {% block site_footer %}
     <footer class="site-footer">
         <div class="container">
             <div class="row g-4">
@@ -204,9 +215,12 @@
             <p class="text-center small mb-0 opacity-75">© {% now "Y" %} {{ site_name }}{% if site_city %} — {{ site_city }}{% endif %}{% if site_state %}, {{ site_state }}{% endif %}.</p>
         </div>
     </footer>
+    {% endblock %}
 
     {% block mobile_engagement %}{% endblock %}
+    {% block mobile_nav %}
     {% include "noticias/partials/mobile_nav.html" %}
+    {% endblock %}
 
     <button id="backToTop" type="button" aria-label="Topo"><i class="fas fa-arrow-up"></i></button>
 

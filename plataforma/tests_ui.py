@@ -119,5 +119,40 @@ class PainelUiTests(TestCase):
 
     def test_login_nao_sobrescreve_nome_do_portal(self):
         resp = self.client.get('/entrar/', **self._host(self.legado.slug))
-        self.assertContains(resp, f'Entrar — {self.legado.nome}')
-        self.assertContains(resp, f'{self.legado.nome} — curtir')
+        self.assertContains(resp, 'Entrar — Portal SaaS')
+        self.assertContains(resp, 'Portal SaaS')
+        self.assertContains(resp, 'Crie, gerencie e publique seu próprio portal de notícias.')
+        self.assertNotContains(resp, f'{self.legado.nome} — curtir')
+
+    def test_cadastro_global_usa_identidade_saas(self):
+        for path in ('/cadastro/', '/criar-conta/'):
+            with self.subTest(path=path):
+                resp = self.client.get(path, **self._host(self.legado.slug))
+                self.assertEqual(resp.status_code, 200)
+                self.assertContains(resp, 'Criar conta — Portal SaaS')
+                self.assertContains(resp, 'Portal SaaS')
+                self.assertContains(resp, 'Crie, gerencie e publique seu próprio portal de notícias.')
+                self.assertContains(resp, 'Crie seu próprio portal de notícias.')
+                self.assertContains(resp, 'Já tem conta?')
+                html = resp.content.decode()
+                self.assertIn('/entrar/', html)
+                self.assertNotContains(resp, self.legado.nome)
+                self.assertNotContains(resp, 'Ji-Paraná')
+                self.assertNotContains(resp, '/media/portais/noticiasjiparana/logo.png')
+
+    def test_conta_global_usa_identidade_saas(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/conta/', **self._host(self.legado.slug))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Minha conta — Portal SaaS')
+        self.assertContains(resp, 'Portal SaaS')
+        self.assertContains(resp, 'Gerencie sua conta e seu portal de notícias.')
+        self.assertContains(resp, self.admin.username)
+        self.assertContains(resp, 'Curtidas dadas')
+        self.assertContains(resp, 'Comentários')
+        self.assertNotContains(resp, self.legado.nome)
+        self.assertNotContains(resp, 'Ji-Paraná')
+        self.assertNotContains(resp, '/media/portais/noticiasjiparana/logo.png')
+        self.assertNotContains(resp, 'Parceria / assinatura')
+        self.assertNotContains(resp, 'Enviar conteúdo')
+        self.assertNotContains(resp, 'Experiência ao vivo')

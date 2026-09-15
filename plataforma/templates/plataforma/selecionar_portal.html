@@ -1,0 +1,68 @@
+{% extends "noticias/base.html" %}
+
+{% block title %}Selecionar portal — Portal SaaS{% endblock %}
+{% block meta_description %}Escolha o portal que deseja administrar.{% endblock %}
+{% block og_title %}Selecionar portal — Portal SaaS{% endblock %}
+{% block og_site_name %}Portal SaaS{% endblock %}
+{% block tenant_icons %}{% endblock %}
+{% block json_ld %}{% endblock %}
+{% block body_nav_class %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-saas-header { padding: 1.75rem 1.25rem 1.5rem; border-bottom: 1px solid #eef0f3; background: #fff; text-align: center; }
+    .login-saas-header__inner { max-width: 32rem; margin: 0 auto; }
+    .login-saas-header__brand { display: flex; align-items: center; justify-content: center; gap: 0.7rem; }
+    .login-saas-mark { width: 2.5rem; height: 2.5rem; border-radius: 0.7rem; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .login-saas-header strong { display: block; font-size: 1.2rem; color: #0f172a; }
+    .login-saas-header p { margin: 0.45rem 0 0; color: #64748b; font-size: 0.9rem; }
+    .login-saas-footer { padding: 1.5rem 1.25rem 2rem; text-align: center; color: #64748b; font-size: 0.85rem; }
+    .login-saas-footer strong { display: block; color: #0f172a; margin-bottom: 0.2rem; }
+    .portal-pick { display: flex; flex-direction: column; gap: 0.85rem; }
+    .portal-pick__item { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 1rem 1.1rem; border: 1px solid #e8eaee; border-radius: 14px; background: #fff; }
+    .portal-pick__item span { display: block; color: #64748b; font-size: 0.88rem; }
+</style>
+{% endblock %}
+
+{% block top_strip %}{% endblock %}
+{% block masthead %}
+<header class="login-saas-header">
+    <div class="login-saas-header__inner">
+        <div class="login-saas-header__brand">
+            <span class="login-saas-mark" aria-hidden="true">P</span>
+            <strong>Portal SaaS</strong>
+        </div>
+        <p>Escolha o portal que deseja administrar.</p>
+    </div>
+</header>
+{% endblock %}
+{% block cat_nav %}{% endblock %}
+{% block site_footer %}
+<footer class="login-saas-footer">
+    <strong>Portal SaaS</strong>
+    <p>Somente os portais da sua conta aparecem aqui.</p>
+</footer>
+{% endblock %}
+{% block mobile_nav %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="glass-card p-4 p-lg-5">
+            <h1 class="display-font h4 mb-4">Seus portais</h1>
+            <div class="portal-pick">
+                {% for portal in portais %}
+                <form method="post" class="portal-pick__item">
+                    {% csrf_token %}
+                    <div>
+                        <strong>{{ portal.nome }}</strong>
+                        <span>{% if portal.cidade %}{{ portal.cidade }}{% if portal.estado %}/{{ portal.estado }}{% endif %}{% endif %}</span>
+                    </div>
+                    <button type="submit" name="portal" value="{{ portal.pk }}" class="btn btn-contribuir">Acessar painel</button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

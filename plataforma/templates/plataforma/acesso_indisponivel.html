@@ -1,0 +1,58 @@
+{% extends "noticias/base.html" %}
+
+{% block title %}Acesso indisponível — Portal SaaS{% endblock %}
+{% block og_site_name %}Portal SaaS{% endblock %}
+{% block tenant_icons %}{% endblock %}
+{% block json_ld %}{% endblock %}
+{% block body_nav_class %}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .login-saas-header { padding: 1.75rem 1.25rem 1.5rem; border-bottom: 1px solid #eef0f3; background: #fff; text-align: center; }
+    .login-saas-header__inner { max-width: 32rem; margin: 0 auto; }
+    .login-saas-header__brand { display: flex; align-items: center; justify-content: center; gap: 0.7rem; }
+    .login-saas-mark { width: 2.5rem; height: 2.5rem; border-radius: 0.7rem; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+    .login-saas-header strong { display: block; font-size: 1.2rem; color: #0f172a; }
+    .login-saas-header p { margin: 0.45rem 0 0; color: #64748b; font-size: 0.9rem; }
+    .login-saas-footer { padding: 1.5rem 1.25rem 2rem; text-align: center; color: #64748b; font-size: 0.85rem; }
+</style>
+{% endblock %}
+
+{% block top_strip %}{% endblock %}
+{% block masthead %}
+<header class="login-saas-header">
+    <div class="login-saas-header__inner">
+        <div class="login-saas-header__brand">
+            <span class="login-saas-mark" aria-hidden="true">P</span>
+            <strong>Portal SaaS</strong>
+        </div>
+        <p>O acesso ao painel está indisponível neste momento.</p>
+    </div>
+</header>
+{% endblock %}
+{% block cat_nav %}{% endblock %}
+{% block site_footer %}{% endblock %}
+{% block mobile_nav %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="glass-card p-4 p-lg-5 text-center">
+            <p class="ds-badge ds-badge--danger mb-3">Indisponível</p>
+            <h1 class="display-font h4">Portal temporariamente fora do ar</h1>
+            <p class="text-muted">
+                A assinatura está bloqueada ou o portal não está ativo.
+                Notícias e arquivos não foram apagados. O painel volta quando a conta for reativada.
+            </p>
+            {% if portais %}
+            <ul class="list-unstyled small text-muted mt-3 mb-0">
+                {% for portal in portais %}
+                <li>{{ portal.nome }}{% if portal.cidade %} — {{ portal.cidade }}{% if portal.estado %}/{{ portal.estado }}{% endif %}{% endif %}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+            <p class="mt-4 mb-0"><a href="{% url 'pagina_vendas' %}">Ver planos</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}
