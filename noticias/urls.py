@@ -24,8 +24,12 @@ from .views_auth import (
 from .views_engagement import toggle_curtida, adicionar_comentario
 from .views_exclusivo import ExclusivoListView, ExclusivoDetailView
 from .views_experiencia import ExperienciaView, ClimaApiView
+from .views_pwa import ManifestView, PwaIconView, ServiceWorkerView
 
 urlpatterns = [
+    path('manifest.webmanifest', ManifestView.as_view(), name='pwa_manifest'),
+    path('sw.js', ServiceWorkerView.as_view(), name='pwa_sw'),
+    path('pwa/icon/<int:size>.png', PwaIconView.as_view(), name='pwa_icon'),
     path('', HomePublicaView.as_view(), name='index'),
     path('videos/', NoticiaVideoListView.as_view(), name='videos'),
     path('experiencia/', ExperienciaView.as_view(), name='experiencia'),

@@ -2,6 +2,7 @@ from django.core.cache import cache
 from django.db.models import Count
 
 from plataforma.identity import identidade_do_portal, identidade_vazia
+from plataforma.resolvers import resolve_portal_from_host
 
 from .models import Categoria, Contribuicao
 from .utils import cache_key_portal
@@ -9,11 +10,13 @@ from .utils import cache_key_portal
 
 def site_context(request):
     portal = getattr(request, 'portal', None)
+    pwa_disponivel = resolve_portal_from_host(request.get_host()) is not None
     extra = {
         'envios_pendentes': 0,
         'user_is_assinante': False,
         'is_platform_master': getattr(request, 'is_platform_master', False),
         'nav_categorias': [],
+        'pwa_disponivel': pwa_disponivel,
     }
     if portal is None:
         data = identidade_vazia()
@@ -47,5 +50,6 @@ def site_context(request):
         'envios_pendentes': pendentes,
         'user_is_assinante': is_assinante,
         'is_platform_master': getattr(request, 'is_platform_master', False),
+        'pwa_disponivel': pwa_disponivel,
     })
     return data
