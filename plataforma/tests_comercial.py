@@ -65,6 +65,7 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
     def test_pagamento_aprovado_cria_portal_usuario_e_assinatura(self):
         resp = self._post(_payload_aprovado())
         self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json().get('classe'), 'aprovado')
         self.assertEqual(Cliente.objects.filter(email='joao@campinas.test').count(), 1)
         self.assertEqual(Portal.objects.filter(cliente__email='joao@campinas.test').count(), 1)
         portal = Portal.objects.get(cliente__email='joao@campinas.test')
@@ -181,10 +182,55 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         late = _payload_aprovado(order_id='ord-002')
         late['webhook_event_type'] = 'pix_gerado'
         late['signature'] = assinatura_kiwify('ord-002', SECRET)
-        self.assertEqual(self._post(late).status_code, 200)
+        resp = self._post(late)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json().get('classe'), 'pendente')
         sub = Assinatura.objects.get(kiwify_subscription_id='sub-001')
         self.assertEqual(sub.status, Assinatura.STATUS_PENDENTE)
         self.assertEqual(Noticia.all_objects.filter(portal=sub.portal).count(), 0)
+
+    def test_pix_created_e_pendente_nao_aprovado(self):
+        self._post(_payload_aprovado())
+        pix = _payload_aprovado(order_id='ord-pix-created')
+        pix['webhook_event_type'] = 'pix_created'
+        pix['order_status'] = 'waiting_payment'
+        pix['signature'] = assinatura_kiwify('ord-pix-created', SECRET)
+        resp = self._post(pix)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertTrue(data.get('ok'))
+        self.assertFalse(data.get('ignorado'))
+        self.assertEqual(data.get('classe'), 'pendente')
+        sub = Assinatura.objects.get(kiwify_subscription_id='sub-001')
+        self.assertEqual(sub.status, Assinatura.STATUS_PENDENTE)
+        self.assertEqual(Assinatura.objects.filter(kiwify_order_id='ord-001').count(), 1)
+
+    def test_compra_aprovada_cria_assinatura(self):
+        body = _payload_aprovado(
+            order_id='ord-pt-ok', email='aprovapt@campinas.test', sub_id='sub-pt-ok',
+            product='Portal Compra Aprovada',
+        )
+        body['webhook_event_type'] = 'compra_aprovada'
+        body['signature'] = assinatura_kiwify('ord-pt-ok', SECRET)
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json().get('classe'), 'aprovado')
+        self.assertEqual(Assinatura.objects.get(kiwify_order_id='ord-pt-ok').status, Assinatura.STATUS_ATIVA)
+
+    def test_evento_desconhecido_retorna_200_ignorado(self):
+        body = _payload_aprovado(
+            order_id='ord-unk', email='unk@campinas.test', sub_id='sub-unk',
+        )
+        body['webhook_event_type'] = 'evento_que_nao_existe'
+        body['signature'] = assinatura_kiwify('ord-unk', SECRET)
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertTrue(data.get('ok'))
+        self.assertTrue(data.get('ignorado'))
+        self.assertEqual(Cliente.objects.filter(email='unk@campinas.test').count(), 0)
+        evento = WebhookEvent.objects.get(id_externo='ord-unk')
+        self.assertEqual(evento.status, WebhookEvent.STATUS_IGNORADO)
 
     def test_cancelamento_bloqueia_sem_apagar(self):
         self._post(_payload_aprovado())

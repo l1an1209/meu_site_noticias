@@ -5,10 +5,11 @@ Eventos oficiais do painel (docs.kiwify.com.br, trigger enum):
 - pix_gerado, boleto_gerado, carrinho_abandonado
 - subscription_canceled, subscription_late, subscription_renewed
 
-O JSON de entrega usa também `webhook_event_type` em inglês
-(ex.: order_approved) e o objeto `Subscription` com id, status,
-start_date, next_payment e plan.id — campos documentados em exemplos
-oficiais de payload, não inventados.
+O JSON de entrega usa `webhook_event_type` em inglês no payload
+(ex.: order_approved, pix_created — confirmado em produção), enquanto
+o enum de triggers da API pública está em português (pix_gerado, etc.).
+O objeto `Subscription` traz id, status, start_date, next_payment e
+plan.id; o payload também pode trazer `subscription_id` no topo.
 
 Autenticidade (checkout do painel, não a API bancária):
 
@@ -38,6 +39,7 @@ from django.utils.dateparse import parse_datetime
 from django.utils.timezone import make_aware, is_naive
 
 
+# Triggers oficiais (PT) + webhook_event_type real do payload (EN).
 EVENTOS_APROVADOS = {
     'compra_aprovada',
     'order_approved',
@@ -45,9 +47,13 @@ EVENTOS_APROVADOS = {
 }
 EVENTOS_PENDENTES = {
     'pix_gerado',
+    'pix_created',
     'boleto_gerado',
+    'boleto_created',
+    'billet_created',
     'compra_recusada',
     'order_rejected',
+    'order_refused',
 }
 EVENTOS_ATRASO = {'subscription_late'}
 EVENTOS_CANCELAMENTO = {
@@ -100,7 +106,7 @@ def webhook_autentico(payload, secret=None, signature=None, corpo_bruto=None):
 
 
 def tipo_evento(payload):
-    tipo = (payload.get('webhook_event_type') or payload.get('event') or '').strip()
+    tipo = (payload.get('webhook_event_type') or payload.get('event') or '').strip().lower()
     if tipo:
         return tipo
     status = (payload.get('order_status') or '').lower()
@@ -150,7 +156,7 @@ def extrair_assinatura_kiwify(payload):
     plan = sub.get('plan') or {}
     product = payload.get('Product') or {}
     return {
-        'subscription_id': str(sub.get('id') or ''),
+        'subscription_id': str(sub.get('id') or payload.get('subscription_id') or ''),
         'order_id': str(payload.get('order_id') or ''),
         'transaction_id': str(
             payload.get('payment_merchant_id') or payload.get('order_ref') or ''
@@ -165,6 +171,7 @@ def extrair_assinatura_kiwify(payload):
 
 
 def classificar_evento(tipo):
+    tipo = (tipo or '').strip().lower()
     if tipo in EVENTOS_APROVADOS:
         return 'aprovado'
     if tipo in EVENTOS_PENDENTES:
