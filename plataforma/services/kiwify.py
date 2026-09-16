@@ -10,10 +10,22 @@ O JSON de entrega usa também `webhook_event_type` em inglês
 start_date, next_payment e plan.id — campos documentados em exemplos
 oficiais de payload, não inventados.
 
-Autenticidade (checkout): o token do webhook no painel Kiwify. A
-assinatura (`signature`) é MD5(order_id + token). Pode vir no JSON
-ou na query string (`?signature=`), como a Kiwify envia via axios.
-Segredo só via KIWIFY_WEBHOOK_SECRET. Não usamos a API bancária Ed25519 aqui.
+Autenticidade (checkout do painel, não a API bancária):
+
+A API bancária (docs.kiwify.com.br/api-reference/banking/webhook-headers)
+usa Ed25519 em headers (`x-kiwify-digital-signature`). Isso NÃO é o
+webhook de produto/assinatura do painel (triggers compra_aprovada,
+token, axios POST com `?signature=`).
+
+O webhook do painel (public-api `/webhooks`, campo `token`) envia a
+assinatura na query string. O digest tem 40 hex = SHA-1, não MD5 (32).
+
+Fórmula aceita (todas exigem o token; nenhuma aceita assinatura vazia):
+- HMAC-SHA1(chave=token, mensagem=order_id) — hex
+- SHA1(order_id + token) — hex, variante documentada em exemplos PHP
+- HMAC-SHA1(chave=token, mensagem=corpo JSON bruto) — n8n / axios
+
+Segredo só via KIWIFY_WEBHOOK_SECRET. Não registrar token nem assinatura.
 """
 from __future__ import annotations
 
@@ -46,22 +58,45 @@ EVENTOS_CANCELAMENTO = {
 }
 
 
+def _hex_igual(esperado, recebido):
+    esperado = (esperado or '').lower()
+    recebido = (recebido or '').lower()
+    if not esperado or not recebido or len(esperado) != len(recebido):
+        return False
+    return hmac.compare_digest(esperado, recebido)
+
+
+def _hmac_sha1_hex(mensagem, secret):
+    if isinstance(mensagem, str):
+        mensagem = mensagem.encode('utf-8')
+    return hmac.new(secret.encode('utf-8'), mensagem, hashlib.sha1).hexdigest()
+
+
 def assinatura_kiwify(order_id, secret):
-    raw = f'{order_id}{secret}'.encode('utf-8')
-    return hashlib.md5(raw).hexdigest()
+    """HMAC-SHA1 do order_id com o token do webhook como chave (hex, 40 chars)."""
+    return _hmac_sha1_hex(str(order_id or ''), secret or '')
 
 
-def webhook_autentico(payload, secret=None, signature=None):
+def webhook_autentico(payload, secret=None, signature=None, corpo_bruto=None):
     secret = (secret if secret is not None else getattr(settings, 'KIWIFY_WEBHOOK_SECRET', '')) or ''
     if not secret:
         return False
     payload = payload or {}
     order_id = str(payload.get('order_id') or '')
     recebido = str(signature or '').strip() or str(payload.get('signature') or '').strip()
-    if not order_id or not recebido:
+    if not recebido:
         return False
-    esperado = assinatura_kiwify(order_id, secret)
-    return hmac.compare_digest(esperado, recebido)
+
+    candidatos = []
+    if order_id:
+        candidatos.append(assinatura_kiwify(order_id, secret))
+        candidatos.append(hashlib.sha1(f'{order_id}{secret}'.encode('utf-8')).hexdigest())
+    if corpo_bruto:
+        bruto = corpo_bruto if isinstance(corpo_bruto, (bytes, bytearray)) else str(corpo_bruto).encode('utf-8')
+        if bruto:
+            candidatos.append(_hmac_sha1_hex(bytes(bruto), secret))
+
+    return any(_hex_igual(candidato, recebido) for candidato in candidatos)
 
 
 def tipo_evento(payload):

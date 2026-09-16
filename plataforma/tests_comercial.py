@@ -1,4 +1,6 @@
 """Etapa 6: Kiwify, onboarding, assinatura e isolamento comercial."""
+import hashlib
+import hmac
 import json
 
 from django.contrib.auth import get_user_model
@@ -116,7 +118,7 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         )
         body.pop('signature', None)
         resp = self.client.post(
-            reverse('webhook_kiwify') + '?signature=00000000000000000000000000000000',
+            reverse('webhook_kiwify') + '?signature=0000000000000000000000000000000000000000',
             data=json.dumps(body),
             content_type='application/json',
             HTTP_HOST='localhost',
@@ -129,6 +131,50 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         body.pop('signature', None)
         resp = self._post(body)
         self.assertEqual(resp.status_code, 401)
+
+    def test_hmac_do_corpo_bruto_na_query_e_aceito(self):
+        body = _payload_aprovado(
+            order_id='ord-body-1', email='bodyhmac@campinas.test', sub_id='sub-body-1',
+            product='Portal HMAC Corpo',
+        )
+        body.pop('signature', None)
+        bruto = json.dumps(body).encode('utf-8')
+        sig = hmac.new(SECRET.encode('utf-8'), bruto, hashlib.sha1).hexdigest()
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(
+                reverse('webhook_kiwify') + '?signature=' + sig,
+                data=bruto,
+                content_type='application/json',
+                HTTP_HOST='localhost',
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(Cliente.objects.filter(email='bodyhmac@campinas.test').count(), 1)
+
+    def test_sha1_order_id_concat_token_na_query_e_aceito(self):
+        body = _payload_aprovado(
+            order_id='ord-sha1-1', email='sha1c@campinas.test', sub_id='sub-sha1-1',
+            product='Portal SHA1 Concat',
+        )
+        body.pop('signature', None)
+        sig = hashlib.sha1(b'ord-sha1-1' + SECRET.encode('utf-8')).hexdigest()
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(
+                reverse('webhook_kiwify') + '?signature=' + sig,
+                data=json.dumps(body),
+                content_type='application/json',
+                HTTP_HOST='localhost',
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(Cliente.objects.filter(email='sha1c@campinas.test').count(), 1)
+
+    def test_md5_legado_e_rejeitado(self):
+        body = _payload_aprovado(
+            order_id='ord-md5-1', email='md5@campinas.test', sub_id='sub-md5-1',
+        )
+        body['signature'] = hashlib.md5(b'ord-md5-1' + SECRET.encode('utf-8')).hexdigest()
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(Cliente.objects.filter(email='md5@campinas.test').count(), 0)
 
     def test_pagamento_pendente_altera_status(self):
         self._post(_payload_aprovado())
