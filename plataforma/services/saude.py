@@ -55,7 +55,9 @@ def verificar_saude():
 
     emails_falha = EmailLog.objects.filter(status=EmailLog.STATUS_FALHOU).count()
     if emails_falha:
-        itens.append(_item('falha', 'E-mails com falha', f'{emails_falha} envio(s) falharam.'))
+        ultimo = EmailLog.objects.filter(status=EmailLog.STATUS_FALHOU).order_by('-criado_em').first()
+        extra = f' — {ultimo.erro}' if ultimo and ultimo.erro else ''
+        itens.append(_item('falha', 'E-mails com falha', f'{emails_falha} envio(s) falharam{extra}'[:240]))
 
     atrasadas = Assinatura.objects.filter(status=Assinatura.STATUS_ATRASADA).count()
     if atrasadas:
@@ -75,12 +77,19 @@ def problemas_operacao():
         status=EmailLog.STATUS_FALHOU,
     )
     n_acesso = emails_acesso.count()
+    ultimo_mail_erro = (
+        EmailLog.objects.filter(status=EmailLog.STATUS_FALHOU)
+        .exclude(erro='')
+        .order_by('-criado_em')
+        .first()
+    )
+    extra_mail = f' — {ultimo_mail_erro.erro}' if ultimo_mail_erro else ''
     if n_acesso:
         problemas.append({
             'nivel': 'falha',
-            'texto': f'{n_acesso} cliente(s) não receberam acesso',
-            'acao': 'Ver clientes',
-            'url': reverse('master_clientes'),
+            'texto': f'{n_acesso} cliente(s) não receberam acesso{extra_mail}'[:240],
+            'acao': 'Ver configurações',
+            'url': reverse('master_configuracoes'),
         })
     n_wh = WebhookEvent.objects.filter(status=WebhookEvent.STATUS_ERRO).count()
     if n_wh:
@@ -112,7 +121,7 @@ def problemas_operacao():
     if n_mail and not n_acesso:
         problemas.append({
             'nivel': 'atencao',
-            'texto': f'{n_mail} e-mail(s) falharam',
+            'texto': f'{n_mail} e-mail(s) falharam{extra_mail}'[:240],
             'acao': 'Ver configurações',
             'url': reverse('master_configuracoes'),
         })

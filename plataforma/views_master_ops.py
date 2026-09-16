@@ -37,6 +37,7 @@ class MasterConfiguracoesView(MasterRequiredMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         ctx['smtp'] = diagnosticar_smtp(conectar=False)
         ctx['destino'] = self.request.GET.get('destino') or self.request.user.email or ''
+        ctx['emails_recentes'] = EmailLog.objects.order_by('-criado_em')[:15]
         return ctx
 
 
@@ -54,11 +55,12 @@ class MasterEmailTesteView(MasterRequiredMixin, View):
             tipo=EmailLog.TIPO_TESTE,
         )
         if resultado.ok:
-            messages.success(request, 'SMTP funcionando. E-mail de teste enviado.')
+            messages.success(request, 'E-mail de teste enviado.')
         elif resultado.status == 'NOT_CONFIGURED':
             messages.warning(request, 'E-mail não configurado neste ambiente.')
         else:
-            messages.error(request, 'Não foi possível enviar o e-mail. Consulte o diagnóstico.')
+            motivo = (resultado.erro or 'Falha no envio.').strip()
+            messages.error(request, f'Não foi possível enviar o e-mail. {motivo}')
         return redirect('master_configuracoes')
 
 
@@ -201,7 +203,8 @@ class MasterClienteReenviarView(MasterRequiredMixin, View):
         if resultado.ok:
             messages.success(request, '✅ Acesso reenviado com sucesso.')
         else:
-            messages.error(request, '❌ Não foi possível enviar o e-mail. Consulte o diagnóstico.')
+            motivo = (resultado.erro or 'Falha no envio.').strip()
+            messages.error(request, f'Não foi possível enviar o e-mail. {motivo}')
         return redirect('master_cliente', pk=item.pk)
 
 

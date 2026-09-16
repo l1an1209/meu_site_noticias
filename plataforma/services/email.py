@@ -58,7 +58,13 @@ def _mensagem_erro_http(status, corpo):
     detalhe = ''
     try:
         dados = json.loads(corpo or '')
-        detalhe = str(dados.get('message') or dados.get('error') or '')[:400]
+        erro = dados.get('error')
+        if isinstance(erro, dict):
+            detalhe = str(erro.get('message') or erro.get('name') or '')[:400]
+        elif isinstance(erro, str):
+            detalhe = erro[:400]
+        if not detalhe:
+            detalhe = str(dados.get('message') or dados.get('name') or '')[:400]
     except (TypeError, ValueError):
         detalhe = (corpo or '')[:400]
     texto = f'Resend HTTP {status}'

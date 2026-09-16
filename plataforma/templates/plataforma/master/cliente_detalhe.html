@@ -20,6 +20,9 @@
         · {{ tentativas_acesso }} tentativa{{ tentativas_acesso|pluralize }}
         {% endif %}
     </p>
+    {% if ultimo_email and ultimo_email.erro %}
+    <p class="mb-2 small text-danger">Motivo: {{ ultimo_email.erro }}</p>
+    {% endif %}
     {% if usuario %}
         {% if ultimo_email and ultimo_email.status == 'enviado' %}
         <span class="ds-badge ds-badge--ok me-2">Enviado</span>

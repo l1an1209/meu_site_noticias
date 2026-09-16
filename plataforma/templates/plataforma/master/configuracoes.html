@@ -17,4 +17,33 @@
         <button class="btn btn-contribuir" type="submit">Enviar e-mail de teste</button>
     </form>
 </div>
+<div class="ds-card p-4" style="max-width:720px">
+    <h2 class="h6 mb-3">Últimos envios</h2>
+    {% if emails_recentes %}
+    <div class="table-responsive">
+    <table class="table table-sm mb-0">
+        <thead>
+        <tr><th>Quando</th><th>Tipo</th><th>Status</th><th>Destino</th><th>Detalhe</th></tr>
+        </thead>
+        <tbody>
+        {% for item in emails_recentes %}
+        <tr>
+            <td class="small text-muted">{{ item.criado_em|date:"d/m/Y H:i" }}</td>
+            <td class="small">{{ item.get_tipo_display }}</td>
+            <td>
+                {% if item.status == 'enviado' %}<span class="ds-badge ds-badge--ok">{{ item.get_status_display }}</span>
+                {% elif item.status == 'falhou' or item.status == 'nao_configurado' %}<span class="ds-badge ds-badge--danger">{{ item.get_status_display }}</span>
+                {% else %}<span class="ds-badge ds-badge--muted">{{ item.get_status_display }}</span>{% endif %}
+            </td>
+            <td class="small">{{ item.destinatario }}</td>
+            <td class="small">{% if item.erro %}{{ item.erro }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="mb-0 text-muted">Nenhum envio registrado ainda.</p>
+    {% endif %}
+</div>
 {% endblock %}

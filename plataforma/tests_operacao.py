@@ -285,6 +285,26 @@ class MasterOperacaoTests(MockResendMixin, TestCase):
         ).exists())
         self.assertTrue(AuditLog.objects.filter(acao='email_teste').exists())
 
+    def test_email_teste_mostra_erro_da_api(self):
+        host = self._login_master()
+        with patch(
+            'plataforma.services.email._post_resend',
+            side_effect=RuntimeError('Resend HTTP 403: The domain is not verified'),
+        ):
+            resp = self.client.post(
+                reverse('master_email_teste'),
+                {'destino': 'teste-smtp@test.com'},
+                **host,
+                follow=True,
+            )
+        self.assertContains(resp, 'Resend HTTP 403')
+        self.assertContains(resp, 'The domain is not verified')
+        self.assertContains(resp, 'Falhou')
+        log = EmailLog.objects.get(tipo=EmailLog.TIPO_TESTE, destinatario='teste-smtp@test.com')
+        self.assertEqual(log.status, EmailLog.STATUS_FALHOU)
+        self.assertIn('Resend HTTP 403', log.erro)
+        self.assertNotIn(RESEND_TEST_KEY, resp.content.decode())
+
     def test_dashboard_problemas_e_timeline(self):
         self._aprovar()
         host = self._login_master()
