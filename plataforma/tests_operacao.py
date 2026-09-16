@@ -68,7 +68,7 @@ def _payload_aprovado(order_id='ord-ops-1', email='ops@cidade.test', sub_id='sub
     DEBUG=False,
     KIWIFY_WEBHOOK_SECRET=SECRET,
     RESEND_API_KEY=RESEND_TEST_KEY,
-    DEFAULT_FROM_EMAIL='noreply@plataforma.local',
+    DEFAULT_FROM_EMAIL='noreply@portalnoticias.com.br',
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
 )
 class EmailServicoTests(MockResendMixin, TestCase):
@@ -81,7 +81,7 @@ class EmailServicoTests(MockResendMixin, TestCase):
         self.assertEqual(len(self.resend_payloads), 1)
         payload = self.resend_payloads[0]
         self.assertEqual(payload['to'], ['ok@test.com'])
-        self.assertEqual(payload['from'], 'noreply@plataforma.local')
+        self.assertEqual(payload['from'], 'noreply@portalnoticias.com.br')
         self.assertEqual(payload['subject'], 'Assunto')
         self.assertEqual(payload['text'], 'Corpo')
         self.assertEqual(payload['html'], '<p>Corpo</p>')
@@ -134,8 +134,26 @@ class EmailServicoTests(MockResendMixin, TestCase):
             self.assertEqual(pedido.full_url, 'https://api.resend.com/emails')
             self.assertEqual(pedido.get_method(), 'POST')
             self.assertTrue(opener.call_args.kwargs.get('timeout'))
+            self.assertEqual(
+                pedido.get_header('User-agent'),
+                'PortalNoticiasSaaS/1.0 (https://portalnoticias.com.br)',
+            )
+            self.assertEqual(pedido.get_header('Content-type'), 'application/json')
+            self.assertEqual(pedido.get_header('Accept'), 'application/json')
+            self.assertTrue(pedido.has_header('Authorization'))
+            corpo = json.loads(pedido.data.decode('utf-8'))
+            self.assertEqual(corpo['from'], 'noreply@portalnoticias.com.br')
+            self.assertNotIn('.local', corpo['from'])
         finally:
             self._resend_patcher.start()
+
+    def test_remetente_padrao_portalnoticias(self):
+        from django.conf import settings as django_settings
+
+        self.assertEqual(django_settings.DEFAULT_FROM_EMAIL, 'noreply@portalnoticias.com.br')
+        resultado = enviar_email('ok@test.com', 'Assunto', 'Corpo', tipo=EmailLog.TIPO_TESTE)
+        self.assertEqual(self.resend_payloads[-1]['from'], 'noreply@portalnoticias.com.br')
+        self.assertEqual(resultado.status, SUCCESS)
 
 
 @override_settings(

@@ -87,6 +87,7 @@ def _post_resend(payload):
             'Authorization': f'Bearer {chave}',
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            'User-Agent': 'PortalNoticiasSaaS/1.0 (https://portalnoticias.com.br)',
         },
     )
     try:
@@ -130,7 +131,7 @@ def enviar_email(
 
     dest = (destinatario or '').strip()
     assunto = (assunto or '')[:200]
-    remetente = remetente or getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@plataforma.local')
+    remetente = remetente or getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@portalnoticias.com.br')
     registro = EmailLog.objects.create(
         cliente=cliente,
         usuario=usuario,
