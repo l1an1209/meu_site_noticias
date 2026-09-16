@@ -29,7 +29,7 @@ def kiwify_webhook(request):
     if payload is None:
         return JsonResponse({'ok': False, 'erro': 'JSON inválido'}, status=400)
 
-    if not webhook_autentico(payload):
+    if not webhook_autentico(payload, signature=(request.GET.get('signature') or '').strip()):
         return JsonResponse({'ok': False, 'erro': 'assinatura inválida'}, status=401)
 
     tipo = tipo_evento(payload)

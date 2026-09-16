@@ -93,6 +93,43 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertEqual(Assinatura.objects.filter(kiwify_order_id='ord-001').count(), 1)
         self.assertEqual(WebhookEvent.objects.filter(id_externo='ord-001').count(), 1)
 
+    def test_assinatura_na_query_string_e_aceita(self):
+        body = _payload_aprovado(
+            order_id='ord-qs-1', email='qs@campinas.test', sub_id='sub-qs-1',
+            product='Portal Query String',
+        )
+        sig = body.pop('signature')
+        with self.captureOnCommitCallbacks(execute=True):
+            resp = self.client.post(
+                reverse('webhook_kiwify') + '?signature=' + sig,
+                data=json.dumps(body),
+                content_type='application/json',
+                HTTP_HOST='localhost',
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(Cliente.objects.filter(email='qs@campinas.test').count(), 1)
+        self.assertEqual(Portal.objects.filter(cliente__email='qs@campinas.test').count(), 1)
+
+    def test_query_string_assinatura_errada_rejeita(self):
+        body = _payload_aprovado(
+            order_id='ord-qs-bad', email='badqs@campinas.test', sub_id='sub-qs-bad',
+        )
+        body.pop('signature', None)
+        resp = self.client.post(
+            reverse('webhook_kiwify') + '?signature=00000000000000000000000000000000',
+            data=json.dumps(body),
+            content_type='application/json',
+            HTTP_HOST='localhost',
+        )
+        self.assertEqual(resp.status_code, 401)
+        self.assertEqual(Cliente.objects.filter(email='badqs@campinas.test').count(), 0)
+
+    def test_sem_assinatura_rejeita(self):
+        body = _payload_aprovado(order_id='ord-nosig', email='nosig@campinas.test', sub_id='sub-nosig')
+        body.pop('signature', None)
+        resp = self._post(body)
+        self.assertEqual(resp.status_code, 401)
+
     def test_pagamento_pendente_altera_status(self):
         self._post(_payload_aprovado())
         late = _payload_aprovado(order_id='ord-002')

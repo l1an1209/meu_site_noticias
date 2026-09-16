@@ -11,9 +11,9 @@ start_date, next_payment e plan.id — campos documentados em exemplos
 oficiais de payload, não inventados.
 
 Autenticidade (checkout): o token do webhook no painel Kiwify. A
-assinatura enviada no JSON (`signature`) é MD5(order_id + token),
-conforme a validação padrão desses webhooks de produto. Segredo só via
-KIWIFY_WEBHOOK_SECRET. Não usamos a API bancária Ed25519 aqui.
+assinatura (`signature`) é MD5(order_id + token). Pode vir no JSON
+ou na query string (`?signature=`), como a Kiwify envia via axios.
+Segredo só via KIWIFY_WEBHOOK_SECRET. Não usamos a API bancária Ed25519 aqui.
 """
 from __future__ import annotations
 
@@ -51,12 +51,13 @@ def assinatura_kiwify(order_id, secret):
     return hashlib.md5(raw).hexdigest()
 
 
-def webhook_autentico(payload, secret=None):
+def webhook_autentico(payload, secret=None, signature=None):
     secret = (secret if secret is not None else getattr(settings, 'KIWIFY_WEBHOOK_SECRET', '')) or ''
     if not secret:
         return False
+    payload = payload or {}
     order_id = str(payload.get('order_id') or '')
-    recebido = str(payload.get('signature') or '')
+    recebido = str(signature or '').strip() or str(payload.get('signature') or '').strip()
     if not order_id or not recebido:
         return False
     esperado = assinatura_kiwify(order_id, secret)
