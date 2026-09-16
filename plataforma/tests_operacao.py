@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.tokens import default_token_generator
-from django.core import mail
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils.encoding import force_bytes
@@ -17,6 +16,24 @@ from plataforma.services.webhooks import payload_publico, processar_evento
 
 User = get_user_model()
 SECRET = 'kiwify-token-teste'
+RESEND_TEST_KEY = 're_test_key_nao_usar_em_producao'
+
+
+class MockResendMixin:
+    def setUp(self):
+        super().setUp()
+        self.resend_payloads = []
+
+        def _fake(payload):
+            self.resend_payloads.append(payload)
+            return {'id': 'email_test'}
+
+        self._resend_patcher = patch(
+            'plataforma.services.email._post_resend',
+            side_effect=_fake,
+        )
+        self._resend_patcher.start()
+        self.addCleanup(self._resend_patcher.stop)
 
 
 def _payload_aprovado(order_id='ord-ops-1', email='ops@cidade.test', sub_id='sub-ops-1'):
@@ -50,45 +67,85 @@ def _payload_aprovado(order_id='ord-ops-1', email='ops@cidade.test', sub_id='sub
     TENANT_COMPAT_FALLBACK=True,
     DEBUG=False,
     KIWIFY_WEBHOOK_SECRET=SECRET,
-    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    RESEND_API_KEY=RESEND_TEST_KEY,
+    DEFAULT_FROM_EMAIL='noreply@plataforma.local',
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
 )
-class EmailServicoTests(TestCase):
+class EmailServicoTests(MockResendMixin, TestCase):
     def test_envio_sucesso(self):
-        resultado = enviar_email('ok@test.com', 'Assunto', 'Corpo', tipo=EmailLog.TIPO_TESTE)
+        resultado = enviar_email(
+            'ok@test.com', 'Assunto', 'Corpo', html='<p>Corpo</p>', tipo=EmailLog.TIPO_TESTE,
+        )
         self.assertEqual(resultado.status, SUCCESS)
         self.assertTrue(resultado.ok)
-        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(len(self.resend_payloads), 1)
+        payload = self.resend_payloads[0]
+        self.assertEqual(payload['to'], ['ok@test.com'])
+        self.assertEqual(payload['from'], 'noreply@plataforma.local')
+        self.assertEqual(payload['subject'], 'Assunto')
+        self.assertEqual(payload['text'], 'Corpo')
+        self.assertEqual(payload['html'], '<p>Corpo</p>')
         log = EmailLog.objects.get(pk=resultado.log_id)
         self.assertEqual(log.status, EmailLog.STATUS_ENVIADO)
         self.assertNotIn('password', (log.erro or '').lower())
+        self.assertNotIn(RESEND_TEST_KEY, (log.erro or ''))
 
-    def test_erro_smtp(self):
-        with patch('plataforma.services.email.EmailMultiAlternatives.send', side_effect=OSError('SMTP down')):
+    def test_erro_api_resend(self):
+        with patch(
+            'plataforma.services.email._post_resend',
+            side_effect=RuntimeError(f'Resend HTTP 422: invalid {RESEND_TEST_KEY}'),
+        ):
             resultado = enviar_email('falha@test.com', 'Assunto', 'Corpo', tipo=EmailLog.TIPO_TESTE)
         self.assertEqual(resultado.status, FAILED)
         log = EmailLog.objects.get(pk=resultado.log_id)
         self.assertEqual(log.status, EmailLog.STATUS_FALHOU)
-        self.assertIn('SMTP', log.erro)
+        self.assertIn('Resend', log.erro)
+        self.assertNotIn(RESEND_TEST_KEY, log.erro)
 
-    @override_settings(EMAIL_BACKEND='django.core.mail.backends.dummy.EmailBackend')
-    def test_nao_configurado(self):
+    @override_settings(RESEND_API_KEY='')
+    def test_nao_configurado_sem_chave(self):
         resultado = enviar_email('x@test.com', 'Assunto', 'Corpo', tipo=EmailLog.TIPO_TESTE)
         self.assertEqual(resultado.status, NOT_CONFIGURED)
         self.assertEqual(EmailLog.objects.get(pk=resultado.log_id).status, EmailLog.STATUS_NAO_CONFIGURADO)
+        self.assertEqual(self.resend_payloads, [])
 
     def test_mascara_email(self):
         self.assertEqual(mascarar_email('luanpatrick@gmail.com'), 'lu***@gmail.com')
+
+    def test_transporte_https_resend(self):
+        self._resend_patcher.stop()
+        try:
+            class _Resp:
+                status = 200
+
+                def read(self):
+                    return b'{"id":"email_https"}'
+
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *args):
+                    return False
+
+            with patch('plataforma.services.email.urlopen', return_value=_Resp()) as opener:
+                resultado = enviar_email('ok@test.com', 'Assunto', 'Corpo', tipo=EmailLog.TIPO_TESTE)
+            self.assertEqual(resultado.status, SUCCESS)
+            pedido = opener.call_args[0][0]
+            self.assertEqual(pedido.full_url, 'https://api.resend.com/emails')
+            self.assertEqual(pedido.get_method(), 'POST')
+            self.assertTrue(opener.call_args.kwargs.get('timeout'))
+        finally:
+            self._resend_patcher.start()
 
 
 @override_settings(
     ALLOWED_HOSTS=['*'],
     TENANT_COMPAT_FALLBACK=True,
     DEBUG=False,
-    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    RESEND_API_KEY=RESEND_TEST_KEY,
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
 )
-class RecuperacaoSenhaTests(TestCase):
+class RecuperacaoSenhaTests(MockResendMixin, TestCase):
     def test_formulario_existe(self):
         resp = self.client.get(reverse('password_reset'), HTTP_HOST='localhost')
         self.assertEqual(resp.status_code, 200)
@@ -129,11 +186,12 @@ class RecuperacaoSenhaTests(TestCase):
     TENANT_COMPAT_FALLBACK=True,
     DEBUG=False,
     KIWIFY_WEBHOOK_SECRET=SECRET,
-    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    RESEND_API_KEY=RESEND_TEST_KEY,
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
 )
-class MasterOperacaoTests(TestCase):
+class MasterOperacaoTests(MockResendMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.master = User.objects.create_superuser('ops-master', 'ops-master@test.com', 'senha-forte-ops')
         self.comum = User.objects.create_user('ops-comum', 'ops-comum@test.com', 'senha-forte-ops')
 
@@ -199,7 +257,7 @@ class MasterOperacaoTests(TestCase):
             tipo=EmailLog.TIPO_REENVIO, destinatario='ops@cidade.test', status=EmailLog.STATUS_ENVIADO,
         ).exists())
         self.assertTrue(AuditLog.objects.filter(acao='reenvio_acesso', objeto_id=str(cliente.pk)).exists())
-        corpo = mail.outbox[-1].body
+        corpo = self.resend_payloads[-1]['text']
         self.assertNotIn('senha-forte', corpo.lower())
         self.assertIn('/senha/redefinir/', corpo)
 

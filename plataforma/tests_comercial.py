@@ -9,6 +9,7 @@ from noticias.models import Noticia
 from plataforma.models import Assinatura, Cliente, Membership, Plano, Portal, WebhookEvent
 from plataforma.services.kiwify import assinatura_kiwify
 from plataforma.slugs import gerar_slug_portal, slug_disponivel
+from plataforma.tests_operacao import MockResendMixin, RESEND_TEST_KEY
 
 User = get_user_model()
 SECRET = 'kiwify-token-teste'
@@ -47,9 +48,10 @@ def _payload_aprovado(order_id='ord-001', email='joao@campinas.test', sub_id='su
     DEBUG=False,
     KIWIFY_WEBHOOK_SECRET=SECRET,
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    RESEND_API_KEY=RESEND_TEST_KEY,
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
 )
-class ComercialKiwifyTests(TestCase):
+class ComercialKiwifyTests(MockResendMixin, TestCase):
     def _post(self, payload):
         return self.client.post(
             reverse('webhook_kiwify'),

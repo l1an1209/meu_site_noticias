@@ -1,8 +1,17 @@
+import os
+from io import StringIO
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.db import IntegrityError
 from django.test import TestCase
 
 from noticias.models import Anuncio, Categoria, Noticia
 from plataforma.models import Portal
+
+User = get_user_model()
 
 
 class PortalScopeTests(TestCase):
@@ -41,3 +50,28 @@ class PortalScopeTests(TestCase):
     def test_noticia_herda_portal_padrao(self):
         noticia = Noticia.objects.create(titulo='Teste tenant', conteudo='Texto')
         self.assertEqual(noticia.portal_id, self.legado.pk)
+
+
+class CriarAdminCommandTests(TestCase):
+    def test_sem_variaveis_nao_cria_conta(self):
+        antes = User.objects.count()
+        with patch.dict(os.environ, {
+            'DJANGO_SUPERUSER_USERNAME': '',
+            'DJANGO_SUPERUSER_EMAIL': '',
+            'DJANGO_SUPERUSER_PASSWORD': '',
+        }, clear=False):
+            with self.assertRaises(CommandError):
+                call_command('criar_admin', stdout=StringIO())
+        self.assertEqual(User.objects.count(), antes)
+
+    def test_nao_altera_superuser_existente(self):
+        User.objects.create_superuser('ops-admin-test', 'ops-admin-test@example.com', 'senha-inicial-teste')
+        with patch.dict(os.environ, {
+            'DJANGO_SUPERUSER_USERNAME': 'ops-admin-test',
+            'DJANGO_SUPERUSER_EMAIL': 'ops-admin-test@example.com',
+            'DJANGO_SUPERUSER_PASSWORD': 'outra-senha-nao-usada',
+        }, clear=False):
+            call_command('criar_admin', stdout=StringIO())
+        user = User.objects.get(username='ops-admin-test')
+        self.assertTrue(user.check_password('senha-inicial-teste'))
+        self.assertEqual(User.objects.filter(username='ops-admin-test').count(), 1)

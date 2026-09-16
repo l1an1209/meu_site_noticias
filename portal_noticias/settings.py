@@ -32,6 +32,26 @@ def _env_list(name, default=''):
     return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
 
 
+# Hosts públicos da plataforma (não são tenants). Env pode acrescentar outros.
+PLATFORM_HOSTS_PRODUCAO = (
+    'portalnoticias.com.br',
+    'www.portalnoticias.com.br',
+    'meu-site-noticias.onrender.com',
+)
+ALLOWED_HOSTS_PRODUCAO = (
+    'portalnoticias.com.br',
+    '.portalnoticias.com.br',
+    'www.portalnoticias.com.br',
+    'meu-site-noticias.onrender.com',
+)
+CSRF_TRUSTED_ORIGINS_PRODUCAO = (
+    'https://portalnoticias.com.br',
+    'https://www.portalnoticias.com.br',
+    'https://*.portalnoticias.com.br',
+    'https://meu-site-noticias.onrender.com',
+)
+
+
 _load_env_file(BASE_DIR / '.env')
 
 DEBUG = _env_bool('DEBUG', 'true')
@@ -44,8 +64,21 @@ if not SECRET_KEY:
     else:
         raise ImproperlyConfigured('SECRET_KEY é obrigatória quando DEBUG=False ou PRODUCTION=True.')
 
-ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS', '*' if DEBUG else 'localhost,127.0.0.1')
-CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS', '')
+if os.environ.get('ALLOWED_HOSTS', '').strip():
+    ALLOWED_HOSTS = _env_list('ALLOWED_HOSTS')
+elif DEBUG and not PRODUCTION:
+    ALLOWED_HOSTS = ['*']
+elif PRODUCTION:
+    ALLOWED_HOSTS = list(ALLOWED_HOSTS_PRODUCAO)
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+if os.environ.get('CSRF_TRUSTED_ORIGINS', '').strip():
+    CSRF_TRUSTED_ORIGINS = _env_list('CSRF_TRUSTED_ORIGINS')
+elif PRODUCTION:
+    CSRF_TRUSTED_ORIGINS = list(CSRF_TRUSTED_ORIGINS_PRODUCAO)
+else:
+    CSRF_TRUSTED_ORIGINS = []
 
 EMAIL_BACKEND = os.environ.get(
     'EMAIL_BACKEND',
@@ -57,6 +90,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = _env_bool('EMAIL_USE_TLS', 'true')
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@plataforma.local')
+RESEND_API_KEY = os.environ.get('RESEND_API_KEY', '').strip()
 NOTIFY_EMAILS = _env_list('NOTIFY_EMAILS', '')
 
 FILE_UPLOAD_MAX_MEMORY_SIZE = int(os.environ.get('FILE_UPLOAD_MAX_MEMORY_SIZE', str(52_428_800)))
@@ -108,9 +142,23 @@ TEMPLATES = [
 WSGI_APPLICATION = 'portal_noticias.wsgi.application'
 
 SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
-TENANT_BASE_DOMAIN = os.environ.get('TENANT_BASE_DOMAIN', 'plataforma.com.br')
-PLATFORM_HOSTS = tuple(_env_list('PLATFORM_HOSTS', 'localhost,127.0.0.1,testserver'))
-TENANT_COMPAT_FALLBACK = _env_bool('TENANT_COMPAT_FALLBACK', 'true')
+TENANT_BASE_DOMAIN = os.environ.get('TENANT_BASE_DOMAIN', 'portalnoticias.com.br')
+_platform_hosts = [
+    h.lower()
+    for h in _env_list(
+        'PLATFORM_HOSTS',
+        'localhost,127.0.0.1,testserver,' + ','.join(PLATFORM_HOSTS_PRODUCAO),
+    )
+]
+for _host in ('localhost', '127.0.0.1', 'testserver', *PLATFORM_HOSTS_PRODUCAO):
+    if _host.lower() not in _platform_hosts:
+        _platform_hosts.append(_host.lower())
+PLATFORM_HOSTS = tuple(_platform_hosts)
+# Local: fallback legado ligado por padrão. Produção: desligado, salvo override explícito.
+TENANT_COMPAT_FALLBACK = _env_bool(
+    'TENANT_COMPAT_FALLBACK',
+    'false' if PRODUCTION else 'true',
+)
 
 DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 if DATABASE_URL:

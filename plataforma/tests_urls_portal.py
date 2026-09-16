@@ -1,12 +1,12 @@
 """URLs públicas e do painel do tenant (slug / host_previsto / custom_domain)."""
 from django.contrib.auth import get_user_model
-from django.core import mail
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from plataforma.models import Portal
 from plataforma.resolvers import resolve_portal_from_host
 from plataforma.services.acesso import enviar_acesso
+from plataforma.tests_operacao import MockResendMixin, RESEND_TEST_KEY
 from plataforma.urls_portal import url_app_portal, url_publica_portal
 
 User = get_user_model()
@@ -18,10 +18,12 @@ User = get_user_model()
     TENANT_COMPAT_FALLBACK=True,
     DEBUG=False,
     EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    RESEND_API_KEY=RESEND_TEST_KEY,
     CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
 )
-class UrlsPortalClienteTests(TestCase):
+class UrlsPortalClienteTests(MockResendMixin, TestCase):
     def setUp(self):
+        super().setUp()
         self.portal = Portal.objects.create(
             nome='Portal Cliente',
             slug='cliente-demo',
@@ -72,7 +74,7 @@ class UrlsPortalClienteTests(TestCase):
         usuario = User.objects.create_user('cliente-demo', 'cliente@demo.test', 'senha-temporaria-xyz')
         resultado = enviar_acesso(usuario, self.portal)
         self.assertTrue(resultado.ok)
-        corpo = mail.outbox[-1].body
+        corpo = self.resend_payloads[-1]['text']
         self.assertIn('Seu portal foi criado com sucesso.', corpo)
         self.assertIn('Acessar meu site', corpo)
         self.assertIn('https://cliente-demo.plataforma.com.br/', corpo)
@@ -100,3 +102,52 @@ class UrlsPortalClienteTests(TestCase):
         self.assertContains(lista, 'Abrir site')
         self.assertContains(lista, 'https://cliente-demo.plataforma.com.br/')
         self.assertNotContains(lista, '/app/?portal_id=')
+
+
+@override_settings(
+    ALLOWED_HOSTS=['*'],
+    TENANT_BASE_DOMAIN='portalnoticias.com.br',
+    TENANT_COMPAT_FALLBACK=False,
+    DEBUG=False,
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
+)
+class HostsPlataformaProducaoTests(TestCase):
+    def test_dominio_principal_nao_e_tenant(self):
+        Portal.objects.create(
+            nome='Colisão de slug',
+            slug='portalnoticias',
+            cidade='Brasil',
+            estado='BR',
+            status=Portal.STATUS_ATIVO,
+        )
+        self.assertIsNone(resolve_portal_from_host('portalnoticias.com.br'))
+        self.assertIsNone(resolve_portal_from_host('www.portalnoticias.com.br'))
+        self.assertIsNone(resolve_portal_from_host('meu-site-noticias.onrender.com'))
+
+    def test_subdominio_cliente_continua_tenant(self):
+        portal = Portal.objects.create(
+            nome='Portal Cliente',
+            slug='cliente-novo',
+            cidade='Cacoal',
+            estado='RO',
+            status=Portal.STATUS_ATIVO,
+        )
+        self.assertEqual(
+            url_publica_portal(portal),
+            'https://cliente-novo.portalnoticias.com.br/',
+        )
+        self.assertEqual(
+            url_app_portal(portal),
+            'https://cliente-novo.portalnoticias.com.br/app/',
+        )
+        self.assertEqual(
+            resolve_portal_from_host('cliente-novo.portalnoticias.com.br').pk,
+            portal.pk,
+        )
+
+    def test_home_do_apex_e_landing_saas(self):
+        resp = self.client.get('/', HTTP_HOST='portalnoticias.com.br')
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Seu próprio portal de notícias')
+        self.assertNotContains(resp, 'Notícias Ji-Paraná')
+
