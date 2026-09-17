@@ -211,16 +211,17 @@ class PortalOnboardingForm(forms.Form):
         max_length=120,
         widget=forms.TextInput(attrs={
             'class': 'form-control form-control-lg',
-            'placeholder': 'Ex.: Jornal de Campinas',
+            'placeholder': 'Ex.: Notícias de Campinas',
             'autocomplete': 'organization',
         }),
     )
     slug = forms.CharField(
         label='Subdomínio',
         max_length=50,
+        help_text='Somente letras, números e hífens. Este será o endereço público do portal.',
         widget=forms.TextInput(attrs={
             'class': 'form-control form-control-lg',
-            'placeholder': 'jornaldecampinas',
+            'placeholder': 'noticias-campinas',
             'autocomplete': 'off',
             'spellcheck': 'false',
         }),

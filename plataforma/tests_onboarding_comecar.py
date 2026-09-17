@@ -77,6 +77,22 @@ class AppComecarOnboardingTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Configure seu portal')
         self.assertContains(resp, 'O subdomínio não poderá ser alterado depois')
+        self.assertContains(resp, 'Antes de começar, escolha o nome do seu portal')
+        self.assertContains(resp, 'Criar meu portal')
+        self.assertContains(resp, '.test')
+
+    def test_nao_preenche_slug_provisorio_setup(self):
+        self.portal.nome = 'Portal em configuração'
+        self.portal.slug = 'setup-a1b2c3d4'
+        self.portal.save(update_fields=['nome', 'slug'])
+        self._login_admin()
+        self.client.defaults.update(_host('setup-a1b2c3d4'))
+        resp = self.client.get(self._url())
+        self.assertEqual(resp.status_code, 200)
+        html = resp.content.decode()
+        self.assertNotIn('value="Portal em configuração"', html)
+        self.assertNotIn('value="setup-a1b2c3d4"', html)
+        self.assertContains(resp, 'https://noticias-campinas.test')
 
     def test_get_setup_concluido_redireciona_dashboard(self):
         self.portal.setup_concluido = True

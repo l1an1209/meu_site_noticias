@@ -621,9 +621,15 @@ class AppComecarView(AppAccessMixin, FormView):
 
     def get_initial(self):
         portal = self.request.portal
+        nome = portal.nome or ''
+        slug = portal.slug or ''
+        if nome.strip() == 'Portal em configuração':
+            nome = ''
+        if slug.startswith('setup-'):
+            slug = ''
         return {
-            'nome': portal.nome,
-            'slug': portal.slug,
+            'nome': nome,
+            'slug': slug,
         }
 
     def get_context_data(self, **kwargs):

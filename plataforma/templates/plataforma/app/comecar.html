@@ -1,18 +1,19 @@
 {% extends "plataforma/app/base.html" %}
 {% block title %}Configure seu portal{% endblock %}
 {% block heading %}Configure seu portal{% endblock %}
-{% block subheading %}Nome e endereço definitivos deste portal{% endblock %}
+{% block subheading %}Nome e endereço que seus leitores vão usar{% endblock %}
 {% block content %}
-<div class="ds-card p-4" style="max-width:640px">
-    <p class="text-muted mb-4">Escolha o nome e o endereço do seu portal. O subdomínio não poderá ser alterado depois.</p>
+<div class="ds-card p-4 p-md-5" style="max-width:680px">
+    <p class="mb-4">Antes de começar, escolha o nome do seu portal e o endereço que será usado pelos seus leitores.</p>
     <form method="post" class="js-loading-form" novalidate>
         {% csrf_token %}
         {% if form.non_field_errors %}
         <div class="alert alert-danger">{{ form.non_field_errors }}</div>
         {% endif %}
-        <div class="mb-3">
+        <div class="mb-4">
             <label class="form-label fw-semibold" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
             {{ form.nome }}
+            <div class="form-text">Exemplo: Notícias de Campinas</div>
             {% if form.nome.errors %}<div class="text-danger small mt-1">{{ form.nome.errors }}</div>{% endif %}
         </div>
         <div class="mb-3">
@@ -21,13 +22,17 @@
                 {{ form.slug }}
                 <span class="input-group-text">.{{ tenant_base_domain }}</span>
             </div>
+            {% if form.slug.help_text %}<div class="form-text">{{ form.slug.help_text }}</div>{% endif %}
             {% if form.slug.errors %}<div class="text-danger small mt-1">{{ form.slug.errors }}</div>{% endif %}
         </div>
-        <div class="alert alert-light border mb-4" role="status">
-            <div class="small text-muted mb-1">Prévia do endereço</div>
-            <strong id="onboarding-preview">https://{{ form.slug.value|default:'seu-portal' }}.{{ tenant_base_domain }}</strong>
+        <div class="alert alert-light border mb-3" role="status">
+            <div class="small text-muted mb-1">Endereço público do portal</div>
+            <strong id="onboarding-preview">https://{{ form.slug.value|default:'noticias-campinas' }}.{{ tenant_base_domain }}</strong>
         </div>
-        <button class="btn btn-contribuir" type="submit">Continuar</button>
+        <div class="alert alert-info mb-4" role="note">
+            O subdomínio será usado como endereço permanente do seu portal e não poderá ser alterado posteriormente pelo seu usuário. O subdomínio não poderá ser alterado depois.
+        </div>
+        <button class="btn btn-contribuir" type="submit">Criar meu portal</button>
     </form>
 </div>
 {% endblock %}
@@ -48,10 +53,15 @@
             .slice(0, 50);
     }
     function atualizar() {
-        var slug = slugify(input.value) || 'seu-portal';
+        var slug = slugify(input.value) || 'noticias-campinas';
         preview.textContent = 'https://' + slug + '.' + base;
     }
     input.addEventListener('input', atualizar);
+    input.addEventListener('blur', function () {
+        var slug = slugify(input.value);
+        if (slug) input.value = slug;
+        atualizar();
+    });
     atualizar();
 })();
 </script>
