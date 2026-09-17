@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.utils.text import slugify
 
 from plataforma.models import Portal
@@ -19,6 +21,15 @@ def slug_disponivel(slug, ignore_pk=None):
     if ignore_pk:
         qs = qs.exclude(pk=ignore_pk)
     return not qs.exists()
+
+
+def gerar_slug_provisorio():
+    """Slug temporário de onboarding. Sem dados pessoais, produto ou plano."""
+    for _ in range(20):
+        slug = f'setup-{uuid4().hex[:8]}'
+        if len(slug) <= 50 and slug_disponivel(slug):
+            return slug
+    return f'setup-{uuid4().hex}'[:50]
 
 
 def gerar_slug_portal(nome, email=''):

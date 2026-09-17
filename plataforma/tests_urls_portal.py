@@ -30,6 +30,7 @@ class UrlsPortalClienteTests(MockResendMixin, TestCase):
             cidade='Cacoal',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
 
     def test_slug_gera_url_publica_e_painel(self):

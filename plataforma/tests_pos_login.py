@@ -29,6 +29,7 @@ class PosLoginRedirectTests(TestCase):
             cidade='Cacoal',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
         cls.portal_b = Portal.objects.create(
             nome='Portal Dois Pos',
@@ -36,6 +37,7 @@ class PosLoginRedirectTests(TestCase):
             cidade='Vilhena',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
         cls.portal_bloq = Portal.objects.create(
             nome='Portal Bloq Pos',

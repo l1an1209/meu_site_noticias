@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.timezone import now
@@ -9,7 +9,7 @@ from plataforma.models import Assinatura, Cliente, EmailLog, Membership, Plano, 
 from plataforma.services.acesso import enviar_acesso
 from plataforma.security import log_audit
 from plataforma.services.kiwify import extrair_assinatura_kiwify, extrair_cliente
-from plataforma.slugs import gerar_slug_portal
+from plataforma.slugs import gerar_slug_provisorio
 
 User = get_user_model()
 
@@ -114,25 +114,35 @@ def provisionar_pagamento_aprovado(payload, request=None):
         cliente.save(update_fields=['telefone'])
 
     plano = resolver_plano(dados_sub)
-    nome_portal = dados_sub.get('product_name') or f"Portal de {dados_cli['cidade']}"
-    slug = gerar_slug_portal(nome_portal, dados_cli['email'])
-
-    portal = Portal.objects.create(
-        nome=nome_portal[:120],
-        slug=slug,
-        cidade=dados_cli['cidade'][:80],
-        estado=dados_cli['estado'][:50],
-        email=dados_cli['email'],
-        telefone=dados_cli['telefone'][:20],
-        cliente=cliente,
-        cliente_nome=cliente.nome,
-        cliente_email=cliente.email,
-        plano=plano,
-        status=Portal.STATUS_ATIVO,
-        pagamento_status=Portal.PAGAMENTO_PAGO,
-        slogan='Notícias da sua cidade',
-        descricao=f'Portal de notícias de {dados_cli["cidade"]}.',
-    )
+    nome_portal = 'Portal em configuração'
+    portal = None
+    for tentativa in range(8):
+        slug = gerar_slug_provisorio()
+        try:
+            with transaction.atomic():
+                portal = Portal.objects.create(
+                    nome=nome_portal,
+                    slug=slug,
+                    cidade=dados_cli['cidade'][:80],
+                    estado=dados_cli['estado'][:50],
+                    email=dados_cli['email'],
+                    telefone=dados_cli['telefone'][:20],
+                    cliente=cliente,
+                    cliente_nome=cliente.nome,
+                    cliente_email=cliente.email,
+                    plano=plano,
+                    status=Portal.STATUS_ATIVO,
+                    pagamento_status=Portal.PAGAMENTO_PAGO,
+                    slogan='Notícias da sua cidade',
+                    descricao=f'Portal de notícias de {dados_cli["cidade"]}.',
+                    setup_concluido=False,
+                )
+            break
+        except IntegrityError:
+            if tentativa >= 7:
+                raise
+    if portal is None:
+        raise IntegrityError('Não foi possível gerar um slug provisório único.')
     Categoria.all_objects.get_or_create(
         portal=portal, slug='geral', defaults={'nome': 'Geral'},
     )

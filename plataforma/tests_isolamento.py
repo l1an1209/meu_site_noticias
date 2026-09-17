@@ -29,6 +29,7 @@ class IsolamentoDoisTenantsTests(TestCase):
             cidade='Cacoal',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
         cls.portal_b = Portal.objects.create(
             nome='Portal Beta',
@@ -36,6 +37,7 @@ class IsolamentoDoisTenantsTests(TestCase):
             cidade='Vilhena',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
         cls.cat_a = Categoria.all_objects.create(
             portal=cls.portal_a, nome='Geral', slug='geral',

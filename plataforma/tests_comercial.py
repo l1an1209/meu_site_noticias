@@ -70,7 +70,10 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertEqual(Portal.objects.filter(cliente__email='joao@campinas.test').count(), 1)
         portal = Portal.objects.get(cliente__email='joao@campinas.test')
         self.assertEqual(portal.status, Portal.STATUS_ATIVO)
-        self.assertTrue(portal.slug.startswith('noticias-de-campinas'))
+        self.assertTrue(portal.slug.startswith('setup-'))
+        self.assertNotEqual(portal.slug, 'noticias-de-campinas')
+        self.assertEqual(portal.nome, 'Portal em configuração')
+        self.assertFalse(portal.setup_concluido)
         user = User.objects.get(email='joao@campinas.test')
         self.assertTrue(
             Membership.objects.filter(
@@ -271,6 +274,8 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertEqual(resp.status_code, 302)
         portal.refresh_from_db()
         self.assertEqual(portal.status, Portal.STATUS_ATIVO)
+        portal.setup_concluido = True
+        portal.save(update_fields=['setup_concluido'])
         self.client.force_login(user)
         self.client.defaults['HTTP_HOST'] = f'{portal.slug}.test'
         self.assertEqual(self.client.get(reverse('app_home')).status_code, 200)
@@ -280,6 +285,10 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self._post(_payload_aprovado(email='b@t.test', order_id='ob', sub_id='sb', product='Portal Beta Com'))
         pa = Portal.objects.get(cliente__email='a@t.test')
         pb = Portal.objects.get(cliente__email='b@t.test')
+        pa.setup_concluido = True
+        pa.save(update_fields=['setup_concluido'])
+        pb.setup_concluido = True
+        pb.save(update_fields=['setup_concluido'])
         ua = User.objects.get(email='a@t.test')
         self.client.force_login(ua)
         self.client.defaults['HTTP_HOST'] = f'{pb.slug}.test'
@@ -314,7 +323,11 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertIn('a@t.test', html)
         self.assertIn('b@t.test', html)
         html2 = self.client.get(reverse('master_assinaturas'), HTTP_HOST='localhost').content.decode()
-        self.assertIn('alfa-tres', html2.lower() + html2)
+        html2_l = html2.lower()
+        self.assertIn('sa3', html2_l)
+        self.assertIn('sb3', html2_l)
+        self.assertIn('setup-', html2_l)
+        self.assertNotIn('alfa-tres', html2_l)
 
     def test_slug_duplicado_e_tratado(self):
         self._post(_payload_aprovado(email='um@t.test', order_id='s1', sub_id='u1', product='Cidade Igual'))
@@ -434,3 +447,86 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertEqual(tenant.status_code, 200)
         self.assertNotContains(tenant, 'COMEÇAR AGORA')
         self.assertContains(tenant, Portal.objects.get(slug=Portal.SLUG_LEGADO).nome)
+
+
+@override_settings(
+    ALLOWED_HOSTS=['*'],
+    TENANT_COMPAT_FALLBACK=True,
+    DEBUG=False,
+    KIWIFY_WEBHOOK_SECRET=SECRET,
+    EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+    RESEND_API_KEY=RESEND_TEST_KEY,
+    CACHES={'default': {'BACKEND': 'django.core.cache.backends.dummy.DummyCache'}},
+)
+class KiwifyIdentidadePortalTests(MockResendMixin, TestCase):
+    def _post(self, payload):
+        return self.client.post(
+            reverse('webhook_kiwify'),
+            data=json.dumps(payload),
+            content_type='application/json',
+            HTTP_HOST='localhost',
+        )
+
+    def test_product_name_nao_define_slug_nem_nome(self):
+        resp = self._post(_payload_aprovado(
+            order_id='ord-id-1',
+            email='id1@campinas.test',
+            sub_id='sub-id-1',
+            product='Plano Básico',
+        ))
+        self.assertEqual(resp.status_code, 200, resp.content)
+        portal = Portal.objects.get(cliente__email='id1@campinas.test')
+        self.assertNotEqual(portal.slug, 'plano-basico')
+        self.assertTrue(portal.slug.startswith('setup-'))
+        self.assertLessEqual(len(portal.slug), 50)
+        self.assertNotEqual(portal.nome, 'Plano Básico')
+        self.assertEqual(portal.nome, 'Portal em configuração')
+        self.assertIs(portal.setup_concluido, False)
+        self.assertEqual(portal.plano.codigo, 'basico')
+        self.assertNotIn('campinas', portal.slug)
+        self.assertNotIn('id1', portal.slug)
+
+    def test_segundo_provisionamento_slug_unico(self):
+        self._post(_payload_aprovado(
+            order_id='ord-id-2a', email='id2a@campinas.test', sub_id='sub-id-2a',
+            product='Plano Básico',
+        ))
+        self._post(_payload_aprovado(
+            order_id='ord-id-2b', email='id2b@campinas.test', sub_id='sub-id-2b',
+            product='Plano Profissional',
+        ))
+        p1 = Portal.objects.get(cliente__email='id2a@campinas.test')
+        p2 = Portal.objects.get(cliente__email='id2b@campinas.test')
+        self.assertTrue(p1.slug.startswith('setup-'))
+        self.assertTrue(p2.slug.startswith('setup-'))
+        self.assertNotEqual(p1.slug, p2.slug)
+        self.assertNotEqual(p1.slug, 'plano-profissional')
+        self.assertNotEqual(p2.slug, 'plano-profissional')
+        self.assertIs(p1.setup_concluido, False)
+        self.assertIs(p2.setup_concluido, False)
+
+    def test_provisionamento_nao_altera_legado_plano_basico(self):
+        legado = Portal.objects.filter(slug='plano-basico').first()
+        if legado is None:
+            legado = Portal.objects.create(
+                nome='Notícias',
+                slug='plano-basico',
+                cidade='Campinas',
+                estado='SP',
+                setup_concluido=True,
+            )
+        slug_antes = legado.slug
+        nome_antes = legado.nome
+        setup_antes = legado.setup_concluido
+        self._post(_payload_aprovado(
+            order_id='ord-id-leg', email='idleg@campinas.test', sub_id='sub-id-leg',
+            product='Plano Básico',
+        ))
+        legado.refresh_from_db()
+        self.assertEqual(legado.slug, slug_antes)
+        self.assertEqual(legado.nome, nome_antes)
+        self.assertEqual(legado.setup_concluido, setup_antes)
+        novo = Portal.objects.get(cliente__email='idleg@campinas.test')
+        self.assertNotEqual(novo.pk, legado.pk)
+        self.assertTrue(novo.slug.startswith('setup-'))
+        self.assertEqual(Portal.objects.filter(slug='plano-basico').count(), 1)

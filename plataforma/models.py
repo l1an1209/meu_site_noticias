@@ -171,6 +171,11 @@ class Portal(models.Model):
     cliente_email = models.EmailField(blank=True)
     criado_em = models.DateTimeField(auto_now_add=True)
     ultimo_acesso_em = models.DateTimeField(null=True, blank=True)
+    setup_concluido = models.BooleanField(
+        default=False,
+        help_text='False = portal novo ainda sem nome/slug definitivos (wizard futuro). '
+                  'Portais já existentes na migration ficam True.',
+    )
 
     class Meta:
         ordering = ['nome']

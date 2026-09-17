@@ -1,0 +1,58 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Configure seu portal{% endblock %}
+{% block heading %}Configure seu portal{% endblock %}
+{% block subheading %}Nome e endereço definitivos deste portal{% endblock %}
+{% block content %}
+<div class="ds-card p-4" style="max-width:640px">
+    <p class="text-muted mb-4">Escolha o nome e o endereço do seu portal. O subdomínio não poderá ser alterado depois.</p>
+    <form method="post" class="js-loading-form" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.nome.id_for_label }}">{{ form.nome.label }}</label>
+            {{ form.nome }}
+            {% if form.nome.errors %}<div class="text-danger small mt-1">{{ form.nome.errors }}</div>{% endif %}
+        </div>
+        <div class="mb-3">
+            <label class="form-label fw-semibold" for="{{ form.slug.id_for_label }}">{{ form.slug.label }}</label>
+            <div class="input-group">
+                {{ form.slug }}
+                <span class="input-group-text">.{{ tenant_base_domain }}</span>
+            </div>
+            {% if form.slug.errors %}<div class="text-danger small mt-1">{{ form.slug.errors }}</div>{% endif %}
+        </div>
+        <div class="alert alert-light border mb-4" role="status">
+            <div class="small text-muted mb-1">Prévia do endereço</div>
+            <strong id="onboarding-preview">https://{{ form.slug.value|default:'seu-portal' }}.{{ tenant_base_domain }}</strong>
+        </div>
+        <button class="btn btn-contribuir" type="submit">Continuar</button>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+    var input = document.getElementById('{{ form.slug.id_for_label }}');
+    var preview = document.getElementById('onboarding-preview');
+    var base = "{{ tenant_base_domain|escapejs }}";
+    if (!input || !preview) return;
+    function slugify(value) {
+        return (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 50);
+    }
+    function atualizar() {
+        var slug = slugify(input.value) || 'seu-portal';
+        preview.textContent = 'https://' + slug + '.' + base;
+    }
+    input.addEventListener('input', atualizar);
+    atualizar();
+})();
+</script>
+{% endblock %}

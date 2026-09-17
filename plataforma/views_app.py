@@ -1,10 +1,12 @@
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.shortcuts import get_object_or_404, redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (
     CreateView, DeleteView, FormView, ListView, TemplateView, UpdateView, View,
@@ -15,7 +17,7 @@ from noticias.utils import limpar_cache_portal
 from noticias.utils_noticia import criar_noticia_de_contribuicao
 from plataforma.forms import (
     AnuncioForm, AparenciaForm, CategoriaForm, ConfigForm, EquipeForm,
-    NoticiaForm, SeoForm,
+    NoticiaForm, PortalOnboardingForm, SeoForm,
 )
 from plataforma.metrics import format_mb, storage_bytes_portal
 from plataforma.models import Membership, Portal
@@ -26,9 +28,12 @@ from plataforma.permissions import (
 from plataforma.resolvers import resolve_portal_from_host
 from plataforma.security import log_audit, safe_redirect
 from plataforma.services.pos_login import (
+    _port_suffix,
     app_url_for_portal,
+    gravar_portal_sessao,
     portais_administraveis,
     portais_indisponiveis,
+    tenant_host_for_portal,
 )
 
 User = get_user_model()
@@ -48,6 +53,34 @@ class AppAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
     login_url = reverse_lazy('entrar')
     papeis_permitidos = ()
     raise_exception = False
+    permite_onboarding_incompleto = False
+    URL_ONBOARDING = 'app_comecar'
+
+    def _url_onboarding_liberada(self, request):
+        if getattr(self, 'permite_onboarding_incompleto', False):
+            return True
+        match = getattr(request, 'resolver_match', None)
+        return getattr(match, 'url_name', None) == self.URL_ONBOARDING
+
+    def _redirecionar_onboarding(self, request):
+        if not request.user.is_authenticated:
+            return False
+        if is_platform_master(request.user):
+            return False
+        portal = getattr(request, 'portal', None)
+        if portal is None or portal.setup_concluido:
+            return False
+        if self._url_onboarding_liberada(request):
+            return False
+        return True
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            if not self.test_func():
+                return self.handle_no_permission()
+            if self._redirecionar_onboarding(request):
+                return redirect(self.URL_ONBOARDING)
+        return super().dispatch(request, *args, **kwargs)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -551,3 +584,82 @@ class AppAssinaturaView(AppAccessMixin, TemplateView):
         ctx['cliente_portal'] = portal.cliente
         ctx['host_previsto'] = portal.host_previsto
         return ctx
+
+
+def _url_app_no_novo_host(request, portal):
+    """Redirect absoluto para /app/ no host do slug recém-salvo."""
+    gravar_portal_sessao(request, portal)
+    scheme = 'https' if request.is_secure() else 'http'
+    host = tenant_host_for_portal(request, portal)
+    return f'{scheme}://{host}{_port_suffix(request)}{reverse("app_home")}'
+
+
+class AppComecarView(AppAccessMixin, FormView):
+    """Configuração única de nome e slug. Sem gate global nesta fase."""
+
+    template_name = 'plataforma/app/comecar.html'
+    form_class = PortalOnboardingForm
+    papeis_permitidos = (Membership.PAPEL_ADMIN,)
+    app_active = 'comecar'
+    permite_onboarding_incompleto = True
+
+    def dispatch(self, request, *args, **kwargs):
+        portal = getattr(request, 'portal', None)
+        if (
+            request.user.is_authenticated
+            and portal is not None
+            and portal.setup_concluido
+            and has_portal_role(request, Membership.PAPEL_ADMIN)
+        ):
+            return redirect('app_home')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['portal'] = self.request.portal
+        return kwargs
+
+    def get_initial(self):
+        portal = self.request.portal
+        return {
+            'nome': portal.nome,
+            'slug': portal.slug,
+        }
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx['tenant_base_domain'] = getattr(
+            settings, 'TENANT_BASE_DOMAIN', 'portalnoticias.com.br',
+        )
+        return ctx
+
+    def form_valid(self, form):
+        portal = self.request.portal
+        if portal.setup_concluido:
+            return redirect('app_home')
+        portal.nome = form.cleaned_data['nome']
+        portal.slug = form.cleaned_data['slug']
+        portal.setup_concluido = True
+        try:
+            with transaction.atomic():
+                portal.save(update_fields=['nome', 'slug', 'setup_concluido'])
+        except IntegrityError:
+            portal.refresh_from_db()
+            form.add_error(
+                'slug',
+                'Este subdomínio acabou de ser ocupado. Escolha outro.',
+            )
+            return self.form_invalid(form)
+        limpar_cache_portal(portal)
+        log_audit(
+            self.request,
+            'portal_onboarding',
+            objeto='Portal',
+            objeto_id=portal.pk,
+            detalhes={'slug': portal.slug},
+        )
+        messages.success(
+            self.request,
+            'Portal configurado. Este endereço não poderá ser alterado.',
+        )
+        return redirect(_url_app_no_novo_host(self.request, portal))

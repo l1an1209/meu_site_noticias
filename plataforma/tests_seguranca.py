@@ -43,6 +43,7 @@ class SegurancaIsolamentoTests(TestCase):
             cidade='Cacoal',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
         cls.portal_b = Portal.objects.create(
             nome='Portal Beta Seg',
@@ -50,6 +51,7 @@ class SegurancaIsolamentoTests(TestCase):
             cidade='Vilhena',
             estado='RO',
             status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
         )
         cls.cat_a = Categoria.all_objects.create(
             portal=cls.portal_a, nome='Geral', slug='geral-seg-a',
@@ -311,7 +313,8 @@ class UploadHttpTenantTests(TestCase):
 
     def test_upload_imagem_fica_na_pasta_do_portal(self):
         portal = Portal.objects.create(
-            nome='Upl A', slug='upl-a', cidade='X', estado='RO', status=Portal.STATUS_ATIVO,
+            nome='Upl A', slug='upl-a', cidade='X', estado='RO',
+            status=Portal.STATUS_ATIVO, setup_concluido=True,
         )
         cat = Categoria.all_objects.create(portal=portal, nome='G', slug='g-upl')
         user = User.objects.create_user('upl_admin', password='senha-forte-u1')
@@ -337,7 +340,8 @@ class UploadHttpTenantTests(TestCase):
 
     def test_upload_php_pelo_painel_e_rejeitado(self):
         portal = Portal.objects.create(
-            nome='Upl B', slug='upl-b', cidade='X', estado='RO', status=Portal.STATUS_ATIVO,
+            nome='Upl B', slug='upl-b', cidade='X', estado='RO',
+            status=Portal.STATUS_ATIVO, setup_concluido=True,
         )
         cat = Categoria.all_objects.create(portal=portal, nome='G', slug='g-upl-b')
         user = User.objects.create_user('upl_admin2', password='senha-forte-u2')

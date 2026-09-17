@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.text import slugify
 
 from noticias.image_utils import (
     MAX_GALLERY_PHOTOS,
@@ -11,6 +12,7 @@ from noticias.image_utils import (
 )
 from noticias.models import Anuncio, Categoria, Noticia
 from plataforma.models import Membership, Portal
+from plataforma.slugs import SLUGS_RESERVADOS, slug_disponivel
 
 User = get_user_model()
 
@@ -201,3 +203,47 @@ class EquipeForm(forms.Form):
         if cleaned.get('papel') not in dict(Membership.PAPEL_CHOICES):
             self.add_error('papel', 'Papel inválido.')
         return cleaned
+
+
+class PortalOnboardingForm(forms.Form):
+    nome = forms.CharField(
+        label='Nome do portal',
+        max_length=120,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'Ex.: Jornal de Campinas',
+            'autocomplete': 'organization',
+        }),
+    )
+    slug = forms.CharField(
+        label='Subdomínio',
+        max_length=50,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg',
+            'placeholder': 'jornaldecampinas',
+            'autocomplete': 'off',
+            'spellcheck': 'false',
+        }),
+    )
+
+    def __init__(self, *args, portal=None, **kwargs):
+        self.portal = portal
+        super().__init__(*args, **kwargs)
+
+    def clean_nome(self):
+        nome = (self.cleaned_data.get('nome') or '').strip()
+        if not nome:
+            raise forms.ValidationError('Informe o nome do portal.')
+        return nome
+
+    def clean_slug(self):
+        bruto = (self.cleaned_data.get('slug') or '').strip()
+        slug = slugify(bruto)[:50].strip('-')
+        if not slug:
+            raise forms.ValidationError('Informe um subdomínio válido.')
+        ignore_pk = self.portal.pk if self.portal is not None else None
+        if slug in SLUGS_RESERVADOS:
+            raise forms.ValidationError('Este subdomínio não está disponível.')
+        if not slug_disponivel(slug, ignore_pk=ignore_pk):
+            raise forms.ValidationError('Este subdomínio já está em uso. Escolha outro.')
+        return slug
