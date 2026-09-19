@@ -366,16 +366,24 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertContains(resp, 'Tenha seu próprio portal profissional.')
         self.assertContains(resp, 'sales-hero')
         self.assertNotContains(resp, 'Este portal está temporariamente fora do ar')
-        self.assertTrue(Plano.objects.filter(codigo='basico', preco_mensal='59.90').exists())
-        self.assertContains(resp, 'Começar com o Básico')
-        self.assertContains(resp, 'Começar com o Profissional')
+        self.assertTrue(Plano.objects.filter(codigo='basico', nome='Start', preco_mensal='29.90').exists())
+        self.assertTrue(Plano.objects.filter(codigo='profissional', nome='Pro', preco_mensal='49.90').exists())
+        self.assertTrue(Plano.objects.filter(codigo='premium', nome='Premium', preco_mensal='69.90').exists())
+        self.assertContains(resp, 'Começar com o Start')
+        self.assertContains(resp, 'Começar com o Pro</a>')
         self.assertContains(resp, 'Começar com o Premium')
+        self.assertNotContains(resp, 'Começar com o Básico')
+        self.assertNotContains(resp, 'Começar com o Profissional')
+        self.assertNotContains(resp, 'R$ 59,90')
+        self.assertNotContains(resp, 'R$ 79,90')
+        self.assertNotContains(resp, 'R$ 99,90')
         self.assertContains(resp, 'Recomendado')
         html = resp.content.decode()
         self.assertIn(reverse('pagina_checkout_plano', args=['basico']), html)
         self.assertIn(reverse('pagina_checkout_plano', args=['profissional']), html)
         self.assertIn(reverse('pagina_checkout_plano', args=['premium']), html)
         self.assertNotIn(reverse('pagina_checkout_plano', args=['inicial']), html)
+        self.assertNotIn('Inicial', html)
 
     def test_checkout_identifica_cada_plano_sem_confundir(self):
         urls = {
@@ -384,14 +392,14 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
             'premium': 'https://pay.kiwify.com.br/ck-premium',
         }
         nomes = {
-            'basico': 'Básico',
-            'profissional': 'Profissional',
+            'basico': 'Start',
+            'profissional': 'Pro',
             'premium': 'Premium',
         }
         precos = {
-            'basico': '59,90',
-            'profissional': '79,90',
-            'premium': '99,90',
+            'basico': '29,90',
+            'profissional': '49,90',
+            'premium': '69,90',
         }
         for codigo, url in urls.items():
             Plano.objects.filter(codigo=codigo).update(checkout_url=url)
@@ -403,7 +411,7 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
             )
             self.assertEqual(resp.status_code, 200, codigo)
             html = resp.content.decode()
-            self.assertContains(resp, f'Começar com o {nome}')
+            self.assertContains(resp, f'Começar com o {nome}</h1>')
             self.assertContains(resp, precos[codigo])
             self.assertIn(f'data-plano-codigo="{codigo}"', html)
             self.assertIn(f'data-checkout-plano="{codigo}"', html)
@@ -415,7 +423,7 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
                 self.assertNotIn(outro_url, html)
                 self.assertNotIn(f'data-checkout-plano="{outro}"', html)
                 self.assertNotIn(f'data-plano-codigo="{outro}"', html)
-                self.assertNotContains(resp, f'Começar com o {nomes[outro]}')
+                self.assertNotContains(resp, f'Começar com o {nomes[outro]}</h1>')
 
         resp = self.client.get('/comece/inicial/', HTTP_HOST='localhost')
         self.assertEqual(resp.status_code, 404)
@@ -437,7 +445,12 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertIn('COMEÇAR AGORA', html)
         self.assertIn(reverse('pagina_vendas'), html)
         self.assertIn('home-saas', html)
-        self.assertIn('portalup-icon.svg', html)
+        self.assertIn('Começar com o Start', html)
+        self.assertIn('Começar com o Pro</a>', html)
+        self.assertIn('Começar com o Premium', html)
+        self.assertNotIn('R$ 59,90', html)
+        self.assertNotIn('R$ 79,90', html)
+        self.assertNotIn('R$ 99,90', html)
         self.assertNotIn('Ji-Paraná', html)
         self.assertNotIn('mosaic-hero', html)
         comece = self.client.get(reverse('pagina_vendas'), HTTP_HOST='localhost')
