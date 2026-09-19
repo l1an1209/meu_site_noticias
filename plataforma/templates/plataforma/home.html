@@ -55,22 +55,31 @@
 <section class="home-hero">
     <div class="container home-hero__grid">
         <div class="home-hero__copy">
-            <p class="sales-kicker">Plataforma online</p>
+            <p class="home-badge">Plataforma para portais</p>
             <h1 class="display-font">Tenha seu próprio portal profissional.</h1>
-            <p class="lead">Crie, personalize e administre seu portal online em uma plataforma completa.</p>
+            <p class="lead">Crie, personalize e administre seu portal online. Assinatura mensal, sem instalar nada.</p>
             <div class="home-hero__actions">
                 <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
                 <a class="btn btn-ds-ghost btn-lg" href="{% url 'entrar' %}">Já sou cliente — Entrar</a>
             </div>
         </div>
         <div class="home-hero__stage" aria-hidden="true">
+            <div class="pup-float pup-float--news">Notícias</div>
+            <div class="pup-float pup-float--look">Aparência</div>
             <div class="pup-mock pup-mock--site">
                 <div class="pup-mock__top">
                     <span></span><span></span><span></span>
-                    <em>seu-portal</em>
+                    <em>seu-portal.portalnoticias.com.br</em>
+                </div>
+                <div class="pup-mock__brand">
+                    <b></b>
+                    <strong>Seu portal</strong>
                 </div>
                 <div class="pup-mock__nav">Início · Cidade · Esportes · Vídeos</div>
-                <div class="pup-mock__hero"></div>
+                <div class="pup-mock__story">
+                    <div class="pup-mock__hero"></div>
+                    <p>Manchete do dia</p>
+                </div>
                 <div class="pup-mock__rows">
                     <div></div><div></div><div></div>
                 </div>
@@ -84,6 +93,7 @@
                     <i>Anúncios</i>
                 </div>
                 <div class="pup-mock__app-main">
+                    <small>Área administrativa</small>
                     <div class="pup-mock__kpis"><span></span><span></span><span></span></div>
                     <div class="pup-mock__line"></div>
                     <div class="pup-mock__line pup-mock__line--short"></div>
@@ -171,23 +181,21 @@
             <h2 class="display-font">Planos</h2>
             <p>Assinatura mensal, com os valores e recursos cadastrados na plataforma.</p>
         </div>
-        <div class="row g-4 justify-content-center">
+        <div class="home-plans">
             {% for plano in planos_venda %}
-            <div class="col-md-6 col-lg-4">
-                <div class="ds-card plan-card {% if plano.codigo == 'profissional' %}plan-card--featured{% endif %}">
-                    {% if plano.codigo == 'profissional' %}
-                    <p class="ds-badge ds-badge--info mb-2">Recomendado</p>
-                    {% endif %}
-                    <h3 class="h5">{{ plano.nome }}</h3>
-                    <p class="price mb-1">R$ {{ plano.preco_mensal }}<span class="fs-6 text-muted fw-normal">/mês</span></p>
-                    <p class="text-muted">{{ plano.descricao }}</p>
-                    <ul class="small flex-grow-1 ps-3">
-                        {% for item in plano.lista_recursos %}
-                        <li class="mb-1">{{ item }}</li>
-                        {% endfor %}
-                    </ul>
-                    <a class="btn btn-contribuir w-100" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com o {{ plano.nome }}</a>
-                </div>
+            <div class="ds-card plan-card {% if plano.codigo == 'profissional' %}plan-card--featured{% endif %}">
+                {% if plano.codigo == 'profissional' %}
+                <p class="ds-badge ds-badge--info">Recomendado</p>
+                {% endif %}
+                <h3>{{ plano.nome }}</h3>
+                <p class="price">R$ {{ plano.preco_mensal }}<span>/mês</span></p>
+                <p class="plan-card__desc">{{ plano.descricao }}</p>
+                <ul class="plan-points">
+                    {% for item in plano.lista_recursos %}
+                    <li><i class="fas fa-check" aria-hidden="true"></i>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                <a class="btn btn-contribuir w-100" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com o {{ plano.nome }}</a>
             </div>
             {% empty %}
             <p class="text-center text-muted">Planos serão publicados em breve.</p>
@@ -230,21 +238,23 @@
 </section>
 
 <section class="home-finale">
-    <div class="container text-center">
-        <h2 class="display-font">Seu próximo portal começa aqui.</h2>
-        <p>Assine a plataforma e administre o seu portal no painel.</p>
-        <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+    <div class="container">
+        <div class="home-finale__panel">
+            <h2 class="display-font">Seu próximo portal começa aqui.</h2>
+            <p>Assine a plataforma e administre o seu portal no painel.</p>
+            <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+        </div>
     </div>
 </section>
 
 <footer class="home-footer">
     <div class="container">
-        <div class="row g-4">
-            <div class="col-md-5">
+        <div class="home-footer__grid">
+            <div>
                 {% include "noticias/partials/portalup_logo.html" with logo_class="pup-logo--on-dark" %}
-                <p class="mt-3 mb-0">Plataforma online para criar e administrar o seu próprio portal.</p>
+                <p class="home-footer__about">Plataforma online para criar e administrar seu próprio portal.</p>
             </div>
-            <div class="col-6 col-md-3">
+            <div>
                 <p class="home-footer__label">Navegação</p>
                 <a href="{% url 'index' %}">Início</a>
                 <a href="#recursos">Recursos</a>
@@ -252,7 +262,7 @@
                 <a href="#como-funciona">Como funciona</a>
                 <a href="#faq">FAQ</a>
             </div>
-            <div class="col-6 col-md-4">
+            <div>
                 <p class="home-footer__label">Acesso</p>
                 <a href="{% url 'entrar' %}">Entrar</a>
                 <a href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
@@ -262,5 +272,14 @@
     </div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        var nav = document.querySelector('.home-nav');
+        if (!nav) return;
+        var onScroll = function () { nav.classList.toggle('is-scrolled', window.scrollY > 8); };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+    })();
+</script>
 </body>
 </html>
