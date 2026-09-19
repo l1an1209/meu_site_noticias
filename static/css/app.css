@@ -98,6 +98,7 @@
     font-weight: 700;
 }
 .app-nav .nav-label:first-child { padding-top: 0.45rem; }
+.app-topbar .btn-ds-ghost { white-space: nowrap; }
 
 .app-main {
     flex: 1;

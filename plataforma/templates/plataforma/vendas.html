@@ -1,31 +1,35 @@
 {% extends "plataforma/sales_base.html" %}
-{% block title %}Crie o portal de notícias da sua cidade{% endblock %}
+{% block title %}Planos — PortalUP{% endblock %}
 {% block content %}
 <section class="sales-hero">
-    <p class="sales-kicker">SaaS para jornais locais</p>
-    <h1 class="display-font">Tenha seu próprio portal de notícias profissional</h1>
-    <p class="lead">Sem precisar desenvolver ou administrar infraestrutura. Você publica. A plataforma isola cada cidade, com painel, mídia e identidade da sua marca.</p>
-    <a href="#planos" class="btn btn-contribuir btn-lg">Ver planos</a>
+    <p class="sales-kicker">Assinatura mensal</p>
+    <h1 class="display-font">Tenha seu próprio portal profissional.</h1>
+    <p class="lead">Escolha um plano, assine a plataforma e administre o seu portal. Sem desenvolver o sistema do zero.</p>
+    <div class="home-hero__actions">
+        <a href="#planos" class="btn btn-contribuir btn-lg">COMEÇAR AGORA</a>
+        <a href="{% url 'entrar' %}" class="btn btn-ds-ghost btn-lg">ENTRAR</a>
+    </div>
 </section>
 
 <section class="row g-3 mb-5">
-    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Identidade da cidade</h2><p class="text-muted mb-0">Nome, cores, logo, slogan e SEO do seu município — sem misturar com outro cliente.</p></div></div>
-    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Redação pronta</h2><p class="text-muted mb-0">Notícias, fotos, vídeos, categorias, galeria e envios da comunidade.</p></div></div>
-    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Assinatura mensal</h2><p class="text-muted mb-0">Pagamento pela Kiwify. Portal e administrador criados após a confirmação.</p></div></div>
+    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Seu portal</h2><p class="text-muted mb-0">Nome, cores, logo e conteúdos só da sua marca.</p></div></div>
+    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Painel para administrar</h2><p class="text-muted mb-0">Publique notícias, organize categorias, mídia, equipe e anúncios.</p></div></div>
+    <div class="col-md-4"><div class="ds-card p-4 h-100"><h2 class="h5">Assinatura mensal</h2><p class="text-muted mb-0">Você assina a plataforma. O portal é criado depois do pagamento confirmado.</p></div></div>
 </section>
 
 <section class="mb-5">
     <h2 class="display-font h3 text-center mb-4">Como funciona</h2>
     <div class="row g-3">
-        <div class="col-md-4"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">1</p><h3 class="h5">Escolha o plano</h3><p class="text-muted mb-0">Básico, Profissional ou Premium, de acordo com equipe e mídia.</p></div></div>
-        <div class="col-md-4"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">2</p><h3 class="h5">Pague na Kiwify</h3><p class="text-muted mb-0">O checkout é da Kiwify. A plataforma só entra depois da confirmação do pedido.</p></div></div>
-        <div class="col-md-4"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">3</p><h3 class="h5">Publique no mesmo dia</h3><p class="text-muted mb-0">Você recebe o acesso por e-mail e usa o painel do seu portal.</p></div></div>
+        <div class="col-md-3"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">01</p><h3 class="h5">Escolha o plano</h3><p class="text-muted mb-0">Compare os planos mensais cadastrados na plataforma.</p></div></div>
+        <div class="col-md-3"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">02</p><h3 class="h5">Assine</h3><p class="text-muted mb-0">Conclua o pagamento mensal do plano escolhido.</p></div></div>
+        <div class="col-md-3"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">03</p><h3 class="h5">Configure</h3><p class="text-muted mb-0">No primeiro acesso, defina o nome e o endereço do seu portal.</p></div></div>
+        <div class="col-md-3"><div class="ds-card p-4 h-100"><p class="ds-badge mb-2">04</p><h3 class="h5">Publique</h3><p class="text-muted mb-0">Use o painel para administrar e publicar.</p></div></div>
     </div>
 </section>
 
 <section id="planos" class="mb-5">
     <h2 class="display-font h3 text-center mb-2">Planos</h2>
-    <p class="text-center text-muted mb-4">Valores mensais. Recursos listados são os que o produto oferece hoje.</p>
+    <p class="text-center text-muted mb-4">Valores mensais e recursos exatamente como estão cadastrados hoje.</p>
     <div class="row g-3">
         {% for plano in planos_venda %}
         <div class="col-md-4">
@@ -86,15 +90,14 @@
 
 <section class="mb-5">
     <h2 class="display-font h4 mb-3">Perguntas frequentes</h2>
-    <div class="ds-card p-4 faq-item"><strong>O que acontece depois do pagamento?</strong><p class="mb-0 text-muted">A Kiwify avisa a plataforma. Criamos seu portal, o usuário administrador e enviamos o acesso por e-mail.</p></div>
-    <div class="ds-card p-4 faq-item"><strong>Cada cidade fica isolada?</strong><p class="mb-0 text-muted">Sim. Notícias, mídia, equipe e identidade pertencem só àquele portal.</p></div>
-    <div class="ds-card p-4 faq-item"><strong>Posso cancelar?</strong><p class="mb-0 text-muted">Sim. O portal deixa de aceitar acesso, mas notícias e mídia não são apagadas. Dá para reativar.</p></div>
-    <div class="ds-card p-4 faq-item"><strong>Já tenho um domínio?</strong><p class="mb-0 text-muted">Nesta fase o endereço é o subdomínio da plataforma. Domínio próprio entra na etapa de produção.</p></div>
+    <div class="ds-card p-4 faq-item"><strong>O que acontece depois do pagamento?</strong><p class="mb-0 text-muted">A plataforma cria o seu portal, o usuário administrador e envia o acesso por e-mail.</p></div>
+    <div class="ds-card p-4 faq-item"><strong>Meu portal fica misturado com outros clientes?</strong><p class="mb-0 text-muted">Não. Notícias, mídia, equipe e identidade pertencem só ao seu portal.</p></div>
+    <div class="ds-card p-4 faq-item"><strong>Já sou cliente?</strong><p class="mb-0 text-muted">Use Entrar no topo para acessar a área administrativa.</p></div>
 </section>
 
 <section class="sales-cta">
-    <h2 class="display-font h3 mb-3">Coloque o jornal da sua cidade no ar</h2>
-    <p class="mb-4 opacity-75">Identidade própria, painel de redação e publicação sem montar servidor.</p>
+    <h2 class="display-font h3 mb-3">Pronto para começar?</h2>
+    <p class="mb-4 opacity-75">Escolha um plano e assine a plataforma.</p>
     <a href="#planos" class="btn btn-contribuir btn-lg">Escolher um plano</a>
 </section>
 {% endblock %}

@@ -3,8 +3,8 @@
 {% block heading %}Dashboard{% endblock %}
 {% block content %}
 <div class="page-intro mb-4">
-    <h1 class="display-font">{{ saudacao }}, {{ site_name }}</h1>
-    <p>Veja o que está acontecendo no seu portal.</p>
+    <h1 class="display-font">Área administrativa</h1>
+    <p>{{ saudacao }}, {{ user.get_username }}. Você está no painel de <strong>{{ site_name }}</strong>.</p>
 </div>
 
 <div class="stat-grid mb-4">

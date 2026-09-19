@@ -4,8 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Seu próprio portal de notícias. Pronto para publicar.</title>
-    <meta name="description" content="Plataforma SaaS completa para criar, administrar e monetizar seu portal de notícias sem desenvolver ou hospedar um sistema do zero.">
+    <title>PortalUP — Tenha seu próprio portal profissional</title>
+    <meta name="description" content="PortalUP é uma plataforma online por assinatura para criar e administrar o seu próprio portal, sem desenvolver o sistema do zero.">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet">
@@ -15,7 +15,7 @@
         :root {
             --primary: #0f766e;
             --brand-navy: #0f172a;
-            --accent: #d97706;
+            --accent: #0f766e;
         }
     </style>
     {% include "noticias/partials/meta_pixel.html" %}
@@ -23,164 +23,140 @@
 <body class="home-saas">
 <header class="home-nav">
     <div class="container home-nav__inner">
-        <a class="home-brand display-font" href="{% url 'index' %}">{{ product_name }}</a>
+        {% include "noticias/partials/portalup_logo.html" %}
         <nav class="home-nav__links" aria-label="Principal">
-            <a href="#produto">Produto</a>
+            <a href="{% url 'index' %}">Início</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#planos">Planos</a>
             <a href="#como-funciona">Como funciona</a>
-            <a href="{% url 'pagina_vendas' %}">Planos</a>
-            <a href="{% url 'entrar' %}">Entrar</a>
+            <a href="#faq">FAQ</a>
         </nav>
-        <a class="btn btn-contribuir btn-sm home-nav__cta" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+        <div class="home-nav__actions">
+            <a class="btn btn-ds-ghost btn-sm" href="{% url 'entrar' %}">ENTRAR</a>
+            <a class="btn btn-contribuir btn-sm home-nav__cta" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+            <button class="home-nav__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#homeMenu" aria-controls="homeMenu" aria-expanded="false" aria-label="Abrir menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </div>
+    <div class="collapse home-nav__mobile" id="homeMenu">
+        <div class="container py-3">
+            <a href="{% url 'index' %}">Início</a>
+            <a href="#recursos">Recursos</a>
+            <a href="#planos">Planos</a>
+            <a href="#como-funciona">Como funciona</a>
+            <a href="#faq">FAQ</a>
+            <a href="{% url 'entrar' %}">Entrar</a>
+            <a href="{% url 'pagina_vendas' %}">Começar agora</a>
+        </div>
     </div>
 </header>
 
 <section class="home-hero">
     <div class="container">
-        <p class="sales-kicker">Plataforma SaaS para portais de notícias</p>
-        <h1 class="display-font">Seu próprio portal de notícias. Pronto para publicar.</h1>
-        <p class="lead">Uma plataforma SaaS completa para criar, administrar e monetizar seu portal de notícias sem precisar desenvolver ou hospedar um sistema do zero.</p>
+        <p class="sales-kicker">Plataforma online por assinatura</p>
+        <h1 class="display-font">Tenha seu próprio portal profissional.</h1>
+        <p class="lead">O PortalUP é uma plataforma online para criar e administrar o seu próprio portal, com assinatura mensal — sem desenvolver o sistema do zero.</p>
         <div class="home-hero__actions">
             <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
-            <a class="btn btn-ds-ghost btn-lg" href="#como-funciona">VER COMO FUNCIONA</a>
+            <a class="btn btn-ds-ghost btn-lg" href="{% url 'entrar' %}">JÁ SOU CLIENTE — ENTRAR</a>
         </div>
     </div>
 </section>
 
-<section id="produto" class="home-section">
+<section class="home-section" id="para-quem">
     <div class="container">
         <div class="home-section__intro">
-            <h2 class="display-font">O sistema já vem pronto. Você recebe o seu ambiente.</h2>
-            <p>Depois da contratação, a plataforma cria o portal, o painel e o acesso da equipe. Você publica e administra o conteúdo da sua marca — em qualquer cidade ou estado.</p>
+            <h2 class="display-font">O que você está contratando</h2>
+            <p>Não é um site avulso nem um projeto sob medida. Você assina a plataforma, recebe o seu portal e passa a administrá-lo pelo painel.</p>
+        </div>
+        <ul class="home-audience">
+            <li>Quem quer um portal próprio</li>
+            <li>Quem precisa publicar conteúdo</li>
+            <li>Quem não quer desenvolver o sistema</li>
+        </ul>
+    </div>
+</section>
+
+<section id="recursos" class="home-section home-section--alt">
+    <div class="container">
+        <div class="home-section__intro">
+            <h2 class="display-font">O que você recebe</h2>
+            <p>Recursos que já existem na plataforma hoje.</p>
         </div>
         <div class="home-features">
-            <article class="ds-card home-feature"><i class="fas fa-globe"></i><h3>Portal próprio</h3><p>Site público com a identidade do seu veículo, isolado dos demais clientes.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-gauge-high"></i><h3>Painel administrativo</h3><p>Área logada para a redação gerenciar o dia a dia do portal.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-newspaper"></i><h3>Publicação de notícias</h3><p>Matérias com título, conteúdo, destaque e publicação imediata.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-folder"></i><h3>Categorias</h3><p>Organize a redação em editorias e filtre o que o leitor encontra no site.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-image"></i><h3>Fotos e galerias</h3><p>Biblioteca de imagens e galerias nas notícias, sem misturar mídia de outro portal.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-video"></i><h3>Vídeos</h3><p>Publique vídeos e destaque a cobertura audiovisual no site.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-users"></i><h3>Autores e usuários</h3><p>Equipe com papéis de administrador, editor, autor e moderador.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-ad"></i><h3>Publicidade</h3><p>Espaços de anúncio no portal para monetizar a audiência.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-search"></i><h3>SEO</h3><p>Título, descrição e dados de compartilhamento configuráveis no painel.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-palette"></i><h3>Identidade visual</h3><p>Logo, cores, slogan e aparência do seu veículo — sem copiar outro cliente.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-share-nodes"></i><h3>WhatsApp e redes</h3><p>Links de contato e redes sociais exibidos no portal público.</p></article>
-            <article class="ds-card home-feature"><i class="fas fa-cloud"></i><h3>Plataforma gerenciada</h3><p>Hospedagem, atualizações e operação ficam na plataforma. Você não instala o sistema.</p></article>
+            <article class="ds-card home-feature"><i class="fas fa-globe"></i><h3>Seu próprio portal</h3><p>Site público com o nome, as cores e a marca do seu veículo, separado dos demais clientes.</p></article>
+            <article class="ds-card home-feature"><i class="fas fa-newspaper"></i><h3>Publicação de conteúdos</h3><p>Notícias, categorias, fotos, vídeos e galerias no mesmo painel.</p></article>
+            <article class="ds-card home-feature"><i class="fas fa-palette"></i><h3>Personalização</h3><p>Logo, cores, slogan, SEO e redes sociais do seu portal.</p></article>
+            <article class="ds-card home-feature"><i class="fas fa-users"></i><h3>Gestão de usuários</h3><p>Equipe com papéis de administrador, editor, autor e moderador.</p></article>
+            <article class="ds-card home-feature"><i class="fas fa-ad"></i><h3>Anúncios</h3><p>Espaços de publicidade no seu portal para monetizar a audiência.</p></article>
+            <article class="ds-card home-feature"><i class="fas fa-gauge-high"></i><h3>Administração do portal</h3><p>Painel para publicar, configurar e acompanhar o dia a dia da operação.</p></article>
         </div>
     </div>
 </section>
 
-<section id="como-funciona" class="home-section home-section--alt">
+<section id="como-funciona" class="home-section">
     <div class="container">
         <div class="home-section__intro">
-            <h2 class="display-font">Comece em poucos passos</h2>
-            <p>Não é necessário instalar, configurar servidor nem contratar um programador para colocar o portal no ar.</p>
+            <h2 class="display-font">Como funciona</h2>
+            <p>Quatro passos. Sem instalar nada no seu computador.</p>
         </div>
         <ol class="home-steps">
             <li>
-                <span>Passo 1</span>
-                <h3>Escolha seu plano.</h3>
-                <p>Compare Básico, Profissional e Premium e escolha o que cabe à sua operação.</p>
+                <span>01</span>
+                <h3>Escolha seu plano</h3>
+                <p>Compare os planos mensais e escolha o que cabe à sua operação.</p>
             </li>
             <li>
-                <span>Passo 2</span>
-                <h3>Faça o pagamento.</h3>
-                <p>O checkout é feito pela Kiwify, o mesmo fluxo já usado na contratação.</p>
+                <span>02</span>
+                <h3>Assine a plataforma</h3>
+                <p>O pagamento é mensal. Depois da confirmação, o acesso chega por e-mail.</p>
             </li>
             <li>
-                <span>Passo 3</span>
-                <h3>Seu portal é criado automaticamente.</h3>
-                <p>Com o pagamento aprovado, a plataforma provisiona o site, o painel e o usuário administrador.</p>
+                <span>03</span>
+                <h3>Configure seu portal</h3>
+                <p>Defina o nome e o endereço do seu portal uma vez, no primeiro acesso.</p>
             </li>
             <li>
-                <span>Passo 4</span>
-                <h3>Acesse seu painel e comece a publicar.</h3>
-                <p>Você recebe o acesso por e-mail, define a senha e publica a primeira notícia.</p>
+                <span>04</span>
+                <h3>Comece a publicar</h3>
+                <p>Entre no painel, publique conteúdos e administre o seu portal.</p>
             </li>
         </ol>
     </div>
 </section>
 
-<section id="painel" class="home-section">
+<section id="planos" class="home-section home-section--alt">
     <div class="container">
         <div class="home-section__intro">
-            <h2 class="display-font">O painel da redação, no ar no mesmo dia</h2>
-            <p>A interface abaixo replica o dashboard real do produto: indicadores, atalhos de publicação, fotos, envios e identidade visual.</p>
-        </div>
-        <div class="home-panel" aria-hidden="true">
-            <div class="home-panel__chrome">
-                <span></span><span></span><span></span>
-                <em>app.seuportal / Dashboard</em>
-            </div>
-            <div class="home-panel__body">
-                <aside>
-                    <strong>Seu portal</strong>
-                    <small>Painel do portal</small>
-                    <p>Dashboard</p>
-                    <p>Notícias</p>
-                    <p>Categorias</p>
-                    <p>Fotos</p>
-                    <p>Vídeos</p>
-                    <p>Publicidade</p>
-                    <p>Aparência</p>
-                    <p>SEO</p>
-                </aside>
-                <div class="home-panel__main">
-                    <div class="home-panel__stats">
-                        <div><span>Notícias</span><b>24</b></div>
-                        <div><span>Fotos</span><b>86</b></div>
-                        <div><span>Vídeos</span><b>7</b></div>
-                        <div><span>Envios</span><b>3</b></div>
-                    </div>
-                    <div class="home-panel__list">
-                        <div><b>Nova notícia</b><small>Publicar matéria</small></div>
-                        <div><b>Câmara discute orçamento</b><small>Hoje · 312 leituras</small></div>
-                        <div><b>Feira de negócios no centro</b><small>Ontem · 148 leituras</small></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<section class="home-section home-section--alt">
-    <div class="container">
-        <div class="home-section__intro">
-            <h2 class="display-font">Por que usar a plataforma</h2>
+            <h2 class="display-font">Planos</h2>
+            <p>Assinatura mensal. Os valores e os recursos abaixo são os cadastrados hoje na plataforma.</p>
         </div>
         <div class="row g-3">
-            <div class="col-md-6 col-lg-4"><div class="ds-card p-4 h-100"><h3 class="h5">Pronto para usar</h3><p class="text-muted mb-0">Portal, painel e publicação já existem. Você configura a marca e começa a operar.</p></div></div>
-            <div class="col-md-6 col-lg-4"><div class="ds-card p-4 h-100"><h3 class="h5">Sem instalação</h3><p class="text-muted mb-0">Nada para instalar no computador ou no servidor. O acesso é pelo navegador.</p></div></div>
-            <div class="col-md-6 col-lg-4"><div class="ds-card p-4 h-100"><h3 class="h5">Seu próprio portal</h3><p class="text-muted mb-0">Conteúdo, mídia, equipe e visual ficam isolados no seu tenant.</p></div></div>
-            <div class="col-md-6 col-lg-4"><div class="ds-card p-4 h-100"><h3 class="h5">Painel administrativo</h3><p class="text-muted mb-0">A redação trabalha em um painel com as mesmas ferramentas do produto em produção.</p></div></div>
-            <div class="col-md-6 col-lg-4"><div class="ds-card p-4 h-100"><h3 class="h5">Atualizações da plataforma</h3><p class="text-muted mb-0">Melhorias entram na plataforma gerenciada, sem você manter código ou infraestrutura.</p></div></div>
-            <div class="col-md-6 col-lg-4"><div class="ds-card p-4 h-100"><h3 class="h5">Gestão completa de conteúdo</h3><p class="text-muted mb-0">Notícias, categorias, fotos, vídeos, usuários, publicidade, SEO e aparência no mesmo lugar.</p></div></div>
+            {% for plano in planos_venda %}
+            <div class="col-md-4">
+                <div class="ds-card plan-card {% if plano.codigo == 'profissional' %}plan-card--featured{% endif %}">
+                    {% if plano.codigo == 'profissional' %}
+                    <p class="ds-badge ds-badge--info mb-2">Mais escolhido</p>
+                    {% endif %}
+                    <h3 class="h5">{{ plano.nome }}</h3>
+                    <p class="price mb-1">R$ {{ plano.preco_mensal }}<span class="fs-6 text-muted fw-normal">/mês</span></p>
+                    <p class="text-muted">{{ plano.descricao }}</p>
+                    <ul class="small flex-grow-1 ps-3">
+                        {% for item in plano.lista_recursos %}
+                        <li class="mb-1">{{ item }}</li>
+                        {% endfor %}
+                    </ul>
+                    <a class="btn btn-contribuir w-100" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com o {{ plano.nome }}</a>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-center text-muted">Planos serão publicados em breve.</p>
+            {% endfor %}
         </div>
-    </div>
-</section>
-
-<section class="home-section">
-    <div class="container">
-        <div class="home-section__intro">
-            <h2 class="display-font">Para quem é</h2>
-            <p>Feito para quem precisa de um portal profissional sem construir um sistema do zero.</p>
-        </div>
-        <ul class="home-audience">
-            <li>Portais de notícias</li>
-            <li>Jornalistas</li>
-            <li>Comunicadores</li>
-            <li>Empresas de mídia</li>
-            <li>Criadores de portais locais</li>
-            <li>Empreendedores digitais</li>
-            <li>Profissionais que querem um portal sem desenvolver o sistema</li>
-        </ul>
-    </div>
-</section>
-
-<section class="home-section home-section--alt" id="planos-cta">
-    <div class="container text-center">
-        <h2 class="display-font">Escolha o plano ideal para o seu projeto</h2>
-        <p class="home-section__lead mx-auto">Básico, Profissional e Premium com os recursos que o produto oferece hoje. A comparação completa está na página de planos.</p>
-        <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">VER PLANOS</a>
+        <p class="text-center mt-4 mb-0">
+            <a href="{% url 'pagina_vendas' %}">Ver comparação completa</a>
+        </p>
     </div>
 </section>
 
@@ -188,36 +164,24 @@
     <div class="container home-faq">
         <h2 class="display-font mb-4">Perguntas frequentes</h2>
         <details class="ds-card p-4 faq-item" open>
-            <summary>Preciso instalar alguma coisa?</summary>
-            <p class="mb-0 text-muted">Não. A plataforma é SaaS. Você acessa o portal público e o painel pelo navegador, sem instalar o sistema.</p>
+            <summary>O PortalUP é um site ou uma plataforma?</summary>
+            <p class="mb-0 text-muted">É uma plataforma online por assinatura. Você não compra um site avulso: assina o acesso para criar e administrar o seu próprio portal.</p>
         </details>
         <details class="ds-card p-4 faq-item">
-            <summary>Preciso contratar um programador?</summary>
-            <p class="mb-0 text-muted">Não para colocar o portal no ar. O ambiente é criado automaticamente após o pagamento aprovado.</p>
+            <summary>Preciso desenvolver o sistema?</summary>
+            <p class="mb-0 text-muted">Não. O sistema já existe. Depois da assinatura, você configura o seu portal e começa a publicar.</p>
         </details>
         <details class="ds-card p-4 faq-item">
-            <summary>Meu portal terá painel administrativo?</summary>
-            <p class="mb-0 text-muted">Sim. Cada cliente recebe o painel da redação para publicar, editar e configurar o próprio portal.</p>
+            <summary>Como eu começo?</summary>
+            <p class="mb-0 text-muted">Clique em Começar agora, escolha um plano e conclua a assinatura. O acesso chega por e-mail.</p>
         </details>
         <details class="ds-card p-4 faq-item">
-            <summary>Posso publicar notícias?</summary>
-            <p class="mb-0 text-muted">Sim. O painel inclui notícias, categorias, fotos, vídeos e os demais recursos de conteúdo do produto.</p>
+            <summary>Já sou cliente. Onde entro?</summary>
+            <p class="mb-0 text-muted">Use o botão Entrar no topo. Depois do login você vai para a área administrativa do seu portal.</p>
         </details>
         <details class="ds-card p-4 faq-item">
-            <summary>Posso adicionar outros usuários?</summary>
-            <p class="mb-0 text-muted">Sim. O portal aceita equipe com papéis diferentes. A quantidade de usuários acompanha o plano contratado.</p>
-        </details>
-        <details class="ds-card p-4 faq-item">
-            <summary>Posso personalizar meu portal?</summary>
-            <p class="mb-0 text-muted">Sim. Nome, cores, logo, slogan, SEO e redes sociais são configurados no painel, só para o seu tenant.</p>
-        </details>
-        <details class="ds-card p-4 faq-item">
-            <summary>Como funciona o pagamento?</summary>
-            <p class="mb-0 text-muted">Você escolhe o plano em Começar, conclui o pagamento na Kiwify e a plataforma recebe a confirmação por webhook.</p>
-        </details>
-        <details class="ds-card p-4 faq-item">
-            <summary>O que acontece depois da compra?</summary>
-            <p class="mb-0 text-muted">O portal, o usuário administrador e a assinatura são criados. O acesso chega por e-mail com um link para definir a senha.</p>
+            <summary>Posso personalizar o visual?</summary>
+            <p class="mb-0 text-muted">Sim. Nome, cores, logo e slogan ficam no seu portal, sem misturar com a marca PortalUP nem com outros clientes.</p>
         </details>
     </div>
 </section>
@@ -226,19 +190,20 @@
     <div class="container">
         <div class="row g-4">
             <div class="col-md-5">
-                <p class="home-brand display-font mb-2">{{ product_name }}</p>
-                <p class="mb-0">Plataforma SaaS para criar e administrar portais de notícias. Um produto para qualquer cidade, sem desenvolver o sistema do zero.</p>
+                <p class="home-brand display-font mb-2">PortalUP</p>
+                <p class="mb-0">Plataforma online para criar e administrar o seu próprio portal, com assinatura mensal.</p>
             </div>
             <div class="col-md-3">
                 <p class="home-footer__label">Produto</p>
-                <a href="{% url 'pagina_vendas' %}">Começar agora</a>
-                <a href="{% url 'pagina_vendas' %}">Planos</a>
+                <a href="#recursos">Recursos</a>
+                <a href="#planos">Planos</a>
                 <a href="#como-funciona">Como funciona</a>
+                <a href="#faq">FAQ</a>
             </div>
             <div class="col-md-4">
                 <p class="home-footer__label">Acesso</p>
                 <a href="{% url 'entrar' %}">Entrar</a>
-                <a href="{% url 'pagina_vendas' %}">VER PLANOS</a>
+                <a href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
             </div>
         </div>
     </div>

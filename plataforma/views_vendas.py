@@ -23,7 +23,8 @@ class PaginaHomeSaaSView(TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['is_sales_page'] = True
-        ctx['product_name'] = 'Portal de Notícias'
+        ctx['product_name'] = 'PortalUP'
+        ctx['planos_venda'] = Plano.objects.filter(ativo=True).exclude(preco_mensal=0)
         return ctx
 
 

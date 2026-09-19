@@ -1,4 +1,4 @@
-{% load static %}
+{% load static urls_portal %}
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -29,7 +29,7 @@
                 <button type="button" class="app-sidebar-collapse d-none d-lg-inline-flex" id="appSidebarCollapse" aria-label="Recolher menu"><i class="fas fa-angles-left"></i></button>
                 <div>
                     <div class="fw-semibold">{% block heading %}Visão geral{% endblock %}</div>
-                    <div class="text-muted small">{% block subheading %}{{ site_name }}{% if site_city %} · {{ site_city }}{% endif %}{% endblock %}</div>
+                    <div class="text-muted small">{% block subheading %}{% if is_master_shell %}Painel da plataforma{% else %}Área administrativa · {{ site_name }}{% if user.is_authenticated %} · {{ user.get_username }}{% endif %}{% endif %}{% endblock %}</div>
                 </div>
             </div>
             <div class="d-flex gap-2 flex-wrap align-items-center">
@@ -37,9 +37,13 @@
                 <form class="d-flex" method="get" action="{% url 'master_busca' %}">
                     <input class="form-control form-control-sm" name="q" value="{{ request.GET.q }}" placeholder="Cliente, e-mail, portal, pedido" style="min-width:12rem">
                 </form>
+                {% else %}
+                {% if request.portal %}
+                <a href="{{ request.portal|url_site_portal }}" class="btn btn-sm btn-contribuir" target="_blank" rel="noopener">Visualizar meu portal</a>
                 {% endif %}
-                <a href="{% url 'index' %}" class="btn btn-sm btn-ds-ghost">Ver site</a>
+                {% endif %}
                 {% if request.is_platform_master %}<a href="{% url 'master_home' %}" class="btn btn-sm btn-ds-ghost">Master</a>{% endif %}
+                <a href="{% url 'sair' %}" class="btn btn-sm btn-ds-ghost">Sair</a>
             </div>
         </header>
         <div class="app-content">

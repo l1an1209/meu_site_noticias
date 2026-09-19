@@ -119,8 +119,8 @@ class PainelUiTests(TestCase):
 
     def test_login_nao_sobrescreve_nome_do_portal(self):
         resp = self.client.get('/entrar/', **self._host(self.legado.slug))
-        self.assertContains(resp, 'Entrar — Portal SaaS')
-        self.assertContains(resp, 'Portal SaaS')
+        self.assertContains(resp, 'Entrar — PortalUP')
+        self.assertContains(resp, 'PortalUP')
         self.assertContains(resp, 'Crie, gerencie e publique seu próprio portal de notícias.')
         self.assertNotContains(resp, f'{self.legado.nome} — curtir')
 
@@ -129,8 +129,8 @@ class PainelUiTests(TestCase):
             with self.subTest(path=path):
                 resp = self.client.get(path, **self._host(self.legado.slug))
                 self.assertEqual(resp.status_code, 200)
-                self.assertContains(resp, 'Criar conta — Portal SaaS')
-                self.assertContains(resp, 'Portal SaaS')
+                self.assertContains(resp, 'Criar conta — PortalUP')
+                self.assertContains(resp, 'PortalUP')
                 self.assertContains(resp, 'Crie, gerencie e publique seu próprio portal de notícias.')
                 self.assertContains(resp, 'Crie seu próprio portal de notícias.')
                 self.assertContains(resp, 'Já tem conta?')
@@ -144,8 +144,8 @@ class PainelUiTests(TestCase):
         self.client.force_login(self.admin)
         resp = self.client.get('/conta/', **self._host(self.legado.slug))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'Minha conta — Portal SaaS')
-        self.assertContains(resp, 'Portal SaaS')
+        self.assertContains(resp, 'Minha conta — PortalUP')
+        self.assertContains(resp, 'PortalUP')
         self.assertContains(resp, 'Gerencie sua conta e seu portal de notícias.')
         self.assertContains(resp, self.admin.username)
         self.assertContains(resp, 'Curtidas dadas')

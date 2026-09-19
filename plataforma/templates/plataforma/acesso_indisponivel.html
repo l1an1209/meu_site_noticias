@@ -1,30 +1,18 @@
 {% extends "noticias/base.html" %}
 
-{% block title %}Acesso indisponível — Portal SaaS{% endblock %}
-{% block og_site_name %}Portal SaaS{% endblock %}
+{% block title %}Acesso indisponível — PortalUP{% endblock %}
+{% block og_site_name %}PortalUP{% endblock %}
 {% block tenant_icons %}{% endblock %}
 {% block json_ld %}{% endblock %}
 {% block body_nav_class %}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .login-saas-header { padding: 1.75rem 1.25rem 1.5rem; border-bottom: 1px solid #eef0f3; background: #fff; text-align: center; }
-    .login-saas-header__inner { max-width: 32rem; margin: 0 auto; }
-    .login-saas-header__brand { display: flex; align-items: center; justify-content: center; gap: 0.7rem; }
-    .login-saas-mark { width: 2.5rem; height: 2.5rem; border-radius: 0.7rem; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
-    .login-saas-header strong { display: block; font-size: 1.2rem; color: #0f172a; }
-    .login-saas-header p { margin: 0.45rem 0 0; color: #64748b; font-size: 0.9rem; }
-    .login-saas-footer { padding: 1.5rem 1.25rem 2rem; text-align: center; color: #64748b; font-size: 0.85rem; }
-</style>
-{% endblock %}
 
 {% block top_strip %}{% endblock %}
 {% block masthead %}
 <header class="login-saas-header">
     <div class="login-saas-header__inner">
         <div class="login-saas-header__brand">
-            <span class="login-saas-mark" aria-hidden="true">P</span>
-            <strong>Portal SaaS</strong>
+            {% include "noticias/partials/portalup_logo.html" %}
         </div>
         <p>O acesso ao painel está indisponível neste momento.</p>
     </div>
