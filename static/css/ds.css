@@ -333,9 +333,9 @@ h1, h2, h3 {
     font-size: 0.85rem;
     font-weight: 600;
     background: #fff;
-    transition: background 0.15s ease;
+    transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
-.shortcut-grid a:hover { background: var(--ds-bg); }
+.shortcut-grid a:hover { background: var(--ds-bg); border-color: #d5dbe3; transform: translateY(-1px); }
 .shortcut-grid i { color: var(--primary, #0f766e); width: 1.1rem; text-align: center; }
 
 .list-card {
