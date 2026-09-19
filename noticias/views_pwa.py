@@ -6,6 +6,8 @@ respondem 404. O service worker não cacheia páginas: só habilita instalação
 from io import BytesIO
 
 from django.http import Http404, HttpResponse, JsonResponse
+from django.shortcuts import redirect
+from django.templatetags.static import static
 from django.views import View
 from PIL import Image, ImageDraw
 
@@ -77,6 +79,19 @@ def _png_icon(portal, size):
 def _nome_curto(portal):
     texto = (portal.cidade or portal.nome or 'Portal').strip() or 'Portal'
     return texto[:12]
+
+
+class BrowserFaviconView(View):
+    """Ícone da aba: PortalUP na plataforma; favicon do tenant quando existir."""
+
+    def get(self, request):
+        portal = _portal_do_host(request)
+        if portal is not None:
+            url = portal.favicon_url
+            if url:
+                return redirect(url)
+            raise Http404()
+        return redirect(static('img/portalup-icon.svg'))
 
 
 class ManifestView(View):

@@ -437,6 +437,7 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertIn('COMEÇAR AGORA', html)
         self.assertIn(reverse('pagina_vendas'), html)
         self.assertIn('home-saas', html)
+        self.assertIn('portalup-icon.svg', html)
         self.assertNotIn('Ji-Paraná', html)
         self.assertNotIn('mosaic-hero', html)
         comece = self.client.get(reverse('pagina_vendas'), HTTP_HOST='localhost')
@@ -447,6 +448,9 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertEqual(tenant.status_code, 200)
         self.assertNotContains(tenant, 'COMEÇAR AGORA')
         self.assertContains(tenant, Portal.objects.get(slug=Portal.SLUG_LEGADO).nome)
+        fav = self.client.get('/favicon.ico', HTTP_HOST='localhost')
+        self.assertEqual(fav.status_code, 302)
+        self.assertIn('portalup-icon.svg', fav['Location'])
 
 
 @override_settings(
