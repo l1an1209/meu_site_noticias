@@ -34,7 +34,7 @@
         </nav>
         <div class="home-nav__actions">
             <a class="btn btn-ds-ghost btn-sm" href="{% url 'entrar' %}">Entrar</a>
-            <a class="btn btn-contribuir btn-sm home-nav__cta" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">Criar meu portal</a>
+            <a class="btn btn-contribuir btn-sm home-nav__cta" data-pup-event="click_subscribe" href="#planos">Criar meu portal</a>
             <button class="home-nav__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#homeMenu" aria-controls="homeMenu" aria-expanded="false" aria-label="Abrir menu">
                 <i class="fas fa-bars" aria-hidden="true"></i>
             </button>
@@ -48,7 +48,7 @@
             <a href="#produto">O portal</a>
             <a href="#faq">FAQ</a>
             <a href="{% url 'entrar' %}">Entrar</a>
-            <a href="{% url 'pagina_vendas' %}" data-pup-event="click_subscribe">Criar meu portal</a>
+            <a href="#planos" data-pup-event="click_subscribe">Criar meu portal</a>
         </nav>
     </div>
 </header>
@@ -57,15 +57,15 @@
     <div class="container home-hero__grid">
         <div class="home-hero__copy">
             <p class="home-badge">Plataforma para portais de notícias</p>
-            <h1 class="display-font">Crie seu próprio portal de notícias profissional</h1>
-            <p class="lead">Crie, personalize e administre seu portal online sem desenvolver o sistema do zero. Assinatura mensal, pelo navegador.</p>
+            <h1 class="display-font">Seu portal. Sua audiência. Sua oportunidade.</h1>
+            <p class="lead">Crie seu próprio portal de notícias, publique conteúdos da sua cidade, construa audiência e tenha uma estrutura profissional para buscar anunciantes, publicidade e parcerias.</p>
             {% with plano_inicial=planos_venda|first %}
             {% if plano_inicial %}
             <p class="home-hero__price">Comece a partir de <strong>R$ {{ plano_inicial.preco_mensal }}</strong><span>/mês</span></p>
             {% endif %}
             {% endwith %}
             <div class="home-hero__actions">
-                <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">Criar meu portal</a>
+                <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="#planos">Criar meu portal</a>
                 <a class="btn btn-ds-ghost btn-lg" href="#planos">Ver planos</a>
             </div>
         </div>
@@ -176,7 +176,7 @@
     <div class="container home-product">
         <div class="home-product__copy">
             <h2 class="display-font">O que você recebe</h2>
-            <p>Um portal público e um painel para administrar, com a identidade do seu projeto.</p>
+            <p>Uma estrutura para operar mídia local: portal público, painel e espaço para anúncios, com a identidade do seu projeto.</p>
             <ul class="home-product__list">
                 <li><i class="fas fa-globe" aria-hidden="true"></i>Portal público no seu endereço</li>
                 <li><i class="fas fa-gauge-high" aria-hidden="true"></i>Painel administrativo</li>
@@ -229,7 +229,7 @@
     <div class="container">
         <div class="home-section__intro">
             <h2 class="display-font">Seu portal pronto para crescer</h2>
-            <p>O essencial para publicar e administrar, no mesmo lugar.</p>
+            <p>Publique, construa audiência e use o painel para anúncios e parcerias quando fizer sentido.</p>
         </div>
         <div class="home-features home-features--benefits">
             <article class="ds-card home-feature">
@@ -260,8 +260,8 @@
     <div class="container">
         <div class="home-mid-cta__panel">
             <h2 class="display-font">Pronto para criar seu próprio portal?</h2>
-            <p>Escolha o plano e continue para a contratação.</p>
-            <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">Criar meu portal</a>
+            <p>Escolha o plano e siga para a contratação.</p>
+            <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="#planos">Criar meu portal</a>
         </div>
     </div>
 </section>
@@ -300,6 +300,10 @@
             <p>Sim. O painel permite publicar notícias com fotos, vídeos e galerias, além de organizar categorias.</p>
         </details>
         <details class="faq-acc">
+            <summary>Posso buscar anunciantes no meu portal?</summary>
+            <p>Sim. O painel permite gerenciar anúncios no site. Publicidade e parcerias são uma possibilidade de negócio depois que você publica e constrói audiência — não uma renda garantida.</p>
+        </details>
+        <details class="faq-acc">
             <summary>Como funciona depois da contratação?</summary>
             <p>Você escolhe o plano, conclui o pagamento mensal e recebe o acesso por e-mail. Em seguida configura nome e endereço do portal e começa a publicar.</p>
         </details>
@@ -314,8 +318,8 @@
     <div class="container">
         <div class="home-finale__panel">
             <h2 class="display-font">Comece seu portal hoje</h2>
-            <p>Crie e administre seu portal de notícias profissional, sem desenvolver do zero.</p>
-            <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">Criar meu portal</a>
+            <p>Publique notícias, construa sua audiência local e tenha uma base profissional para anunciantes e parcerias.</p>
+            <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="#planos">Criar meu portal</a>
         </div>
     </div>
 </section>
@@ -325,7 +329,7 @@
         <div class="home-footer__grid">
             <div>
                 {% include "noticias/partials/portalup_logo.html" with logo_class="pup-logo--on-dark" %}
-                <p class="home-footer__about">Plataforma online para criar e administrar seu próprio portal.</p>
+                <p class="home-footer__about">Plataforma para criar e operar seu portal de mídia local.</p>
                 <p class="home-footer__label">Contato</p>
                 <a href="mailto:Lup4357@gmail.com">Lup4357@gmail.com</a>
             </div>
@@ -340,7 +344,7 @@
             <div>
                 <p class="home-footer__label">Acesso</p>
                 <a href="{% url 'entrar' %}">Entrar</a>
-                <a href="{% url 'pagina_vendas' %}" data-pup-event="click_subscribe">Criar meu portal</a>
+                <a href="#planos" data-pup-event="click_subscribe">Criar meu portal</a>
             </div>
         </div>
         <p class="home-footer__copy">
