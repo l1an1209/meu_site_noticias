@@ -34,7 +34,7 @@
         </nav>
         <div class="home-nav__actions">
             <a class="btn btn-ds-ghost btn-sm" href="{% url 'entrar' %}">Entrar</a>
-            <a class="btn btn-contribuir btn-sm home-nav__cta" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+            <a class="btn btn-contribuir btn-sm home-nav__cta" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
             <button class="home-nav__toggle" type="button" data-bs-toggle="collapse" data-bs-target="#homeMenu" aria-controls="homeMenu" aria-expanded="false" aria-label="Abrir menu">
                 <i class="fas fa-bars" aria-hidden="true"></i>
             </button>
@@ -60,7 +60,7 @@
             <h1 class="display-font">Tenha seu próprio portal profissional.</h1>
             <p class="lead">Crie, personalize e administre seu portal online. Assinatura mensal, sem instalar nada.</p>
             <div class="home-hero__actions">
-                <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+                <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
                 <a class="btn btn-ds-ghost btn-lg" href="{% url 'entrar' %}">Já sou cliente — Entrar</a>
             </div>
         </div>
@@ -196,7 +196,7 @@
                     <li><i class="fas fa-check" aria-hidden="true"></i>{{ item }}</li>
                     {% endfor %}
                 </ul>
-                <a class="btn btn-contribuir w-100" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com o {{ plano.nome }}</a>
+                <a class="btn btn-contribuir w-100" data-pup-event="click_plan" data-plano="{{ plano.codigo }}" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com o {{ plano.nome }}</a>
             </div>
             {% empty %}
             <p class="text-center text-muted">Planos serão publicados em breve.</p>
@@ -243,7 +243,7 @@
         <div class="home-finale__panel">
             <h2 class="display-font">Seu próximo portal começa aqui.</h2>
             <p>Assine a plataforma e administre o seu portal no painel.</p>
-            <a class="btn btn-contribuir btn-lg" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
+            <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
         </div>
     </div>
 </section>
@@ -282,5 +282,6 @@
         window.addEventListener('scroll', onScroll, { passive: true });
     })();
 </script>
+{% include "plataforma/partials/saas_analytics.html" %}
 </body>
 </html>

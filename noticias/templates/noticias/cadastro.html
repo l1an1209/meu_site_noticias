@@ -69,3 +69,8 @@
     </div>
 </div>
 {% endblock %}
+{% block extra_js %}
+{% if not request.portal or request.portal_from_compat_fallback %}
+{% include "plataforma/partials/saas_analytics.html" %}
+{% endif %}
+{% endblock %}

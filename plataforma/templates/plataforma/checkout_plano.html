@@ -22,6 +22,7 @@
         {% if plano.checkout_url %}
         <a class="btn btn-contribuir btn-lg w-100"
            data-checkout-plano="{{ plano.codigo }}"
+           data-pup-event="click_subscribe"
            href="{{ plano.checkout_url }}"
            rel="noopener noreferrer">Pagar o {{ plano.nome }} na Kiwify</a>
         <p class="small text-muted mt-3 mb-0">Você será enviado ao checkout Kiwify deste plano. O portal só é criado depois do pagamento aprovado.</p>

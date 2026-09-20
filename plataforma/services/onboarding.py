@@ -3,6 +3,7 @@ from django.db import IntegrityError, transaction
 from django.utils.crypto import get_random_string
 from django.utils.text import slugify
 from django.utils.timezone import now
+import logging
 
 from noticias.models import Categoria
 from plataforma.models import Assinatura, Cliente, EmailLog, Membership, Plano, Portal
@@ -12,6 +13,7 @@ from plataforma.services.kiwify import extrair_assinatura_kiwify, extrair_client
 from plataforma.slugs import gerar_slug_provisorio
 
 User = get_user_model()
+logger = logging.getLogger('plataforma.onboarding')
 
 
 def resolver_plano(dados_kiwify):
@@ -190,6 +192,11 @@ def provisionar_pagamento_aprovado(payload, request=None):
         _enviar_acesso(usuario, portal_ref, request=req, cliente=cliente_ref)
 
     transaction.on_commit(_enviar)
+    try:
+        from plataforma.services.analytics import registrar_compra
+        registrar_compra(assinatura)
+    except Exception:
+        logger.exception('Falha ao registrar evento de compra no analytics')
     return {
         'criado': True,
         'portal': portal,

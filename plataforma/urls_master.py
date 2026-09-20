@@ -22,6 +22,11 @@ from plataforma.views_master_ops import (
     MasterWebhookReprocessarView,
     MasterWebhooksView,
 )
+from plataforma.views_analytics import (
+    MasterAnalyticsAgoraView,
+    MasterAnalyticsSessaoView,
+    MasterAnalyticsView,
+)
 
 urlpatterns = [
     path('', MasterHomeView.as_view(), name='master_home'),
@@ -33,6 +38,9 @@ urlpatterns = [
     path('webhooks/<int:pk>/', MasterWebhookDetailView.as_view(), name='master_webhook'),
     path('webhooks/<int:pk>/reprocessar/', MasterWebhookReprocessarView.as_view(), name='master_webhook_reprocessar'),
     path('auditoria/', MasterAuditoriaView.as_view(), name='master_auditoria'),
+    path('analytics/', MasterAnalyticsView.as_view(), name='master_analytics'),
+    path('analytics/agora/', MasterAnalyticsAgoraView.as_view(), name='master_analytics_agora'),
+    path('analytics/sessoes/<uuid:pk>/', MasterAnalyticsSessaoView.as_view(), name='master_analytics_sessao'),
     path('clientes/', MasterClientesView.as_view(), name='master_clientes'),
     path('clientes/<int:pk>/', MasterClienteDetailView.as_view(), name='master_cliente'),
     path('clientes/<int:pk>/reenviar/', MasterClienteReenviarView.as_view(), name='master_cliente_reenviar'),

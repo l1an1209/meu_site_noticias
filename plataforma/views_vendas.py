@@ -3,10 +3,12 @@ from django.views.generic import DetailView, TemplateView
 
 from plataforma.models import Plano
 from plataforma.resolvers import resolve_portal_from_host
+from plataforma.views_analytics import CommercialAnalyticsMixin
 
 
-class PaginaVendasView(TemplateView):
+class PaginaVendasView(CommercialAnalyticsMixin, TemplateView):
     template_name = 'plataforma/vendas.html'
+    analytics_tipo = 'view_plans'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -15,10 +17,11 @@ class PaginaVendasView(TemplateView):
         return ctx
 
 
-class PaginaHomeSaaSView(TemplateView):
+class PaginaHomeSaaSView(CommercialAnalyticsMixin, TemplateView):
     """Landing comercial da plataforma. Não é o jornal de um tenant."""
 
     template_name = 'plataforma/home.html'
+    analytics_tipo = 'view_home'
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
@@ -38,10 +41,11 @@ class HomePublicaView(View):
         return NoticiaListView.as_view()(request, *args, **kwargs)
 
 
-class PaginaCheckoutPlanoView(DetailView):
+class PaginaCheckoutPlanoView(CommercialAnalyticsMixin, DetailView):
     """Passo de contratação de um plano específico, antes do checkout Kiwify."""
 
     template_name = 'plataforma/checkout_plano.html'
+    analytics_tipo = 'initiate_checkout'
     context_object_name = 'plano'
     slug_field = 'codigo'
     slug_url_kwarg = 'codigo'

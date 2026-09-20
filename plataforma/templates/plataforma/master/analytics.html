@@ -1,0 +1,194 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Analytics{% endblock %}
+{% block heading %}Analytics comercial{% endblock %}
+{% block subheading %}Funil do PortalUP · exclusivo do Master{% endblock %}
+{% block content %}
+<form class="app-toolbar flex-wrap gap-2 mb-3" method="get">
+    <select class="form-select" name="periodo" style="max-width:10rem">
+        <option value="hoje" {% if periodo == 'hoje' %}selected{% endif %}>Hoje</option>
+        <option value="ontem" {% if periodo == 'ontem' %}selected{% endif %}>Ontem</option>
+        <option value="7d" {% if periodo == '7d' %}selected{% endif %}>Últimos 7 dias</option>
+        <option value="30d" {% if periodo == '30d' %}selected{% endif %}>Últimos 30 dias</option>
+        <option value="custom" {% if periodo == 'custom' %}selected{% endif %}>Personalizado</option>
+    </select>
+    <input class="form-control" type="date" name="de" value="{{ request.GET.de }}" style="max-width:10rem">
+    <input class="form-control" type="date" name="ate" value="{{ request.GET.ate }}" style="max-width:10rem">
+    <select class="form-select" name="portal" style="max-width:14rem">
+        <option value="">Todos os portais</option>
+        {% for p in portais %}
+        <option value="{{ p.id }}" {% if portal and portal.id == p.id %}selected{% endif %}>{{ p.nome }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn btn-ds-ghost" type="submit">Filtrar</button>
+    <a class="btn btn-contribuir" href="{% url 'master_analytics' %}?periodo={{ periodo }}{% if portal %}&portal={{ portal.id }}{% endif %}">Atualizar agora</a>
+</form>
+<p class="small text-muted mb-3">Atualizado às {{ gerado_em|date:"H:i:s" }} · sessão ativa = atividade nos últimos minutos</p>
+
+<div class="an-grid mb-4">
+    <div class="ds-card p-3"><span class="text-muted small">Visitantes hoje/período</span><strong>{{ visitantes }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Visitantes agora</span><strong id="anNowCount">{{ ativos }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">PageViews</span><strong>{{ pageviews }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Planos</span><strong>{{ view_plans }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Cliques contratar</span><strong>{{ clicks }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Checkouts</span><strong>{{ checkouts }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Cadastros</span><strong>{{ cadastros }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Compras</span><strong>{{ compras }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Receita (eventos)</span><strong>R$ {{ receita }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Conversão</span><strong>{{ taxa }}%</strong></div>
+</div>
+
+<section class="ds-card p-4 mb-4">
+    <h2 class="h5 mb-3">🟢 Visitantes agora</h2>
+    <div id="anLive" class="an-live">
+        {% for s in ativos_lista %}
+        <a class="an-live__item" href="{% url 'master_analytics_sessao' s.id %}">
+            <strong>Visitante {{ s.rotulo }}</strong>
+            <span>{{ s.origem_label }} · {{ s.get_dispositivo_display }}</span>
+            <code>{{ s.path_atual|default:"/" }}</code>
+        </a>
+        {% empty %}
+        <p class="text-muted mb-0">Nenhuma sessão ativa no momento.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="ds-card p-4 mb-4">
+    <h2 class="h5 mb-3">Funil comercial</h2>
+    <ol class="an-funnel">
+        {% for etapa in funil %}
+        <li>
+            <div>
+                <strong>{{ etapa.label }}</strong>
+                <span>{{ etapa.quantidade }} sessões · {{ etapa.pct_anterior }}% da etapa anterior · {{ etapa.pct_total }}% do início{% if etapa.abandono %} · abandono {{ etapa.abandono }}{% endif %}</span>
+            </div>
+            <div class="an-bar"><i style="width: {{ etapa.pct_total }}%"></i></div>
+        </li>
+        {% endfor %}
+    </ol>
+</section>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-6">
+        <div class="ds-card p-4 h-100">
+            <h2 class="h6">Visitantes por hora</h2>
+            {% for h in por_hora %}
+            <div class="an-row"><span>{{ h.hora|date:"H:i" }}</span><div class="an-bar"><i style="width:{{ h.pct }}%"></i></div><b>{{ h.unicos }}</b></div>
+            {% empty %}<p class="text-muted small mb-0">Sem dados no período.</p>{% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="ds-card p-4 h-100">
+            <h2 class="h6">Origem</h2>
+            {% for o in origens %}
+            <div class="an-row"><span>{{ o.label }}</span><div class="an-bar"><i style="width:{{ o.pct }}%"></i></div><b>{{ o.n }}</b></div>
+            {% empty %}<p class="text-muted small mb-0">Sem origem registrada.</p>{% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="ds-card p-4 h-100">
+            <h2 class="h6">Dispositivos</h2>
+            {% for o in dispositivos %}
+            <div class="an-row"><span>{{ o.label }}</span><div class="an-bar"><i style="width:{{ o.pct }}%"></i></div><b>{{ o.n }}</b></div>
+            {% empty %}<p class="text-muted small mb-0">Sem dados.</p>{% endfor %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="ds-card p-4 h-100">
+            <h2 class="h6">Campanhas UTM</h2>
+            {% for o in campanhas %}
+            <div class="an-row"><span>{{ o.label }}</span><div class="an-bar"><i style="width:{{ o.pct }}%"></i></div><b>{{ o.n }}</b></div>
+            {% empty %}<p class="text-muted small mb-0">Nenhuma campanha UTM no período.</p>{% endfor %}
+        </div>
+    </div>
+</div>
+
+<section class="ds-card p-4 mb-4">
+    <h2 class="h5 mb-3">Páginas mais acessadas</h2>
+    <div class="app-table-wrap">
+    <table class="table align-middle mb-0">
+        <thead><tr><th>URL</th><th>Visitantes</th><th>PageViews</th><th>Última atividade</th></tr></thead>
+        <tbody>
+        {% for p in paginas %}
+        <tr>
+            <td><code>{{ p.path }}</code></td>
+            <td>{{ p.unicos }}</td>
+            <td>{{ p.pageviews }}</td>
+            <td class="small text-muted">{{ p.ultima|date:"d/m H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-muted">Nenhuma página no período.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+
+<section class="ds-card p-4 mb-4">
+    <h2 class="h5 mb-3">Compras</h2>
+    <div class="app-table-wrap">
+    <table class="table align-middle mb-0">
+        <thead><tr><th>Quando</th><th>Plano</th><th>Valor</th><th>Origem</th><th>Sessão</th></tr></thead>
+        <tbody>
+        {% for c in compras_lista %}
+        <tr>
+            <td>{{ c.criado_em|date:"d/m H:i" }}</td>
+            <td>{{ c.extra.nome_plano|default:c.extra.plano|default:"—" }}</td>
+            <td>R$ {{ c.extra.valor|default:"—" }}</td>
+            <td>{{ c.sessao.origem_label }}</td>
+            <td><a href="{% url 'master_analytics_sessao' c.sessao_id %}">{{ c.sessao.rotulo }}</a></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Nenhuma compra no período.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+
+<section class="ds-card p-4">
+    <h2 class="h5 mb-3">Sessões</h2>
+    <div class="app-table-wrap">
+    <table class="table align-middle mb-0">
+        <thead><tr><th>Visitante</th><th>Origem</th><th>Dispositivo</th><th>Página</th><th>Última atividade</th></tr></thead>
+        <tbody>
+        {% for s in sessoes %}
+        <tr>
+            <td><a href="{% url 'master_analytics_sessao' s.id %}">{{ s.rotulo }}</a></td>
+            <td>{{ s.origem_label }}</td>
+            <td>{{ s.get_dispositivo_display }}</td>
+            <td><code>{{ s.path_atual }}</code></td>
+            <td class="small">{{ s.visto_em|date:"d/m H:i:s" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-muted">Nenhuma sessão no período.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</section>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  var box = document.getElementById('anLive');
+  var count = document.getElementById('anNowCount');
+  if (!box) return;
+  function tick() {
+    fetch('{% url "master_analytics_agora" %}{% if portal %}?portal={{ portal.id }}{% endif %}', {credentials: 'same-origin'})
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        if (!data.ok) return;
+        count.textContent = data.ativos;
+        if (!data.itens.length) {
+          box.innerHTML = '<p class="text-muted mb-0">Nenhuma sessão ativa no momento.</p>';
+          return;
+        }
+        box.innerHTML = data.itens.map(function (s) {
+          return '<a class="an-live__item" href="/master/analytics/sessoes/' + s.id + '/"><strong>Visitante ' + s.rotulo + '</strong><span>' + s.origem + ' · ' + s.dispositivo + '</span><code>' + s.path + '</code><em>Ativo há ' + s.segundos + 's</em></a>';
+        }).join('');
+      }).catch(function () {});
+  }
+  setInterval(tick, 12000);
+})();
+</script>
+{% endblock %}

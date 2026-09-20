@@ -18,6 +18,8 @@ from django.views.generic import CreateView, TemplateView
 
 from plataforma.security import log_audit, throttle_blocked, throttle_response
 from plataforma.services.pos_login import destino_pos_login
+from plataforma.services.analytics import registrar_evento
+from plataforma.views_analytics import CommercialAnalyticsMixin
 
 from .forms import CadastroForm, LoginForm, RecuperarSenhaForm
 from .models import Perfil
@@ -49,7 +51,7 @@ class PortalAuthContextMixin:
         return form
 
 
-class EntrarView(PortalAuthContextMixin, LoginView):
+class EntrarView(CommercialAnalyticsMixin, PortalAuthContextMixin, LoginView):
     template_name = 'noticias/entrar.html'
     authentication_form = LoginForm
     redirect_authenticated_user = True
@@ -86,9 +88,10 @@ class SairView(View):
         return redirect('index')
 
 
-class CadastroView(CreateView):
+class CadastroView(CommercialAnalyticsMixin, CreateView):
     form_class = CadastroForm
     template_name = 'noticias/cadastro.html'
+    analytics_tipo = 'registration_start'
 
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
@@ -106,6 +109,7 @@ class CadastroView(CreateView):
         self.object = form.save()
         login(self.request, self.object, backend='django.contrib.auth.backends.ModelBackend')
         log_audit(self.request, 'cadastro', objeto='User', objeto_id=self.object.pk)
+        registrar_evento(self.request, 'registration_complete', path='/cadastro/')
         messages.success(
             self.request,
             'Conta criada! Agora você pode curtir, comentar e participar do portal.',

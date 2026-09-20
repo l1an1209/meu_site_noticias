@@ -1,0 +1,30 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Sessão {{ sessao.rotulo }}{% endblock %}
+{% block heading %}Visitante {{ sessao.rotulo }}{% endblock %}
+{% block subheading %}Jornada anônima · sem dados pessoais{% endblock %}
+{% block content %}
+<p class="mb-3"><a href="{% url 'master_analytics' %}">← Voltar ao Analytics</a></p>
+<div class="ds-card p-4 mb-4">
+    <p class="mb-1"><strong>Origem:</strong> {{ sessao.origem_label }}</p>
+    <p class="mb-1"><strong>Dispositivo:</strong> {{ sessao.get_dispositivo_display }}</p>
+    <p class="mb-1"><strong>Campanha:</strong> {{ sessao.utm_campaign|default:"—" }} · {{ sessao.utm_source|default:"—" }}/{{ sessao.utm_medium|default:"—" }}</p>
+    <p class="mb-0 small text-muted">Primeira página {{ sessao.path_primeiro }} · última {{ sessao.path_atual }} · {{ sessao.visto_em|date:"d/m/Y H:i:s" }}</p>
+</div>
+<div class="ds-card p-4">
+    <h2 class="h5 mb-3">Jornada</h2>
+    <ol class="an-journey">
+        {% for ev in jornada %}
+        <li>
+            <time>{{ ev.criado_em|date:"H:i:s" }}</time>
+            <div>
+                <strong>{{ ev.tipo }}</strong>
+                <code>{{ ev.path|default:"—" }}</code>
+                {% if ev.extra.plano %}<span class="small text-muted">{{ ev.extra.nome_plano|default:ev.extra.plano }}</span>{% endif %}
+            </div>
+        </li>
+        {% empty %}
+        <li class="text-muted">Sem eventos.</li>
+        {% endfor %}
+    </ol>
+</div>
+{% endblock %}

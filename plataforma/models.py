@@ -1,4 +1,5 @@
 from pathlib import Path
+import uuid
 
 from django.conf import settings
 from django.db import models
@@ -528,3 +529,93 @@ class EmailLog(models.Model):
 
     def __str__(self):
         return f'{self.tipo} → {self.destinatario} ({self.status})'
+
+
+class AnalyticsSession(models.Model):
+    DISPOSITIVO_DESCONHECIDO = 'unknown'
+    DISPOSITIVO_MOBILE = 'mobile'
+    DISPOSITIVO_TABLET = 'tablet'
+    DISPOSITIVO_DESKTOP = 'desktop'
+    DISPOSITIVO_CHOICES = [
+        (DISPOSITIVO_DESCONHECIDO, 'Desconhecido'),
+        (DISPOSITIVO_MOBILE, 'Mobile'),
+        (DISPOSITIVO_TABLET, 'Tablet'),
+        (DISPOSITIVO_DESKTOP, 'Desktop'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    rotulo = models.CharField(max_length=8, db_index=True)
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True)
+    visto_em = models.DateTimeField(db_index=True)
+    path_primeiro = models.CharField(max_length=200, blank=True)
+    path_atual = models.CharField(max_length=200, blank=True)
+    referrer = models.CharField(max_length=300, blank=True)
+    utm_source = models.CharField(max_length=80, blank=True)
+    utm_medium = models.CharField(max_length=80, blank=True)
+    utm_campaign = models.CharField(max_length=120, blank=True)
+    utm_content = models.CharField(max_length=120, blank=True)
+    utm_term = models.CharField(max_length=120, blank=True)
+    fbclid = models.CharField(max_length=200, blank=True)
+    fbp = models.CharField(max_length=80, blank=True)
+    fbc = models.CharField(max_length=200, blank=True)
+    dispositivo = models.CharField(
+        max_length=16, choices=DISPOSITIVO_CHOICES, default=DISPOSITIVO_DESCONHECIDO,
+    )
+    portal = models.ForeignKey(
+        Portal, on_delete=models.SET_NULL, null=True, blank=True, related_name='analytics_sessoes',
+    )
+
+    class Meta:
+        ordering = ['-visto_em']
+        verbose_name = 'Sessão de analytics'
+        verbose_name_plural = 'Sessões de analytics'
+        indexes = [
+            models.Index(fields=['visto_em']),
+            models.Index(fields=['portal', 'visto_em']),
+        ]
+
+    def __str__(self):
+        return self.rotulo
+
+    def origem_label(self):
+        fonte = (self.utm_source or '').lower()
+        meio = (self.utm_medium or '').lower()
+        if fonte in {'fb', 'facebook', 'ig', 'instagram', 'meta'} or self.fbclid or meio == 'paid':
+            if 'instagram' in fonte or fonte == 'ig':
+                return 'Instagram'
+            return 'Meta Ads'
+        if 'google' in fonte or meio == 'organic':
+            return 'Google'
+        if fonte:
+            return self.utm_source[:40]
+        if self.referrer:
+            return 'Referência'
+        return 'Direto'
+
+
+class AnalyticsEvent(models.Model):
+    sessao = models.ForeignKey(
+        AnalyticsSession, on_delete=models.CASCADE, related_name='eventos',
+    )
+    portal = models.ForeignKey(
+        Portal, on_delete=models.SET_NULL, null=True, blank=True, related_name='analytics_eventos',
+    )
+    tipo = models.CharField(max_length=40, db_index=True)
+    path = models.CharField(max_length=200, blank=True)
+    extra = models.JSONField(default=dict, blank=True)
+    ref_externo = models.CharField(max_length=80, blank=True, db_index=True)
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ['criado_em']
+        verbose_name = 'Evento de analytics'
+        verbose_name_plural = 'Eventos de analytics'
+        indexes = [
+            models.Index(fields=['tipo', 'criado_em']),
+            models.Index(fields=['sessao', 'criado_em']),
+            models.Index(fields=['portal', 'tipo', 'criado_em']),
+            models.Index(fields=['tipo', 'ref_externo']),
+        ]
+
+    def __str__(self):
+        return f'{self.tipo} {self.path}'

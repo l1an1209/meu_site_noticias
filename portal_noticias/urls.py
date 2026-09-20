@@ -8,10 +8,12 @@ from noticias.sitemaps import sitemaps
 from noticias.views_seo import RobotsTxtView
 from plataforma.views_vendas import PaginaCheckoutPlanoView, PaginaVendasView
 from plataforma.views_webhooks import kiwify_webhook
+from plataforma.views_analytics import collect_analytics
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('webhooks/kiwify/', kiwify_webhook, name='webhook_kiwify'),
+    path('a/collect/', collect_analytics, name='analytics_collect'),
     path('comece/<slug:codigo>/', PaginaCheckoutPlanoView.as_view(), name='pagina_checkout_plano'),
     path('comece/', PaginaVendasView.as_view(), name='pagina_vendas'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
