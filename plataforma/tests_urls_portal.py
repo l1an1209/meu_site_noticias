@@ -149,6 +149,6 @@ class HostsPlataformaProducaoTests(TestCase):
     def test_home_do_apex_e_landing_saas(self):
         resp = self.client.get('/', HTTP_HOST='portalnoticias.com.br')
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'Tenha seu próprio portal profissional.')
+        self.assertContains(resp, 'Crie seu próprio portal de notícias profissional')
         self.assertNotContains(resp, 'Notícias Ji-Paraná')
 
