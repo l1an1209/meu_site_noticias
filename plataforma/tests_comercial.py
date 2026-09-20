@@ -453,6 +453,11 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         self.assertNotIn('R$ 99,90', html)
         self.assertNotIn('Ji-Paraná', html)
         self.assertNotIn('mosaic-hero', html)
+        self.assertIn('Quem somos', html)
+        self.assertIn('mailto:Lup4357@gmail.com', html)
+        self.assertIn(reverse('pagina_privacidade'), html)
+        self.assertIn(reverse('pagina_termos'), html)
+        self.assertIn(reverse('pagina_contato'), html)
         comece = self.client.get(reverse('pagina_vendas'), HTTP_HOST='localhost')
         self.assertEqual(comece.status_code, 200)
         self.assertContains(comece, 'sales-hero')
@@ -464,6 +469,12 @@ class ComercialKiwifyTests(MockResendMixin, TestCase):
         fav = self.client.get('/favicon.ico', HTTP_HOST='localhost')
         self.assertEqual(fav.status_code, 302)
         self.assertIn('portalup-icon.svg', fav['Location'])
+        for nome in ('pagina_privacidade', 'pagina_termos', 'pagina_contato'):
+            pagina = self.client.get(reverse(nome), HTTP_HOST='localhost')
+            self.assertEqual(pagina.status_code, 200, nome)
+            self.assertContains(pagina, 'Lup4357@gmail.com')
+        tenant_legal = self.client.get(reverse('pagina_privacidade'), HTTP_HOST=f'{Portal.SLUG_LEGADO}.test')
+        self.assertEqual(tenant_legal.status_code, 404)
 
 
 @override_settings(

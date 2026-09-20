@@ -176,6 +176,20 @@
     </div>
 </section>
 
+<section id="quem-somos" class="home-section" aria-labelledby="quem-somos-titulo">
+    <div class="container">
+        <div class="home-section__intro">
+            <h2 id="quem-somos-titulo" class="display-font">Quem somos</h2>
+        </div>
+        <div class="home-about">
+            <p>O PortalUP é uma plataforma criada para facilitar a criação e gestão de portais de conteúdo na internet.</p>
+            <p>Nossa proposta é oferecer uma solução moderna e acessível para quem deseja ter seu próprio portal, publicar conteúdos e construir uma presença digital profissional sem precisar desenvolver toda a estrutura do zero.</p>
+            <p>O PortalUP reúne tecnologia, gestão e infraestrutura em uma única plataforma, permitindo que cada cliente tenha seu próprio portal e possa evoluir sua presença digital de forma simples e profissional.</p>
+            <p>Nossa plataforma está sendo desenvolvida com foco em segurança, desempenho, facilidade de uso e crescimento.</p>
+        </div>
+    </div>
+</section>
+
 <section id="planos" class="home-section">
     <div class="container">
         <div class="home-section__intro">
@@ -254,6 +268,8 @@
             <div>
                 {% include "noticias/partials/portalup_logo.html" with logo_class="pup-logo--on-dark" %}
                 <p class="home-footer__about">Plataforma online para criar e administrar seu próprio portal.</p>
+                <p class="home-footer__label">Contato</p>
+                <a href="mailto:Lup4357@gmail.com">Lup4357@gmail.com</a>
             </div>
             <div>
                 <p class="home-footer__label">Navegação</p>
@@ -269,7 +285,14 @@
                 <a href="{% url 'pagina_vendas' %}">COMEÇAR AGORA</a>
             </div>
         </div>
-        <p class="home-footer__copy">© {% now "Y" %} PortalUP. Todos os direitos reservados.</p>
+        <p class="home-footer__copy">
+            <span>© {% now "Y" %} PortalUP. Todos os direitos reservados.</span>
+            <span class="home-footer__legal">
+                <a href="{% url 'pagina_privacidade' %}">Política de Privacidade</a>
+                <a href="{% url 'pagina_termos' %}">Termos de Uso</a>
+                <a href="{% url 'pagina_contato' %}">Contato</a>
+            </span>
+        </p>
     </div>
 </footer>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

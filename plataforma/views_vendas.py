@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.views import View
 from django.views.generic import DetailView, TemplateView
 
@@ -58,3 +59,24 @@ class PaginaCheckoutPlanoView(CommercialAnalyticsMixin, DetailView):
         ctx['is_sales_page'] = True
         ctx['cta_plano'] = f'Começar com o {self.object.nome}'
         return ctx
+
+
+class PaginaInstitucionalView(CommercialAnalyticsMixin, TemplateView):
+    """Páginas legais do SaaS. Somente no host da plataforma."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if resolve_portal_from_host(request.get_host()) is not None:
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
+
+
+class PaginaPrivacidadeView(PaginaInstitucionalView):
+    template_name = 'plataforma/privacidade.html'
+
+
+class PaginaTermosView(PaginaInstitucionalView):
+    template_name = 'plataforma/termos.html'
+
+
+class PaginaContatoView(PaginaInstitucionalView):
+    template_name = 'plataforma/contato.html'
