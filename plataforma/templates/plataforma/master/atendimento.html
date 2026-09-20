@@ -1,0 +1,61 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Atendimento{% endblock %}
+{% block heading %}Atendimento{% endblock %}
+{% block subheading %}Conversas dos clientes da plataforma{% endblock %}
+{% block content %}
+<form class="app-toolbar" method="get">
+    <input class="form-control" name="q" value="{{ request.GET.q }}" placeholder="Assunto, portal ou e-mail" style="max-width:16rem">
+    <select class="form-select" name="status" style="max-width:14rem">
+        <option value="">Todos os status</option>
+        {% for value, label in status_choices %}
+        <option value="{{ value }}" {% if filtro_status == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+    <button class="btn btn-ds-ghost">Filtrar</button>
+</form>
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead>
+        <tr>
+            <th>Cliente</th>
+            <th>Portal</th>
+            <th>Assunto</th>
+            <th>Tipo</th>
+            <th>Última mensagem</th>
+            <th>Status</th>
+            <th>Atualizado</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for conversa in conversas %}
+    <tr>
+        <td>
+            <a class="fw-semibold text-reset text-decoration-none" href="{% url 'master_atendimento_conversa' conversa.pk %}">
+                {{ conversa.portal.cliente.nome|default:conversa.portal.cliente_nome|default:"—" }}
+            </a>
+            <div class="small text-muted">{{ conversa.portal.cliente.email|default:conversa.portal.cliente_email|default:"—" }}</div>
+        </td>
+        <td>{{ conversa.portal.nome }}<div class="small text-muted">{{ conversa.portal.slug }}</div></td>
+        <td><a href="{% url 'master_atendimento_conversa' conversa.pk %}">{{ conversa.assunto }}</a></td>
+        <td>{{ conversa.get_tipo_display }}</td>
+        <td>{{ conversa.ultima_mensagem|truncatechars:80 }}</td>
+        <td>
+            <span class="ds-badge {% if conversa.status == 'encerrada' %}ds-badge--muted{% elif conversa.nao_lidas_master %}ds-badge--warn{% else %}ds-badge--ok{% endif %}">{{ conversa.get_status_display }}</span>
+            {% if conversa.nao_lidas_master %}<span class="ds-badge">{{ conversa.nao_lidas_master }}</span>{% endif %}
+        </td>
+        <td>{{ conversa.atualizado_em|date:"d/m/Y H:i" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7"><div class="empty-state my-3"><p class="empty-title">Nenhuma conversa de atendimento.</p></div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% if is_paginated %}
+<div class="d-flex gap-2 mt-3">
+    {% if page_obj.has_previous %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ filtro_status }}&page={{ page_obj.previous_page_number }}">Anterior</a>{% endif %}
+    <span class="align-self-center small text-muted">Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="btn btn-ds-ghost btn-sm" href="?q={{ request.GET.q }}&status={{ filtro_status }}&page={{ page_obj.next_page_number }}">Próxima</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

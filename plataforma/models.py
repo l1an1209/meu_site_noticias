@@ -4,6 +4,8 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from plataforma.managers import TenantManager
+
 
 def _portal_asset_path(instance, filename, pasta):
     ext = Path(filename or '').suffix.lower() or '.png'
@@ -619,3 +621,149 @@ class AnalyticsEvent(models.Model):
 
     def __str__(self):
         return f'{self.tipo} {self.path}'
+
+
+class ConversaAjuda(models.Model):
+    TIPO_DUVIDA = 'duvida'
+    TIPO_PROBLEMA = 'problema'
+    TIPO_SUGESTAO = 'sugestao'
+    TIPO_CHOICES = [
+        (TIPO_DUVIDA, 'Dúvida'),
+        (TIPO_PROBLEMA, 'Problema'),
+        (TIPO_SUGESTAO, 'Sugestão'),
+    ]
+
+    STATUS_ABERTA = 'aberta'
+    STATUS_AGUARDANDO_CLIENTE = 'aguardando_cliente'
+    STATUS_AGUARDANDO_SUPORTE = 'aguardando_suporte'
+    STATUS_ENCERRADA = 'encerrada'
+    STATUS_CHOICES = [
+        (STATUS_ABERTA, 'Aberta'),
+        (STATUS_AGUARDANDO_CLIENTE, 'Aguardando cliente'),
+        (STATUS_AGUARDANDO_SUPORTE, 'Aguardando suporte'),
+        (STATUS_ENCERRADA, 'Encerrada'),
+    ]
+
+    portal = models.ForeignKey(
+        Portal,
+        on_delete=models.CASCADE,
+        related_name='conversas_ajuda',
+        db_index=True,
+    )
+    aberto_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='conversas_ajuda_abertas',
+    )
+    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default=TIPO_DUVIDA)
+    assunto = models.CharField(max_length=140)
+    status = models.CharField(
+        max_length=24,
+        choices=STATUS_CHOICES,
+        default=STATUS_AGUARDANDO_SUPORTE,
+        db_index=True,
+    )
+    ultima_mensagem = models.CharField(max_length=180, blank=True)
+    nao_lidas_cliente = models.PositiveIntegerField(default=0)
+    nao_lidas_master = models.PositiveIntegerField(default=1)
+    criado_em = models.DateTimeField(auto_now_add=True)
+    atualizado_em = models.DateTimeField(auto_now=True, db_index=True)
+    encerrado_em = models.DateTimeField(null=True, blank=True)
+
+    objects = TenantManager()
+    all_objects = models.Manager()
+
+    class Meta:
+        ordering = ['-atualizado_em']
+        verbose_name = 'Conversa de ajuda'
+        verbose_name_plural = 'Conversas de ajuda'
+        indexes = [
+            models.Index(fields=['portal', '-atualizado_em']),
+            models.Index(fields=['status', '-atualizado_em']),
+        ]
+
+    def __str__(self):
+        return f'{self.assunto} ({self.portal_id})'
+
+    def adicionar_mensagem(self, autor, origem, texto):
+        texto = (texto or '').strip()[:4000]
+        if not texto:
+            raise ValueError('Mensagem vazia.')
+        msg = MensagemAjuda.objects.create(
+            conversa=self,
+            autor=autor if getattr(autor, 'is_authenticated', False) else None,
+            origem=origem,
+            texto=texto,
+        )
+        self.ultima_mensagem = texto[:180]
+        if origem == MensagemAjuda.ORIGEM_CLIENTE:
+            self.nao_lidas_master = (self.nao_lidas_master or 0) + 1
+            self.status = self.STATUS_AGUARDANDO_SUPORTE
+            self.encerrado_em = None
+        else:
+            self.nao_lidas_cliente = (self.nao_lidas_cliente or 0) + 1
+            if self.status != self.STATUS_ENCERRADA:
+                self.status = self.STATUS_AGUARDANDO_CLIENTE
+        self.save(update_fields=[
+            'ultima_mensagem', 'nao_lidas_cliente', 'nao_lidas_master',
+            'status', 'encerrado_em', 'atualizado_em',
+        ])
+        return msg
+
+    def marcar_lida_cliente(self):
+        if self.nao_lidas_cliente:
+            self.nao_lidas_cliente = 0
+            self.save(update_fields=['nao_lidas_cliente', 'atualizado_em'])
+
+    def marcar_lida_master(self):
+        if self.nao_lidas_master:
+            self.nao_lidas_master = 0
+            self.save(update_fields=['nao_lidas_master', 'atualizado_em'])
+
+    def definir_status(self, status):
+        permitidos = {item[0] for item in self.STATUS_CHOICES}
+        if status not in permitidos:
+            raise ValueError('Status inválido.')
+        self.status = status
+        if status == self.STATUS_ENCERRADA:
+            from django.utils.timezone import now
+            self.encerrado_em = now()
+        else:
+            self.encerrado_em = None
+        self.save(update_fields=['status', 'encerrado_em', 'atualizado_em'])
+
+
+class MensagemAjuda(models.Model):
+    ORIGEM_CLIENTE = 'cliente'
+    ORIGEM_SUPORTE = 'suporte'
+    ORIGEM_CHOICES = [
+        (ORIGEM_CLIENTE, 'Cliente'),
+        (ORIGEM_SUPORTE, 'Suporte'),
+    ]
+
+    conversa = models.ForeignKey(
+        ConversaAjuda,
+        on_delete=models.CASCADE,
+        related_name='mensagens',
+    )
+    autor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='mensagens_ajuda',
+    )
+    origem = models.CharField(max_length=16, choices=ORIGEM_CHOICES)
+    texto = models.TextField(max_length=4000)
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True)
+    lida_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['criado_em', 'id']
+        verbose_name = 'Mensagem de ajuda'
+        verbose_name_plural = 'Mensagens de ajuda'
+
+    def __str__(self):
+        return f'{self.origem} #{self.pk}'

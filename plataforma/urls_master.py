@@ -27,6 +27,11 @@ from plataforma.views_analytics import (
     MasterAnalyticsSessaoView,
     MasterAnalyticsView,
 )
+from plataforma.views_master_ajuda import (
+    MasterAtendimentoConversaView,
+    MasterAtendimentoListView,
+    MasterAtendimentoPollView,
+)
 
 urlpatterns = [
     path('', MasterHomeView.as_view(), name='master_home'),
@@ -50,4 +55,7 @@ urlpatterns = [
     path('assinaturas/', MasterAssinaturasView.as_view(), name='master_assinaturas'),
     path('planos/', MasterPlanosView.as_view(), name='master_planos'),
     path('planos/<int:pk>/', MasterPlanoUpdateView.as_view(), name='master_plano'),
+    path('atendimento/', MasterAtendimentoListView.as_view(), name='master_atendimento'),
+    path('atendimento/<int:pk>/', MasterAtendimentoConversaView.as_view(), name='master_atendimento_conversa'),
+    path('atendimento/<int:pk>/mensagens/', MasterAtendimentoPollView.as_view(), name='master_atendimento_poll'),
 ]

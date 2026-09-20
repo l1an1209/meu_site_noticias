@@ -1,0 +1,53 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Ajuda{% endblock %}
+{% block heading %}Ajuda{% endblock %}
+{% block subheading %}Fale com o suporte sobre este portal{% endblock %}
+{% block content %}
+<div class="help-layout">
+    <div class="ds-card p-3 p-md-4 mb-4">
+        <h2 class="h6 mb-3">Nova conversa</h2>
+        <form method="post" class="help-new">
+            {% csrf_token %}
+            <div class="help-new__row">
+                <label class="form-label" for="help-tipo">Assunto do atendimento</label>
+                <select class="form-select" id="help-tipo" name="tipo">
+                    {% for value, label in tipos %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="help-new__row">
+                <label class="form-label" for="help-assunto">Título</label>
+                <input class="form-control" id="help-assunto" name="assunto" maxlength="140" required placeholder="Ex.: Não consigo publicar uma notícia">
+            </div>
+            <div class="help-new__row">
+                <label class="form-label" for="help-texto">Mensagem</label>
+                <textarea class="form-control" id="help-texto" name="texto" rows="4" maxlength="4000" required placeholder="Descreva o que você precisa."></textarea>
+            </div>
+            <button class="btn btn-contribuir" type="submit">Iniciar conversa</button>
+        </form>
+    </div>
+    <div>
+        <h2 class="h6 mb-3">Conversas deste portal</h2>
+        {% for conversa in conversas %}
+        <a class="help-item ds-card" href="{% url 'app_ajuda_conversa' conversa.pk %}">
+            <div>
+                <strong>{{ conversa.assunto }}</strong>
+                <p>{{ conversa.ultima_mensagem|default:"Sem mensagens ainda." }}</p>
+            </div>
+            <div class="help-item__meta">
+                <span class="ds-badge {% if conversa.status == 'encerrada' %}ds-badge--muted{% elif conversa.nao_lidas_cliente %}ds-badge--warn{% else %}ds-badge--ok{% endif %}">{{ conversa.get_status_display }}</span>
+                <small>{{ conversa.atualizado_em|date:"d/m H:i" }}</small>
+                {% if conversa.nao_lidas_cliente %}<span class="ds-badge">{{ conversa.nao_lidas_cliente }}</span>{% endif %}
+            </div>
+        </a>
+        {% empty %}
+        <div class="empty-state">
+            <i class="far fa-life-ring"></i>
+            <p class="empty-title">Nenhuma conversa ainda.</p>
+            <p>Quando precisar, inicie um atendimento acima. A conversa fica disponível para toda a equipe deste portal.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

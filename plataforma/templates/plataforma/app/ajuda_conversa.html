@@ -1,0 +1,28 @@
+{% extends "plataforma/app/base.html" %}
+{% load static %}
+{% block title %}{{ conversa.assunto }}{% endblock %}
+{% block heading %}{{ conversa.assunto }}{% endblock %}
+{% block subheading %}{{ conversa.get_tipo_display }} · {{ conversa.get_status_display }}{% endblock %}
+{% block content %}
+<p class="mb-3"><a href="{% url 'app_ajuda' %}">← Todas as conversas</a></p>
+<div class="help-thread ds-card" data-help-thread data-poll-url="{% url 'app_ajuda_poll' conversa.pk %}" data-send-url="{% url 'app_ajuda_conversa' conversa.pk %}" data-origem="cliente">
+    <div class="help-thread__status" data-help-status>{{ conversa.get_status_display }}</div>
+    <div class="help-thread__messages" data-help-messages>
+        {% for msg in mensagens %}
+        <article class="help-bubble help-bubble--{{ msg.origem }}" data-msg-id="{{ msg.pk }}">
+            <p>{{ msg.texto }}</p>
+            <small>{{ msg.autor.get_username|default:"Equipe" }} · {{ msg.criado_em|date:"d/m H:i" }}</small>
+        </article>
+        {% endfor %}
+    </div>
+    <form method="post" class="help-compose" data-help-form>
+        {% csrf_token %}
+        <label class="visually-hidden" for="help-reply">Mensagem</label>
+        <textarea id="help-reply" name="texto" class="form-control" rows="3" maxlength="4000" required placeholder="{% if conversa.status == 'encerrada' %}A conversa está encerrada. Envie uma mensagem para reabrir.{% else %}Escreva sua mensagem{% endif %}"></textarea>
+        <button class="btn btn-contribuir" type="submit">Enviar</button>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/ajuda.js' %}"></script>
+{% endblock %}

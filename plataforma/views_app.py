@@ -20,7 +20,7 @@ from plataforma.forms import (
     NoticiaForm, PortalOnboardingForm, SeoForm,
 )
 from plataforma.metrics import format_mb, storage_bytes_portal
-from plataforma.models import Membership, Portal
+from plataforma.models import ConversaAjuda, Membership, Portal
 from plataforma.permissions import (
     PAPEIS_ANUNCIO, PAPEIS_CATEGORIA, PAPEIS_MODERACAO, PAPEIS_NOTICIA,
     has_portal_role, is_platform_master,
@@ -109,6 +109,9 @@ class AppAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
         ctx = super().get_context_data(**kwargs)
         ctx['app_active'] = getattr(self, 'app_active', '')
         ctx['envios_pendentes_app'] = Contribuicao.objects.filter(status='pendente').count()
+        ctx['ajuda_nao_lidas'] = (
+            ConversaAjuda.objects.aggregate(n=Sum('nao_lidas_cliente'))['n'] or 0
+        )
         return ctx
 
 

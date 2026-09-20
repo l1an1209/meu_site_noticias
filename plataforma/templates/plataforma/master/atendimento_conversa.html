@@ -1,0 +1,46 @@
+{% extends "plataforma/app/base.html" %}
+{% load static %}
+{% block title %}{{ conversa.assunto }}{% endblock %}
+{% block heading %}{{ conversa.assunto }}{% endblock %}
+{% block subheading %}{{ conversa.portal.nome }} · {{ conversa.portal.slug }}{% endblock %}
+{% block content %}
+<p class="mb-3"><a href="{% url 'master_atendimento' %}">← Todas as conversas</a></p>
+<div class="ds-card p-3 mb-3">
+    <p class="mb-1"><strong>Cliente:</strong> {{ conversa.portal.cliente.nome|default:conversa.portal.cliente_nome|default:"—" }} · {{ conversa.portal.cliente.email|default:conversa.portal.cliente_email|default:"—" }}</p>
+    <p class="mb-1"><strong>Portal:</strong> {{ conversa.portal.nome }} ({{ conversa.portal.slug }})</p>
+    <p class="mb-1"><strong>Tipo:</strong> {{ conversa.get_tipo_display }}</p>
+    <p class="mb-3"><strong>Aberto por:</strong> {{ conversa.aberto_por.get_username|default:"—" }}</p>
+    <form method="post" class="d-flex flex-wrap gap-2 align-items-center">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="status">
+        <label class="small text-muted mb-0" for="help-status">Status</label>
+        <select class="form-select" id="help-status" name="status" style="max-width:16rem">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if conversa.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-ds-ghost btn-sm" type="submit">Atualizar status</button>
+    </form>
+</div>
+<div class="help-thread ds-card" data-help-thread data-poll-url="{% url 'master_atendimento_poll' conversa.pk %}" data-send-url="{% url 'master_atendimento_conversa' conversa.pk %}" data-origem="suporte">
+    <div class="help-thread__status" data-help-status>{{ conversa.get_status_display }}</div>
+    <div class="help-thread__messages" data-help-messages>
+        {% for msg in mensagens %}
+        <article class="help-bubble help-bubble--{{ msg.origem }}" data-msg-id="{{ msg.pk }}">
+            <p>{{ msg.texto }}</p>
+            <small>{{ msg.autor.get_username|default:"Equipe" }} · {{ msg.criado_em|date:"d/m H:i" }}</small>
+        </article>
+        {% endfor %}
+    </div>
+    <form method="post" class="help-compose" data-help-form>
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="responder">
+        <label class="visually-hidden" for="help-reply">Mensagem</label>
+        <textarea id="help-reply" name="texto" class="form-control" rows="3" maxlength="4000" required placeholder="Resposta ao cliente"></textarea>
+        <button class="btn btn-contribuir" type="submit">Enviar</button>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="{% static 'js/ajuda.js' %}"></script>
+{% endblock %}

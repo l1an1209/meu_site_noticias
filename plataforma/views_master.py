@@ -9,7 +9,9 @@ from django.views.generic import DetailView, ListView, TemplateView, UpdateView
 
 from noticias.models import Noticia
 from plataforma.metrics import format_mb, storage_bytes_portal
-from plataforma.models import Assinatura, Cliente, EmailLog, Membership, Plano, Portal, WebhookEvent
+from plataforma.models import (
+    Assinatura, Cliente, ConversaAjuda, EmailLog, Membership, Plano, Portal, WebhookEvent,
+)
 from plataforma.permissions import is_platform_master
 from plataforma.security import log_audit
 from plataforma.services.acesso import usuario_do_cliente
@@ -34,6 +36,9 @@ class MasterRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         ctx = super().get_context_data(**kwargs)
         ctx['app_active'] = getattr(self, 'app_active', '')
         ctx['is_master_shell'] = True
+        ctx['atendimento_nao_lidas'] = (
+            ConversaAjuda.all_objects.aggregate(n=Sum('nao_lidas_master'))['n'] or 0
+        )
         return ctx
 
 

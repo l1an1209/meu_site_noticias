@@ -10,6 +10,9 @@ from plataforma.views_app import (
     AppPublicidadeView, AppRejeitarEnvioView, AppSeoView,
     AppUsuarioCreateView, AppUsuariosView, AppVideosView,
 )
+from plataforma.views_ajuda import (
+    AppAjudaConversaView, AppAjudaListView, AppAjudaPollView,
+)
 
 urlpatterns = [
     path('', AppHomeView.as_view(), name='app_home'),
@@ -38,4 +41,7 @@ urlpatterns = [
     path('seo/', AppSeoView.as_view(), name='app_seo'),
     path('aparencia/', AppAparenciaView.as_view(), name='app_aparencia'),
     path('configuracoes/', AppConfigView.as_view(), name='app_config'),
+    path('ajuda/', AppAjudaListView.as_view(), name='app_ajuda'),
+    path('ajuda/<int:pk>/', AppAjudaConversaView.as_view(), name='app_ajuda_conversa'),
+    path('ajuda/<int:pk>/mensagens/', AppAjudaPollView.as_view(), name='app_ajuda_poll'),
 ]
