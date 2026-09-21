@@ -558,11 +558,18 @@ body.pup-auth .auth-card {
 .home-nav__links a { color: #64748b; text-decoration: none; transition: color 0.15s ease; }
 .home-nav__links a:hover, .home-nav__mobile a:hover { color: #0f172a; }
 .home-hero {
-    padding: 5rem 0 4.4rem;
+    padding: 4.2rem 0 3.2rem;
     background:
         radial-gradient(720px 260px at 88% 12%, rgba(15, 118, 110, 0.09), transparent 62%),
         linear-gradient(180deg, #ffffff 0%, #f4f5f7 100%);
 }
+.home-hero--simple { padding: 4.6rem 0 3.4rem; }
+.home-hero__copy--center {
+    max-width: 40rem;
+    margin: 0 auto;
+    text-align: center;
+}
+.home-hero__actions--center { justify-content: center; }
 .home-hero__grid {
     display: grid;
     grid-template-columns: minmax(0, 0.98fr) minmax(320px, 1.05fr);
@@ -584,16 +591,16 @@ body.pup-auth .auth-card {
     text-transform: uppercase;
 }
 .home-hero h1 {
-    font-size: clamp(2.15rem, 4.6vw, 3.35rem);
-    max-width: 16ch;
-    margin: 0 0 1.05rem;
+    font-size: clamp(2.15rem, 4.6vw, 3.2rem);
+    max-width: 12em;
+    margin: 0 auto 1.05rem;
     letter-spacing: -0.045em;
     line-height: 1.08;
     font-weight: 650;
 }
 .home-hero .lead {
-    max-width: 30rem;
-    margin: 0 0 1.05rem;
+    max-width: 34rem;
+    margin: 0 auto 1.7rem;
     color: #575f6b;
     font-size: 1.08rem;
     line-height: 1.62;
@@ -611,7 +618,6 @@ body.pup-auth .auth-card {
 }
 .home-hero__price span { color: #64748b; font-weight: 500; margin-left: 0.15rem; }
 .home-hero__actions { display: flex; flex-wrap: wrap; gap: 0.7rem; align-items: center; }
-.home-section--plans { padding-top: 1.2rem; }
 .home-hero__stage { position: relative; min-height: 390px; padding: 0.4rem 0.6rem 1.6rem 0; }
 .pup-mock {
     background: #fff;
@@ -795,7 +801,7 @@ body.pup-auth .auth-card {
 .sales-cta { background: #0f172a; }
 @media (max-width: 991px) {
     .home-hero__grid { grid-template-columns: 1fr; gap: 1.4rem; }
-    .home-hero h1 { max-width: 18ch; }
+    .home-hero h1 { max-width: none; }
     .home-features, .home-steps, .home-plans, .home-footer__grid, .home-features--benefits { grid-template-columns: 1fr 1fr; }
     .home-product { grid-template-columns: 1fr; gap: 2rem; }
     .home-product__stage { min-height: 0; }
@@ -808,13 +814,14 @@ body.pup-auth .auth-card {
     .home-saas .plan-card--featured { transform: none; }
 }
 @media (max-width: 575px) {
-    .home-hero { padding: 2.3rem 0 1.4rem; }
+    .home-hero { padding: 2.3rem 0 1.8rem; }
+    .home-hero--simple { padding: 2.4rem 0 1.6rem; }
     .home-section { padding: 2.8rem 0; }
-    .home-section--plans { padding-top: 0.35rem; padding-bottom: 2.2rem; }
     .home-features, .home-steps, .home-plans, .home-footer__grid, .home-features--benefits { grid-template-columns: 1fr; }
     .home-nav__cta { font-size: 0.78rem; padding: 0.55rem 0.95rem; min-height: 40px; }
     .home-hero__actions { flex-direction: column; align-items: stretch; }
     .home-hero__actions .btn { width: 100%; min-height: 48px; }
     .home-finale__panel, .home-mid-cta__panel { padding: 2.2rem 1.15rem; border-radius: 20px; }
+    .home-hero h1 { max-width: none; }
     .pup-float--news { display: none; }
 }
