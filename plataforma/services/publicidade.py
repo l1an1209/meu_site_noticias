@@ -6,6 +6,8 @@ from plataforma.models import ConfiguracaoMonetizacao, Plano, Portal
 
 CACHE_CFG = 'monetizacao_cfg'
 PREFIXOS_PRIVADOS = ('/app/', '/master/', '/admin/')
+# ID de certificação publicado pelo Google para linhas DIRECT do AdSense.
+CERTIFICACAO_GOOGLE = 'f08c47fec0942fa0'
 
 
 def limpar_cache_monetizacao():
@@ -50,6 +52,25 @@ def _pagina_publica(request):
         return False
     path = request.path or '/'
     return not any(path.startswith(prefixo) for prefixo in PREFIXOS_PRIVADOS)
+
+
+def publisher_ads_txt(publisher_id):
+    bruto = (publisher_id or '').strip()
+    baixo = bruto.lower()
+    if baixo.startswith('ca-pub-'):
+        return 'pub-' + bruto[7:]
+    if baixo.startswith('pub-'):
+        return 'pub-' + bruto[4:]
+    return ''
+
+
+def linha_ads_txt(portal):
+    if not portal_deve_exibir_publicidade(portal):
+        return ''
+    pub = publisher_ads_txt(configuracao_monetizacao().publisher_id)
+    if not pub:
+        return ''
+    return f'google.com, {pub}, DIRECT, {CERTIFICACAO_GOOGLE}\n'
 
 
 def payload_publicidade(portal, request=None):

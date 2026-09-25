@@ -206,6 +206,27 @@ class PublicidadeRedeTests(TestCase):
         Membership.objects.create(usuario=self.dono, portal=self.gratis, papel=Membership.PAPEL_ADMIN)
         self.master = User.objects.create_superuser('master_ads', 'masterads@test.com', SENHA)
 
+    def test_ads_txt_do_portal_com_monetizacao(self):
+        _ligar_publicidade()
+        from plataforma.models import ConfiguracaoMonetizacao
+        cfg = ConfiguracaoMonetizacao.objects.get(pk=1)
+        cfg.publisher_id = 'ca-pub-5451545777538942'
+        cfg.provedor = ConfiguracaoMonetizacao.PROVEDOR_ADSENSE
+        cfg.save()
+        resp = self.client.get('/ads.txt', HTTP_HOST='portal-gratis-ads.test')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp['Content-Type'].startswith('text/plain'))
+        self.assertEqual(
+            resp.content.decode(),
+            'google.com, pub-5451545777538942, DIRECT, f08c47fec0942fa0\n',
+        )
+
+    def test_ads_txt_ausente_sem_publicidade(self):
+        resp = self.client.get('/ads.txt', HTTP_HOST='portal-gratis-ads.test')
+        self.assertEqual(resp.status_code, 404)
+        plataforma = self.client.get('/ads.txt', HTTP_HOST='localhost')
+        self.assertEqual(plataforma.status_code, 404)
+
     def test_gratuito_mostra_quando_habilitada(self):
         _ligar_publicidade()
         resp = self.client.get('/', HTTP_HOST='portal-gratis-ads.test')

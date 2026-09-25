@@ -1,5 +1,17 @@
-from django.http import HttpResponse
+from django.http import Http404, HttpResponse
 from django.views import View
+
+from plataforma.services.publicidade import linha_ads_txt
+
+
+class AdsTxtView(View):
+    def get(self, request):
+        if getattr(request, 'portal_from_compat_fallback', False):
+            raise Http404()
+        linha = linha_ads_txt(getattr(request, 'portal', None))
+        if not linha:
+            raise Http404()
+        return HttpResponse(linha, content_type='text/plain; charset=utf-8')
 
 
 class RobotsTxtView(View):

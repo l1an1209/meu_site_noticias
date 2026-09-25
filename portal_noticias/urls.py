@@ -5,7 +5,7 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from noticias.sitemaps import sitemaps
-from noticias.views_seo import RobotsTxtView
+from noticias.views_seo import AdsTxtView, RobotsTxtView
 from plataforma.views_vendas import (
     PaginaCheckoutPlanoView,
     PaginaContatoView,
@@ -27,6 +27,7 @@ urlpatterns = [
     path('contato/', PaginaContatoView.as_view(), name='pagina_contato'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     path('robots.txt', RobotsTxtView.as_view(), name='robots_txt'),
+    path('ads.txt', AdsTxtView.as_view(), name='ads_txt'),
     path('app/', include('plataforma.urls')),
     path('master/', include('plataforma.urls_master')),
     path('', include('noticias.urls')),
