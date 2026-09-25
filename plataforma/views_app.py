@@ -116,6 +116,24 @@ class AppAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
         return ctx
 
 
+def _identidade_configurada(portal):
+    if portal.logo:
+        return True
+    return bool((portal.tagline or '').strip() or (portal.seo_title or '').strip())
+
+
+def _guia_do_portal(portal, total_noticias):
+    """Estado do painel a partir do portal e das notícias já existentes. Sem rascunho."""
+    identidade = _identidade_configurada(portal)
+    publicada = total_noticias > 0
+    return {
+        'mostrar_guia': not publicada,
+        'identidade_ok': identidade,
+        'publicada_ok': publicada,
+        'proximo': 'noticia' if identidade else 'identidade',
+    }
+
+
 class AppHomeView(AppAccessMixin, TemplateView):
     template_name = 'plataforma/app/dashboard.html'
     app_active = 'dashboard'
@@ -124,6 +142,7 @@ class AppHomeView(AppAccessMixin, TemplateView):
         ctx = super().get_context_data(**kwargs)
         portal = self.request.portal
         noticias = Noticia.objects.all()
+        total = noticias.count()
         hour = timezone.localtime().hour
         if hour < 12:
             saudacao = 'Bom dia'
@@ -133,7 +152,7 @@ class AppHomeView(AppAccessMixin, TemplateView):
             saudacao = 'Boa noite'
         ctx.update({
             'saudacao': saudacao,
-            'total_noticias': noticias.count(),
+            'total_noticias': total,
             'total_categorias': Categoria.objects.count(),
             'total_envios': Contribuicao.objects.filter(status='pendente').count(),
             'total_videos': noticias.exclude(video='').exclude(video__isnull=True).count(),
@@ -143,6 +162,8 @@ class AppHomeView(AppAccessMixin, TemplateView):
             'storage_mb': format_mb(storage_bytes_portal(portal)),
             'plano_nome': portal.plano.nome if portal.plano else '—',
             'assinatura': portal.assinatura_atual(),
+            'guia': _guia_do_portal(portal, total),
+            'status_portal': portal.get_status_display(),
         })
         return ctx
 
@@ -168,6 +189,9 @@ class AppNoticiaListView(AppAccessMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         ctx['categorias'] = Categoria.objects.all()
         ctx['q'] = self.request.GET.get('q', '')
+        publicada = (self.request.GET.get('publicada') or '').strip()
+        if publicada.isdigit():
+            ctx['noticia_publicada'] = self.get_queryset().filter(pk=int(publicada)).first()
         return ctx
 
 
@@ -190,7 +214,8 @@ class AppNoticiaCreateView(AppAccessMixin, CreateView):
     form_class = NoticiaForm
     papeis_permitidos = tuple(PAPEIS_NOTICIA)
     app_active = 'noticias'
-    success_url = reverse_lazy('app_noticias')
+    def get_success_url(self):
+        return f"{reverse('app_noticias')}?publicada={self.object.pk}"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -201,7 +226,7 @@ class AppNoticiaCreateView(AppAccessMixin, CreateView):
     def form_valid(self, form):
         form.instance.portal = self.request.portal
         form.instance.criado_por = self.request.user
-        messages.success(self.request, 'Notícia publicada.')
+        messages.success(self.request, 'Notícia publicada com sucesso.')
         limpar_cache_portal(self.request.portal)
         response = super().form_valid(form)
         _sync_galeria_noticia(self.request, form.instance, form.extra_files)

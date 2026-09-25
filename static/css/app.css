@@ -164,6 +164,25 @@
     padding: 1.4rem 1.4rem 2.6rem;
 }
 
+.app-back { margin: 0 0 0.85rem; }
+.app-back a { color: #475569; font-weight: 600; text-decoration: none; font-size: 0.875rem; }
+.app-back a:hover { color: #0f172a; }
+.app-acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.guia-passos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; }
+.guia-passos li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid #e8edf3;
+    border-radius: 12px;
+    background: #fff;
+}
+.guia-passos li.is-done span { color: #0f766e; }
+.guia-passos li.is-done span::before { content: "✓ "; }
+
 .page-intro h1 {
     font-size: 1.45rem;
     margin-bottom: 0.2rem;

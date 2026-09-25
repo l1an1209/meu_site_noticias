@@ -38,13 +38,16 @@
                     <input class="form-control form-control-sm" name="q" value="{{ request.GET.q }}" placeholder="Cliente, e-mail, portal, pedido" style="min-width:12rem">
                 </form>
                 {% elif request.portal %}
-                <a href="{{ request.portal|url_site_portal }}" class="btn btn-sm btn-ds-ghost app-topbar__portal"><i class="fas fa-arrow-left"></i> Ver portal</a>
+                <a href="{{ request.portal|url_site_portal }}" class="btn btn-sm btn-ds-ghost app-topbar__portal" target="_blank" rel="noopener"><i class="fas fa-arrow-left"></i> Ver portal</a>
                 {% endif %}
                 {% if request.is_platform_master %}<a href="{% url 'master_home' %}" class="btn btn-sm btn-ds-ghost">Master</a>{% endif %}
                 <a href="{% url 'sair' %}" class="btn btn-sm btn-ds-ghost app-topbar__sair">Sair</a>
             </div>
         </header>
         <div class="app-content">
+            {% if not is_master_shell and app_active and app_active != 'dashboard' %}
+            <p class="app-back"><a href="{% url 'app_home' %}">← Painel</a></p>
+            {% endif %}
             {% if messages %}
             {% for message in messages %}
             <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags|default:'info' }}{% endif %} alert-dismissible fade show" role="alert">

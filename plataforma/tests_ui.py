@@ -61,14 +61,65 @@ class PainelUiTests(TestCase):
         self.assertEqual(bloqueado.status_code, 302)
         self.assertIn('/entrar/', bloqueado['Location'])
 
+        self.assertIn('/entrar/', bloqueado['Location'])
+
+    def test_guia_some_quando_ja_ha_noticia_e_aparece_sem_conteudo(self):
+        from plataforma.models import Plano
+        self.client.force_login(self.admin)
+        cheio = self.client.get('/app/', **self._host(self.legado.slug))
+        if Noticia.all_objects.filter(portal=self.legado).exists():
+            self.assertContains(cheio, 'Seu portal está no ar')
+            self.assertNotContains(cheio, 'Comece por aqui')
+        else:
+            self.assertContains(cheio, 'Comece por aqui')
+        plano = Plano.objects.filter(codigo='gratuito').first() or self.legado.plano
+        novo = Portal.objects.create(
+            nome='Portal Guia',
+            slug='portal-guia',
+            cidade='Cacoal',
+            estado='RO',
+            status=Portal.STATUS_ATIVO,
+            setup_concluido=True,
+            plano=plano,
+        )
+        Membership.objects.create(usuario=self.admin, portal=novo, papel=Membership.PAPEL_ADMIN)
+        vazio = self.client.get('/app/', **self._host(novo.slug))
+        self.assertEqual(vazio.status_code, 200)
+        self.assertContains(vazio, 'Comece por aqui')
+        self.assertContains(vazio, 'Configurar portal')
+        self.assertContains(vazio, reverse('app_noticia_nova'))
+        self.assertIn(f'https://{novo.host_previsto}/', vazio.content.decode())
+        self.assertNotIn(f'https://{self.legado.host_previsto}/', vazio.content.decode())
+
+    def test_publicar_noticia_confirma_e_fica_no_portal(self):
+        self.client.force_login(self.admin)
+        cat = Categoria.all_objects.filter(portal=self.legado).first()
+        resp = self.client.post(
+            reverse('app_noticia_nova'),
+            {
+                'titulo': 'Primeira do guia',
+                'conteudo': 'Texto publicado no portal certo.',
+                'categoria': cat.pk,
+                'autor': 'Redação',
+            },
+            **self._host(self.legado.slug),
+        )
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('publicada=', resp['Location'])
+        pagina = self.client.get(resp['Location'], **self._host(self.legado.slug))
+        self.assertContains(pagina, 'Notícia publicada com sucesso.')
+        self.assertContains(pagina, 'Ver notícia')
+        noticia = Noticia.all_objects.get(portal=self.legado, titulo='Primeira do guia')
+        self.assertContains(pagina, f'/noticia/{noticia.pk}/')
+
     def test_app_exige_equipe_do_portal(self):
         resp = self.client.get('/app/', **self._host(self.legado.slug))
         self.assertEqual(resp.status_code, 302)
         self.client.force_login(self.admin)
         resp = self.client.get('/app/', **self._host(self.legado.slug))
         self.assertEqual(resp.status_code, 200)
-        self.assertContains(resp, 'Visão geral')
-        self.assertContains(resp, 'Dashboard')
+        self.assertContains(resp, 'Painel')
+        self.assertContains(resp, 'Ver meu portal')
         resp_b = self.client.get('/app/', **self._host(self.beta.slug))
         self.assertEqual(resp_b.status_code, 403)
 

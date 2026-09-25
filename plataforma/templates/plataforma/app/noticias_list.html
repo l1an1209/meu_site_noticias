@@ -1,7 +1,17 @@
 {% extends "plataforma/app/base.html" %}
+{% load urls_portal %}
 {% block title %}Notícias{% endblock %}
 {% block heading %}Notícias{% endblock %}
 {% block content %}
+{% if noticia_publicada %}
+<div class="ds-card p-3 p-md-4 mb-3">
+    <p class="mb-2"><strong>Notícia publicada com sucesso.</strong> Ela já está no ar.</p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-sm btn-contribuir" href="{% url 'detalhe' noticia_publicada.pk %}" target="_blank" rel="noopener">Ver notícia</a>
+        <a class="btn btn-sm btn-ds-ghost" href="{{ request.portal|url_site_portal }}" target="_blank" rel="noopener">Ver meu portal</a>
+    </div>
+</div>
+{% endif %}
 <form class="app-toolbar" method="get">
     <input class="form-control" style="max-width:260px" type="search" name="q" value="{{ q }}" placeholder="Buscar título ou texto…">
     <select name="categoria" class="form-select" style="max-width:200px" onchange="this.form.submit()">

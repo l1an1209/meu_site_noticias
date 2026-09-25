@@ -8,7 +8,7 @@
         </span>
     </a>
     {% if not is_master_shell and request.portal %}
-    <a class="app-sidebar__portal" href="{{ request.portal|url_site_portal }}"><i class="fas fa-arrow-left"></i> <span>Ver portal</span></a>
+    <a class="app-sidebar__portal" href="{{ request.portal|url_site_portal }}" target="_blank" rel="noopener"><i class="fas fa-arrow-left"></i> <span>Ver portal</span></a>
     {% endif %}
     <nav class="app-nav">
         {% if is_master_shell %}
@@ -33,7 +33,7 @@
         <a href="{% url 'master_auditoria' %}" class="{% if app_active == 'auditoria' %}is-active{% endif %}"><i class="fas fa-clipboard-list"></i> <span>Auditoria</span></a>
         {% else %}
         <div class="nav-label">Visão geral</div>
-        <a href="{% url 'app_home' %}" class="{% if app_active == 'dashboard' %}is-active{% endif %}"><i class="fas fa-gauge-high"></i> <span>Dashboard</span></a>
+        <a href="{% url 'app_home' %}" class="{% if app_active == 'dashboard' %}is-active{% endif %}"><i class="fas fa-gauge-high"></i> <span>Painel</span></a>
         <a href="{% url 'app_noticias' %}" class="{% if app_active == 'noticias' %}is-active{% endif %}"><i class="fas fa-newspaper"></i> <span>Notícias</span></a>
         <a href="{% url 'app_categorias' %}" class="{% if app_active == 'categorias' %}is-active{% endif %}"><i class="fas fa-folder"></i> <span>Categorias</span></a>
         <a href="{% url 'app_publicidade' %}" class="{% if app_active == 'publicidade' %}is-active{% endif %}"><i class="fas fa-ad"></i> <span>Anúncios</span></a>
