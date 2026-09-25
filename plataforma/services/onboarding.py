@@ -7,7 +7,7 @@ import logging
 
 from noticias.models import Categoria
 from plataforma.models import Assinatura, Cliente, EmailLog, Membership, Plano, Portal
-from plataforma.services.acesso import enviar_acesso
+from plataforma.services.acesso import enviar_acesso, enviar_boas_vindas_gratuito
 from plataforma.security import log_audit
 from plataforma.services.kiwify import extrair_assinatura_kiwify, extrair_cliente
 from plataforma.slugs import gerar_slug_provisorio
@@ -169,6 +169,10 @@ def provisionar_portal_gratuito(*, nome, email, slug, cidade, estado, senha='', 
         portal=portal, detalhes={'email': cliente.email, 'slug': portal.slug},
     )
     log_audit(request, 'primeiro_acesso', objeto='Portal', objeto_id=portal.pk, portal=portal)
+    try:
+        enviar_boas_vindas_gratuito(user, portal, request=request, cliente=cliente)
+    except Exception:
+        logger.exception('Falha ao disparar o e-mail do cadastro gratuito')
     return {
         'criado': True,
         'portal': portal,

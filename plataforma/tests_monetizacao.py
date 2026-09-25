@@ -1,12 +1,13 @@
 """Plano gratuito, publicidade da rede e upgrade sem duplicar o portal."""
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from noticias.models import Noticia
-from plataforma.models import Assinatura, Cliente, ConfiguracaoMonetizacao, Membership, Plano, Portal
+from plataforma.models import Assinatura, Cliente, ConfiguracaoMonetizacao, EmailLog, Membership, Plano, Portal
 from plataforma.services.kiwify import assinatura_kiwify
 from plataforma.tests_comercial import SECRET, _payload_aprovado
 from plataforma.tests_operacao import MockResendMixin, RESEND_TEST_KEY
@@ -69,6 +70,23 @@ class CadastroGratuitoTests(MockResendMixin, TestCase):
             'password': SENHA,
         }, HTTP_HOST='localhost')
         self.assertEqual(login.status_code, 302)
+        self.assertEqual(len(self.resend_payloads), 1)
+        payload = self.resend_payloads[0]
+        self.assertEqual(payload['to'], ['ana.gratis@test.com'])
+        self.assertEqual(payload['subject'], 'Seu portal foi criado no PortalUP')
+        self.assertEqual(payload['from'], 'noreply@portalnoticias.com.br')
+        self.assertIn('Notícias da Ana', payload['text'])
+        self.assertIn('/entrar/', payload['text'])
+        self.assertNotIn(SENHA, payload['text'])
+        self.assertNotIn('noticias-ana.test', payload['text'])
+        self.assertEqual(
+            EmailLog.objects.filter(
+                destinatario='ana.gratis@test.com',
+                assunto='Seu portal foi criado no PortalUP',
+                status=EmailLog.STATUS_ENVIADO,
+            ).count(),
+            1,
+        )
         publico = self.client.get('/', HTTP_HOST='noticias-ana.test')
         self.assertEqual(publico.status_code, 200)
         self.assertContains(publico, 'Notícias da Ana')
@@ -117,6 +135,33 @@ class CadastroGratuitoTests(MockResendMixin, TestCase):
         )
         self.assertEqual(Portal.objects.count(), antes)
         self.assertFalse(User.objects.filter(email='bruno.pago@test.com').exists())
+        self.assertEqual(self.resend_payloads, [])
+
+    def test_falha_no_resend_nao_impede_cadastro_nem_onboarding(self):
+        with patch(
+            'plataforma.services.email._post_resend',
+            side_effect=RuntimeError('Resend HTTP 422: invalid'),
+        ):
+            resp = self.client.post(reverse('app_comecar'), {
+                'plano': 'gratuito',
+                'nome_pessoa': 'Dora',
+                'email': 'dora.gratis@test.com',
+                'senha': SENHA,
+                'nome': 'Portal Dora',
+                'slug': 'portal-dora',
+                'cidade': 'Cacoal',
+                'estado': 'RO',
+            }, HTTP_HOST='localhost')
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn('_auth_user_id', self.client.session)
+        portal = Portal.objects.get(slug='portal-dora')
+        self.assertEqual(portal.pagamento_status, Portal.PAGAMENTO_GRATUITO)
+        log = EmailLog.objects.get(destinatario='dora.gratis@test.com')
+        self.assertEqual(log.status, EmailLog.STATUS_FALHOU)
+        self.assertNotIn(SENHA, log.erro or '')
+        painel = self.client.get(reverse('app_home'), HTTP_HOST='portal-dora.test')
+        self.assertEqual(painel.status_code, 302)
+        self.assertEqual(painel['Location'], reverse('app_aparencia'))
 
 
 @override_settings(
@@ -172,6 +217,18 @@ class UpgradeKiwifyTests(MockResendMixin, TestCase):
         self.assertEqual(assinatura.plano.codigo, 'basico')
         self.assertEqual(portal.plano.codigo, 'basico')
         self.assertEqual(portal.slug, 'portal-carla')
+        self.assertEqual(len(self.resend_payloads), 1)
+        self.assertEqual(self.resend_payloads[0]['subject'], 'Seu portal foi criado no PortalUP')
+        de_novo = self.client.post(
+            reverse('webhook_kiwify'),
+            data=json.dumps(_payload_aprovado(
+                order_id='ord-up', email='carla.upgrade@test.com', sub_id='sub-up',
+            )),
+            content_type='application/json',
+            HTTP_HOST='localhost',
+        )
+        self.assertEqual(de_novo.status_code, 200)
+        self.assertEqual(len(self.resend_payloads), 1)
         self.assertTrue(Noticia.all_objects.filter(portal=portal).count() >= 0)
 
 

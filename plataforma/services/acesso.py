@@ -110,6 +110,35 @@ def enviar_acesso(usuario, portal, request=None, tipo=EmailLog.TIPO_ONBOARDING, 
     )
 
 
+def enviar_boas_vindas_gratuito(usuario, portal, request=None, cliente=None):
+    """E-mail do cadastro gratuito. Não envia senha e não altera o fluxo da Kiwify."""
+    if not usuario or not usuario.email:
+        return EmailResult(FAILED, 'Usuário sem e-mail.')
+    nome = usuario.get_short_name() or usuario.username
+    portal_nome = (portal.nome if portal else '') or 'seu portal'
+    entrar = _url_entrar_plataforma(request)
+    assunto = 'Seu portal foi criado no PortalUP'
+    corpo = (
+        f'Olá, {nome}.\n\n'
+        f'Seu cadastro no PortalUP foi concluído.\n\n'
+        f'O portal {portal_nome} foi criado.\n\n'
+        f'Você já pode acessar o PortalUP e seguir o passo a passo '
+        f'para configurar o portal.\n\n'
+        f'Acessar o PortalUP:\n'
+        f'{entrar}\n\n'
+        f'Se você não fez este cadastro, ignore este e-mail.\n'
+    )
+    return enviar_email(
+        usuario.email,
+        assunto,
+        corpo,
+        tipo=EmailLog.TIPO_ONBOARDING,
+        cliente=cliente,
+        usuario=usuario,
+        portal=portal,
+    )
+
+
 def usuario_do_cliente(cliente):
     if cliente is None or not cliente.email:
         return None
