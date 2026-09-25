@@ -64,13 +64,17 @@ def publisher_ads_txt(publisher_id):
     return ''
 
 
-def linha_ads_txt(portal):
-    if not portal_deve_exibir_publicidade(portal):
-        return ''
+def linha_ads_txt_rede():
     pub = publisher_ads_txt(configuracao_monetizacao().publisher_id)
     if not pub:
         return ''
     return f'google.com, {pub}, DIRECT, {CERTIFICACAO_GOOGLE}\n'
+
+
+def linha_ads_txt(portal):
+    if not portal_deve_exibir_publicidade(portal):
+        return ''
+    return linha_ads_txt_rede()
 
 
 def payload_publicidade(portal, request=None):

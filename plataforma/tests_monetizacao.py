@@ -227,6 +227,19 @@ class PublicidadeRedeTests(TestCase):
         plataforma = self.client.get('/ads.txt', HTTP_HOST='localhost')
         self.assertEqual(plataforma.status_code, 404)
 
+    def test_ads_txt_no_dominio_principal(self):
+        from plataforma.models import ConfiguracaoMonetizacao
+        cfg = ConfiguracaoMonetizacao.obter()
+        cfg.publisher_id = 'ca-pub-5451545777538942'
+        cfg.save()
+        resp = self.client.get('/ads.txt', HTTP_HOST='portalnoticias.com.br')
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp['Content-Type'].startswith('text/plain'))
+        self.assertEqual(
+            resp.content.decode(),
+            'google.com, pub-5451545777538942, DIRECT, f08c47fec0942fa0\n',
+        )
+
     def test_gratuito_mostra_quando_habilitada(self):
         _ligar_publicidade()
         resp = self.client.get('/', HTTP_HOST='portal-gratis-ads.test')
