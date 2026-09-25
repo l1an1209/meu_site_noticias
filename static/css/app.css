@@ -100,7 +100,44 @@
     font-weight: 700;
 }
 .app-nav .nav-label:first-child { padding-top: 0.45rem; }
+.app-sidebar__portal {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin: 0.75rem 0.85rem 0;
+    padding: 0.55rem 0.75rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+.app-sidebar__portal:hover { background: rgba(255, 255, 255, 0.06); color: #fff; }
+.app-shell.is-collapsed .app-sidebar__portal span { display: none; }
+.app-shell.is-collapsed .app-sidebar__portal { justify-content: center; margin-inline: 0.45rem; }
+
+.app-topbar__lead {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.app-topbar__titles { min-width: 0; }
+.app-topbar__titles .text-muted {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.app-topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
 .app-topbar .btn-ds-ghost { white-space: nowrap; }
+.app-topbar__portal i { margin-right: 0.25rem; }
 
 .app-main {
     flex: 1;
@@ -250,7 +287,8 @@
     .app-shell.is-collapsed .app-sidebar { width: min(280px, 86vw); }
     .app-shell.is-collapsed .app-brand span,
     .app-shell.is-collapsed .nav-label,
-    .app-shell.is-collapsed .app-nav a span { display: revert; }
+    .app-shell.is-collapsed .app-nav a span,
+    .app-shell.is-collapsed .app-sidebar__portal span { display: revert; }
     .app-sidebar-toggle { display: inline-flex; }
     .app-sidebar-collapse { display: none; }
     .app-content { padding: 1rem; }
@@ -291,6 +329,14 @@
         padding-top: 0.55rem;
     }
     .shortcut-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767px) {
+    .app-topbar { flex-wrap: wrap; align-items: flex-start; }
+    .app-topbar__actions--cliente {
+        flex: 1 1 100%;
+        justify-content: space-between;
+    }
 }
 
 @media (max-width: 575px) {

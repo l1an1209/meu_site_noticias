@@ -44,6 +44,23 @@ class PainelUiTests(TestCase):
         self.assertNotIn(self.legado.nome, html_b)
         self.assertNotIn('Ji-Paraná', html_b)
 
+    def test_painel_ver_portal_e_sair(self):
+        self.client.force_login(self.admin)
+        resp = self.client.get('/app/', **self._host(self.legado.slug))
+        self.assertEqual(resp.status_code, 200)
+        destino = f'https://{self.legado.host_previsto}/'
+        self.assertIn(f'href="{destino}"', resp.content.decode())
+        self.assertContains(resp, 'Ver portal')
+        self.assertContains(resp, 'Sair')
+        self.assertIn('href="/sair/"', resp.content.decode())
+        self.assertNotIn('href="https://portalnoticias.com.br/"', resp.content.decode())
+        saida = self.client.get('/sair/', **self._host(self.legado.slug))
+        self.assertEqual(saida.status_code, 302)
+        self.assertNotIn('_auth_user_id', self.client.session)
+        bloqueado = self.client.get('/app/', **self._host(self.legado.slug))
+        self.assertEqual(bloqueado.status_code, 302)
+        self.assertIn('/entrar/', bloqueado['Location'])
+
     def test_app_exige_equipe_do_portal(self):
         resp = self.client.get('/app/', **self._host(self.legado.slug))
         self.assertEqual(resp.status_code, 302)

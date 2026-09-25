@@ -7,6 +7,9 @@
             <small>{% if is_master_shell %}Painel da plataforma{% else %}Administrando este portal{% endif %}</small>
         </span>
     </a>
+    {% if not is_master_shell and request.portal %}
+    <a class="app-sidebar__portal" href="{{ request.portal|url_site_portal }}"><i class="fas fa-arrow-left"></i> <span>Ver portal</span></a>
+    {% endif %}
     <nav class="app-nav">
         {% if is_master_shell %}
         <div class="nav-label">Visão geral</div>
@@ -57,9 +60,6 @@
         </a>
         <a href="{% url 'conta' %}"><i class="fas fa-user"></i> <span>Meu perfil</span></a>
         <div class="app-nav__foot">
-            {% if request.portal %}
-            <a href="{{ request.portal|url_site_portal }}" target="_blank" rel="noopener"><i class="fas fa-arrow-up-right-from-square"></i> <span>Visualizar meu portal</span></a>
-            {% endif %}
             <a class="app-nav__exit" href="{% url 'sair' %}"><i class="fas fa-right-from-bracket"></i> <span>Sair</span></a>
         </div>
         {% endif %}
