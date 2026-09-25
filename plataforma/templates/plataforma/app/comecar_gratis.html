@@ -1,10 +1,26 @@
 {% extends "plataforma/sales_base.html" %}
 {% block title %}Criar portal — PortalUP{% endblock %}
+{% block extra_head %}
+<style>
+.comecar__field { display: block; margin: 0 0 1.05rem; }
+.comecar__field label { display: block; margin: 0 0 0.4rem; font-weight: 600; font-size: 0.9rem; line-height: 1.3; }
+.comecar__field input { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
+</style>
+{% endblock %}
+{% block sales_nav %}
+<nav class="sales-nav comecar-nav">
+    <div class="container">
+        {% include "noticias/partials/portalup_logo.html" %}
+        <a class="comecar-nav__entrar" href="{% url 'entrar' %}">Já tem uma conta? Entrar</a>
+    </div>
+</nav>
+{% endblock %}
 {% block content %}
 <div class="comecar">
     <header class="comecar__intro">
         <h1 class="display-font">Crie seu portal de notícias gratuitamente</h1>
         <p>Publique notícias, construa sua audiência e evolua seu portal quando quiser.</p>
+        <p class="comecar__apoio">Comece em poucos minutos. Sem cartão de crédito.</p>
     </header>
 
     <div class="comecar__planos" role="list">
@@ -16,7 +32,7 @@
             <p class="comecar__nota">Comece seu portal sem mensalidade. Pode exibir publicidade do PortalUP.</p>
             <button class="btn btn-contribuir w-100" type="button" data-comecar-gratis>Criar gratuitamente</button>
             {% else %}
-            {% if plano.descricao %}<p class="comecar__nota">{{ plano.descricao }}</p>{% endif %}
+            <p class="comecar__nota">{{ plano.descricao }}</p>
             <a class="btn btn-ds-ghost w-100" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com {{ plano.nome }}</a>
             {% endif %}
         </article>
@@ -25,59 +41,74 @@
 
     <form method="post" class="comecar__form {% if mostrar_formulario %}is-open{% endif %}" id="comecar-form" novalidate>
         {% csrf_token %}
-        <input type="radio" name="plano" value="gratuito" class="visually-hidden" checked>
-        <h2>Dados do portal</h2>
-        <p class="comecar__lead">Sem cartão. O endereço fica no subdomínio da plataforma.</p>
-        {% if form.non_field_errors %}
-        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
-        {% endif %}
-        {% if form.plano.errors %}<div class="text-danger small mb-2">{{ form.plano.errors }}</div>{% endif %}
+        <input type="hidden" name="plano" value="gratuito">
+        <h2>Crie os dados do seu portal</h2>
+        <p class="comecar__lead">Preencha os dados abaixo para colocar seu portal no ar.</p>
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+        {% if form.plano.errors %}<div class="comecar__erro">{{ form.plano.errors }}</div>{% endif %}
 
         {% if request.user.is_authenticated %}
         <p class="comecar__conta">Conta: {{ request.user.email }}</p>
         <input type="hidden" name="nome_pessoa" value="{{ form.nome_pessoa.value|default:request.user.get_full_name|default:request.user.username }}">
         <input type="hidden" name="email" value="{{ request.user.email }}">
         {% else %}
-        <label class="form-label" for="{{ form.nome_pessoa.id_for_label }}">Seu nome</label>
-        {{ form.nome_pessoa }}
-        {% if form.nome_pessoa.errors %}<div class="text-danger small mb-2">{{ form.nome_pessoa.errors }}</div>{% endif %}
-
-        <label class="form-label" for="{{ form.email.id_for_label }}">E-mail</label>
-        {{ form.email }}
-        {% if form.email.errors %}<div class="text-danger small mb-2">{{ form.email.errors }}</div>{% endif %}
-
-        <label class="form-label" for="{{ form.senha.id_for_label }}">Senha</label>
-        {{ form.senha }}
-        {% if form.senha.errors %}<div class="text-danger small mb-2">{{ form.senha.errors }}</div>{% endif %}
+        <div class="comecar__field">
+            <label for="{{ form.nome_pessoa.id_for_label }}">Seu nome</label>
+            {{ form.nome_pessoa }}
+            {% if form.nome_pessoa.errors %}<p class="comecar__erro">{{ form.nome_pessoa.errors }}</p>{% endif %}
+        </div>
+        <div class="comecar__field">
+            <label for="{{ form.email.id_for_label }}">E-mail</label>
+            {{ form.email }}
+            {% if form.email.errors %}<p class="comecar__erro">{{ form.email.errors }}</p>{% endif %}
+        </div>
+        <div class="comecar__field">
+            <label for="{{ form.senha.id_for_label }}">Senha</label>
+            {{ form.senha }}
+            {% if form.senha.errors %}<p class="comecar__erro">{{ form.senha.errors }}</p>{% endif %}
+        </div>
         {% endif %}
 
-        <label class="form-label" for="{{ form.nome.id_for_label }}">Nome do portal</label>
-        {{ form.nome }}
-        {% if form.nome.errors %}<div class="text-danger small mb-2">{{ form.nome.errors }}</div>{% endif %}
-
-        <label class="form-label" for="{{ form.slug.id_for_label }}">Subdomínio</label>
-        <div class="comecar__slug">
-            {{ form.slug }}
-            <span>.{{ tenant_base_domain }}</span>
+        <div class="comecar__field">
+            <label for="{{ form.nome.id_for_label }}">Nome do portal</label>
+            {{ form.nome }}
+            {% if form.nome.errors %}<p class="comecar__erro">{{ form.nome.errors }}</p>{% endif %}
         </div>
-        {% if form.slug.errors %}<div class="text-danger small mb-2">{{ form.slug.errors }}</div>{% endif %}
-
+        <div class="comecar__field">
+            <label for="{{ form.slug.id_for_label }}">Subdomínio</label>
+            <div class="comecar__slug">
+                {{ form.slug }}
+                <span>.{{ tenant_base_domain }}</span>
+            </div>
+            {% if form.slug.errors %}<p class="comecar__erro">{{ form.slug.errors }}</p>{% endif %}
+        </div>
         <div class="comecar__lugar">
-            <div>
-                <label class="form-label" for="{{ form.cidade.id_for_label }}">Cidade</label>
+            <div class="comecar__field">
+                <label for="{{ form.cidade.id_for_label }}">Cidade</label>
                 {{ form.cidade }}
-                {% if form.cidade.errors %}<div class="text-danger small">{{ form.cidade.errors }}</div>{% endif %}
+                {% if form.cidade.errors %}<p class="comecar__erro">{{ form.cidade.errors }}</p>{% endif %}
             </div>
-            <div>
-                <label class="form-label" for="{{ form.estado.id_for_label }}">Estado</label>
+            <div class="comecar__field">
+                <label for="{{ form.estado.id_for_label }}">Estado</label>
                 {{ form.estado }}
-                {% if form.estado.errors %}<div class="text-danger small">{{ form.estado.errors }}</div>{% endif %}
+                {% if form.estado.errors %}<p class="comecar__erro">{{ form.estado.errors }}</p>{% endif %}
             </div>
         </div>
-
-        <button class="btn btn-contribuir w-100" type="submit">Criar gratuitamente</button>
+        <button class="btn btn-contribuir w-100" type="submit">Criar meu portal gratuitamente</button>
+        <p class="comecar__aviso">Sem cartão de crédito. Você poderá evoluir para um plano pago quando quiser.</p>
     </form>
 </div>
+{% endblock %}
+{% block sales_footer %}
+<footer class="sales-footer">
+    <p class="mb-0">PortalUP — plataforma online para criar e administrar o seu portal.</p>
+    <p class="sales-footer__legal">
+        <a href="mailto:Lup4357@gmail.com">Lup4357@gmail.com</a>
+        <a href="{% url 'pagina_privacidade' %}">Privacidade</a>
+        <a href="{% url 'pagina_termos' %}">Termos</a>
+        <a href="{% url 'pagina_contato' %}">Contato</a>
+    </p>
+</footer>
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -87,7 +118,7 @@
     if (!abrir || !form) return;
     abrir.addEventListener('click', function () {
         form.classList.add('is-open');
-        var foco = form.querySelector('input:not([type="hidden"]):not([type="radio"])');
+        var foco = form.querySelector('input:not([type="hidden"])');
         if (foco) foco.focus();
         form.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
