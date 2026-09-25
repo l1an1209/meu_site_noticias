@@ -3,6 +3,9 @@
 {% block heading %}Aparência do portal{% endblock %}
 {% block subheading %}As mudanças valem somente para {{ site_name }}{% endblock %}
 {% block content %}
+{% if primeiro_etapa == 'identidade' %}
+<p class="mb-3">Defina o nome e a descrição do portal. Em seguida, continue.</p>
+{% endif %}
 <div class="ds-card p-4">
     <form method="post" enctype="multipart/form-data" class="js-loading-form">
         {% csrf_token %}
@@ -37,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <button class="btn btn-contribuir" type="submit">Salvar identidade</button>
+                <button class="btn btn-contribuir" type="submit">{% if primeiro_etapa == 'identidade' %}Continuar{% else %}Salvar identidade{% endif %}</button>
     </form>
 </div>
 {% endblock %}

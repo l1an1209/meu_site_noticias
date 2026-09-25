@@ -180,7 +180,9 @@ class FluxoSaasIntegradoAuditoriaTests(MockResendMixin, TestCase):
         )
 
         self.client.defaults.update(self._host('noticias-campinas'))
-        self.assertEqual(self.client.get(reverse('app_home')).status_code, 200)
+        resp_painel = self.client.get(reverse('app_home'))
+        self.assertEqual(resp_painel.status_code, 302)
+        self.assertEqual(resp_painel['Location'], reverse('app_aparencia'))
         self.assertEqual(self.client.get(reverse('app_comecar')).status_code, 302)
         publico = self.client.get('/', **self._host('noticias-campinas'))
         self.assertEqual(publico.status_code, 200)

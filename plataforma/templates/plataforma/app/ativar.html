@@ -1,0 +1,82 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}{% if pronto %}Portal pronto{% elif primeiro_etapa == 'compartilhar' %}Compartilhar{% else %}Sua notícia está no ar{% endif %}{% endblock %}
+{% block heading %}{% if pronto %}Portal pronto{% elif primeiro_etapa == 'compartilhar' %}Compartilhar{% else %}Publicada{% endif %}{% endblock %}
+{% block content %}
+<div class="ds-card p-3 p-md-4 ativar-card">
+    {% if pronto %}
+    <h1 class="h4">Portal pronto!</h1>
+    <p>Você configurou seu portal, publicou sua primeira notícia e já compartilhou seu conteúdo.</p>
+    <a class="btn btn-contribuir" href="{% url 'app_home' %}">Ir para meu painel</a>
+    {% elif primeiro_etapa == 'compartilhar' or request.GET.mostrar == 'ver' and primeiro_etapa == 'compartilhar' %}
+    {% if request.GET.mostrar == 'ver' %}
+    <h1 class="h4">Seu portal está no ar!</h1>
+    <p>A notícia <strong>{{ noticia.titulo }}</strong> já pode ser vista.</p>
+    <div class="d-flex flex-wrap gap-2">
+        <a class="btn btn-contribuir" href="{{ link_noticia }}" target="_blank" rel="noopener">Ver notícia</a>
+        <a class="btn btn-ds-ghost" href="{{ portal_publico }}" target="_blank" rel="noopener">Ver meu portal</a>
+    </div>
+    {% else %}
+    <h1 class="h4">Agora compartilhe sua primeira notícia.</h1>
+    <p>Seu portal já está no ar. Compartilhe para começar a divulgar.</p>
+    <p class="small text-muted">{{ link_noticia }}</p>
+    <div class="d-flex flex-wrap gap-2">
+        <button type="button" class="btn btn-contribuir" id="btnShare" data-titulo="{{ noticia.titulo }}" data-texto="Confira esta notícia no {{ site_name }}." data-url="{{ link_noticia }}">Compartilhar</button>
+        <button type="button" class="btn btn-ds-ghost" id="btnCopiar" data-url="{{ link_noticia }}">Copiar link</button>
+        <a class="btn btn-ds-ghost" id="btnWhats" href="{{ link_whatsapp }}" target="_blank" rel="noopener">Compartilhar no WhatsApp</a>
+    </div>
+    <p class="small mt-3 mb-0" id="avisoCopia" hidden>Link copiado!</p>
+    <form method="post" id="formShare" class="mt-3">{% csrf_token %}
+        <input type="hidden" name="acao" value="compartilhar">
+        <input type="hidden" name="canal" value="">
+    </form>
+    {% endif %}
+    {% else %}
+    <h1 class="h4">Sua primeira notícia foi publicada!</h1>
+    <p><strong>{{ noticia.titulo }}</strong> já está no ar. Abra o portal para ver como ficou.</p>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a class="btn btn-contribuir" href="{{ link_noticia }}" target="_blank" rel="noopener">Ver notícia</a>
+        <a class="btn btn-ds-ghost" href="{{ portal_publico }}" target="_blank" rel="noopener">Ver meu portal</a>
+    </div>
+    <form method="post">{% csrf_token %}<button class="btn btn-contribuir" name="acao" value="viu" type="submit">Já vi meu portal</button></form>
+    {% endif %}
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+    var form = document.getElementById('formShare');
+    if (!form) return;
+    function concluir(canal) {
+        var campo = form.querySelector('[name=canal]');
+        if (campo) campo.value = canal || '';
+        form.submit();
+    }
+    var copiar = document.getElementById('btnCopiar');
+    var share = document.getElementById('btnShare');
+    var whats = document.getElementById('btnWhats');
+    if (copiar) copiar.addEventListener('click', function () {
+        var url = copiar.getAttribute('data-url');
+        var aviso = document.getElementById('avisoCopia');
+        function ok() { if (aviso) aviso.hidden = false; concluir('copiar'); }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(ok).catch(ok);
+        } else { ok(); }
+    });
+    if (whats) whats.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.open(whats.getAttribute('href'), '_blank', 'noopener');
+        concluir('whatsapp');
+    });
+    if (share) {
+        if (!navigator.share) share.hidden = true;
+        share.addEventListener('click', function () {
+            navigator.share({
+                title: share.getAttribute('data-titulo'),
+                text: share.getAttribute('data-texto'),
+                url: share.getAttribute('data-url')
+            }).then(function () { concluir('share'); }).catch(function () {});
+        });
+    }
+})();
+</script>
+{% endblock %}

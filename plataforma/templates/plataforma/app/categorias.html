@@ -2,6 +2,22 @@
 {% block title %}Categorias{% endblock %}
 {% block heading %}Categorias{% endblock %}
 {% block content %}
+{% if primeiro_etapa == 'categorias' %}
+<div class="ds-card p-3 p-md-4 mb-3">
+    <h1 class="h5">Agora vamos organizar seu portal.</h1>
+    <p class="mb-3">Escolha os assuntos que você deseja publicar. Se não escolher nenhum, a categoria Notícias permanece.</p>
+    {% if sugestoes %}
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        {% for nome, slug in sugestoes %}
+        <form method="post">{% csrf_token %}
+            <button class="btn btn-sm btn-ds-ghost" name="sugestao" value="{{ slug }}" type="submit">+ {{ nome }}</button>
+        </form>
+        {% endfor %}
+    </div>
+    {% endif %}
+    <form method="post">{% csrf_token %}<button class="btn btn-contribuir" type="submit">Continuar</button></form>
+</div>
+{% endif %}
 <div class="app-toolbar">
     <a href="{% url 'app_categoria_nova' %}" class="btn btn-contribuir">Nova categoria</a>
 </div>

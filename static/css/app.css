@@ -164,7 +164,13 @@
     padding: 1.4rem 1.4rem 2.6rem;
 }
 
-.app-back { margin: 0 0 0.85rem; }
+.primeiro-passos { list-style: none; margin: 0.75rem 0.4rem 0; padding: 0; }
+.primeiro-passos li { color: #94a3b8; font-size: 0.8rem; padding: 0.28rem 0.7rem; }
+.primeiro-passos li.is-done { color: #86efac; }
+.primeiro-passos li.is-done span::before { content: "✓ "; }
+.primeiro-voltar { margin: 0.6rem 0.85rem 0; }
+.primeiro-voltar a { color: #cbd5e1; font-size: 0.8rem; text-decoration: none; }
+.ativar-card h1 { font-size: 1.35rem; }
 .app-back a { color: #475569; font-weight: 600; text-decoration: none; font-size: 0.875rem; }
 .app-back a:hover { color: #0f172a; }
 .app-acoes { display: flex; flex-wrap: wrap; gap: 0.5rem; }

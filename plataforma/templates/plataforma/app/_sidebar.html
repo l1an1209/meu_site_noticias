@@ -32,6 +32,12 @@
         <a href="{% url 'master_configuracoes' %}" class="{% if app_active == 'config' %}is-active{% endif %}"><i class="fas fa-envelope"></i> <span>Configuração de e-mail</span></a>
         <a href="{% url 'master_auditoria' %}" class="{% if app_active == 'auditoria' %}is-active{% endif %}"><i class="fas fa-clipboard-list"></i> <span>Auditoria</span></a>
         {% else %}
+        {% if primeiro_etapa %}
+        {% include "plataforma/app/_progresso.html" %}
+        <div class="app-nav__foot">
+            <a class="app-nav__exit" href="{% url 'sair' %}"><i class="fas fa-right-from-bracket"></i> <span>Sair</span></a>
+        </div>
+        {% else %}
         <div class="nav-label">Visão geral</div>
         <a href="{% url 'app_home' %}" class="{% if app_active == 'dashboard' %}is-active{% endif %}"><i class="fas fa-gauge-high"></i> <span>Painel</span></a>
         <a href="{% url 'app_noticias' %}" class="{% if app_active == 'noticias' %}is-active{% endif %}"><i class="fas fa-newspaper"></i> <span>Notícias</span></a>
@@ -62,6 +68,7 @@
         <div class="app-nav__foot">
             <a class="app-nav__exit" href="{% url 'sair' %}"><i class="fas fa-right-from-bracket"></i> <span>Sair</span></a>
         </div>
+        {% endif %}
         {% endif %}
     </nav>
 </aside>

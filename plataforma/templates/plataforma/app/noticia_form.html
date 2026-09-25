@@ -3,6 +3,9 @@
 {% block heading %}{{ page_title|default:'Notícia' }}{% endblock %}
 {% block subheading %}Publicação neste portal{% endblock %}
 {% block content %}
+{% if primeiro_etapa == 'noticia' %}
+<p class="mb-3">Agora publique sua primeira notícia. Ao salvar, ela entra no ar.</p>
+{% endif %}
 <form method="post" enctype="multipart/form-data" class="js-loading-form">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}

@@ -168,6 +168,7 @@ def provisionar_portal_gratuito(*, nome, email, slug, cidade, estado, senha='', 
         request, 'onboarding_gratuito', objeto='Assinatura', objeto_id=assinatura.pk,
         portal=portal, detalhes={'email': cliente.email, 'slug': portal.slug},
     )
+    log_audit(request, 'primeiro_acesso', objeto='Portal', objeto_id=portal.pk, portal=portal)
     return {
         'criado': True,
         'portal': portal,

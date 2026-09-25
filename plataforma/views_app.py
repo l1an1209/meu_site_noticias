@@ -28,6 +28,12 @@ from plataforma.permissions import (
 from plataforma.resolvers import resolve_portal_from_host
 from plataforma.security import log_audit, safe_redirect
 from plataforma.services.onboarding import provisionar_portal_gratuito
+from plataforma.services.primeiro_acesso import (
+    CATEGORIAS, COMPARTILHOU, IDENTIDADE, LIBERADAS, MARCA, VIU,
+    adicionar_sugestao, destino_etapa, etapa_primeiro_acesso, garantir_categoria_padrao,
+    noticia_guia, progresso, url_noticia_publica, url_whatsapp,
+)
+from plataforma.urls_portal import url_publica_portal
 from plataforma.services.pos_login import (
     _port_suffix,
     app_url_for_portal,
@@ -75,12 +81,30 @@ class AppAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
             return False
         return True
 
+    def _redirecionar_primeiro_acesso(self, request):
+        if is_platform_master(request.user):
+            return None
+        portal = getattr(request, 'portal', None)
+        etapa = etapa_primeiro_acesso(portal)
+        if not etapa:
+            return None
+        match = getattr(request, 'resolver_match', None)
+        nome = getattr(match, 'url_name', None)
+        if nome in LIBERADAS:
+            if nome == 'app_ativar' and etapa not in {'ver', 'compartilhar'}:
+                return redirect(destino_etapa(etapa))
+            return None
+        return redirect(destino_etapa(etapa))
+
     def dispatch(self, request, *args, **kwargs):
         if request.user.is_authenticated:
             if not self.test_func():
                 return self.handle_no_permission()
             if self._redirecionar_onboarding(request):
                 return redirect(self.URL_ONBOARDING)
+            destino = self._redirecionar_primeiro_acesso(request)
+            if destino is not None:
+                return destino
         return super().dispatch(request, *args, **kwargs)
 
     def handle_no_permission(self):
@@ -113,6 +137,10 @@ class AppAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
         ctx['ajuda_nao_lidas'] = (
             ConversaAjuda.objects.aggregate(n=Sum('nao_lidas_cliente'))['n'] or 0
         )
+        portal = getattr(self.request, 'portal', None)
+        etapa, itens = progresso(portal) if portal is not None else (None, ())
+        ctx['primeiro_etapa'] = etapa
+        ctx['primeiro_progresso'] = itens
         return ctx
 
 
@@ -132,6 +160,56 @@ def _guia_do_portal(portal, total_noticias):
         'publicada_ok': publicada,
         'proximo': 'noticia' if identidade else 'identidade',
     }
+
+
+class AppAtivarView(AppAccessMixin, View):
+    """Publicação, visualização e primeiro compartilhamento."""
+
+    def get(self, request):
+        etapa = etapa_primeiro_acesso(request.portal)
+        if request.GET.get('pronto') and _tem_share(request.portal):
+            ctx = self._ctx(request, 'compartilhar')
+            ctx['pronto'] = True
+            ctx['primeiro_etapa'] = None
+            return render(request, 'plataforma/app/ativar.html', ctx)
+        if etapa not in {'ver', 'compartilhar'}:
+            return redirect(destino_etapa(etapa) if etapa else 'app_home')
+        return render(request, 'plataforma/app/ativar.html', self._ctx(request, etapa))
+
+    def post(self, request):
+        etapa = etapa_primeiro_acesso(request.portal)
+        acao = request.POST.get('acao')
+        if etapa == 'ver' and acao == 'viu':
+            log_audit(request, VIU, objeto='Portal', objeto_id=request.portal.pk)
+            return redirect('app_ativar')
+        if etapa == 'compartilhar' and acao == 'compartilhar':
+            log_audit(request, COMPARTILHOU, objeto='Portal', objeto_id=request.portal.pk)
+            if request.POST.get('canal') == 'copiar':
+                messages.success(request, 'Link copiado!')
+            messages.success(request, 'Portal pronto!')
+            return redirect(reverse('app_ativar') + '?pronto=1')
+        return redirect('app_ativar')
+
+    def _ctx(self, request, etapa):
+        noticia = noticia_guia(request.portal)
+        link = url_noticia_publica(request.portal, noticia)
+        _, itens = progresso(request.portal)
+        pronto = _tem_share(request.portal)
+        return {
+            'app_active': 'ativar',
+            'primeiro_etapa': None if pronto else etapa,
+            'primeiro_progresso': itens,
+            'noticia': noticia,
+            'link_noticia': link,
+            'link_whatsapp': url_whatsapp(request.portal, noticia),
+            'portal_publico': url_publica_portal(request.portal),
+            'pronto': pronto,
+        }
+
+
+def _tem_share(portal):
+    from plataforma.services.primeiro_acesso import _tem
+    return _tem(portal, COMPARTILHOU)
 
 
 class AppHomeView(AppAccessMixin, TemplateView):
@@ -215,6 +293,8 @@ class AppNoticiaCreateView(AppAccessMixin, CreateView):
     papeis_permitidos = tuple(PAPEIS_NOTICIA)
     app_active = 'noticias'
     def get_success_url(self):
+        if etapa_primeiro_acesso(self.request.portal) in {'noticia', 'ver'}:
+            return reverse('app_ativar')
         return f"{reverse('app_noticias')}?publicada={self.object.pk}"
 
     def get_form_kwargs(self):
@@ -295,8 +375,32 @@ class AppCategoriaListView(AppAccessMixin, ListView):
     papeis_permitidos = tuple(PAPEIS_CATEGORIA)
     app_active = 'categorias'
 
+    def get(self, request, *args, **kwargs):
+        if etapa_primeiro_acesso(request.portal) == 'categorias':
+            garantir_categoria_padrao(request.portal)
+        return super().get(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        if etapa_primeiro_acesso(request.portal) != 'categorias':
+            return redirect('app_categorias')
+        if request.POST.get('sugestao'):
+            adicionar_sugestao(request.portal, request.POST.get('sugestao'))
+            return redirect('app_categorias')
+        if not Categoria.all_objects.filter(portal=request.portal).exists():
+            garantir_categoria_padrao(request.portal)
+        log_audit(request, CATEGORIAS, objeto='Portal', objeto_id=request.portal.pk)
+        messages.success(request, 'Categorias prontas.')
+        return redirect('app_noticia_nova')
+
     def get_queryset(self):
         return Categoria.objects.annotate(num=Count('noticias'))
+
+    def get_context_data(self, **kwargs):
+        from plataforma.services.primeiro_acesso import SUGESTOES
+        ctx = super().get_context_data(**kwargs)
+        existentes = set(Categoria.all_objects.filter(portal=self.request.portal).values_list('slug', flat=True))
+        ctx['sugestoes'] = [par for par in SUGESTOES if par[1] not in existentes]
+        return ctx
 
 
 class AppCategoriaCreateView(AppAccessMixin, CreateView):
@@ -576,6 +680,16 @@ class AppAparenciaView(AppPortalFormMixin, UpdateView):
     app_active = 'aparencia'
     success_url = reverse_lazy('app_aparencia')
 
+    def form_valid(self, form):
+        if etapa_primeiro_acesso(self.request.portal) == 'identidade' and (form.cleaned_data.get('nome') or '').strip():
+            self.object = form.save()
+            limpar_cache_portal(self.request.portal)
+            log_audit(self.request, 'portal_atualizar', objeto='Portal', objeto_id=self.request.portal.pk)
+            log_audit(self.request, IDENTIDADE, objeto='Portal', objeto_id=self.request.portal.pk)
+            messages.success(self.request, 'Identidade configurada.')
+            return redirect('app_categorias')
+        return super().form_valid(form)
+
 
 class AppSeoView(AppPortalFormMixin, UpdateView):
     template_name = 'plataforma/app/form.html'
@@ -741,6 +855,7 @@ class AppComecarView(AppAccessMixin, FormView):
             objeto_id=portal.pk,
             detalhes={'slug': portal.slug},
         )
+        log_audit(self.request, MARCA, objeto='Portal', objeto_id=portal.pk, portal=portal)
         messages.success(
             self.request,
             'Portal configurado. Este endereço não poderá ser alterado.',

@@ -1,0 +1,16 @@
+<ol class="primeiro-passos">
+    {% for chave, rotulo, feito in primeiro_progresso %}
+    <li class="{% if feito %}is-done{% elif primeiro_etapa == chave %}is-now{% endif %}">
+        <span>{{ rotulo }}</span>
+    </li>
+    {% endfor %}
+</ol>
+{% if primeiro_etapa == 'categorias' %}
+<p class="primeiro-voltar"><a href="{% url 'app_aparencia' %}">← Voltar</a></p>
+{% elif primeiro_etapa == 'noticia' %}
+<p class="primeiro-voltar"><a href="{% url 'app_categorias' %}">← Voltar</a></p>
+{% elif primeiro_etapa == 'ver' %}
+<p class="primeiro-voltar"><a href="{% url 'app_noticia_nova' %}">← Voltar</a></p>
+{% elif primeiro_etapa == 'compartilhar' %}
+<p class="primeiro-voltar"><a href="{% url 'app_ativar' %}?mostrar=ver">← Voltar</a></p>
+{% endif %}

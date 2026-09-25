@@ -5,10 +5,10 @@ from plataforma.views_app import (
     AppAprovarEnvioView, AppAssinaturaView, AppAutoresView,
     AppCategoriaCreateView, AppCategoriaDeleteView, AppCategoriaListView,
     AppCategoriaUpdateView, AppComecarView, AppConfigView, AppEnviosView,
-    AppFotosView, AppGaleriaView, AppHomeView, AppNoticiaCreateView,
+    AppFotosView,     AppGaleriaView, AppHomeView, AppNoticiaCreateView,
     AppNoticiaDeleteView, AppNoticiaListView, AppNoticiaUpdateView,
     AppPublicidadeView, AppRejeitarEnvioView, AppSeoView,
-    AppUsuarioCreateView, AppUsuariosView, AppVideosView,
+    AppUsuarioCreateView, AppUsuariosView, AppVideosView, AppAtivarView,
 )
 from plataforma.views_ajuda import (
     AppAjudaConversaView, AppAjudaListView, AppAjudaPollView,
@@ -17,6 +17,7 @@ from plataforma.views_ajuda import (
 urlpatterns = [
     path('', AppHomeView.as_view(), name='app_home'),
     path('comecar/', AppComecarView.as_view(), name='app_comecar'),
+    path('ativar/', AppAtivarView.as_view(), name='app_ativar'),
     path('noticias/', AppNoticiaListView.as_view(), name='app_noticias'),
     path('noticias/nova/', AppNoticiaCreateView.as_view(), name='app_noticia_nova'),
     path('noticias/<int:pk>/editar/', AppNoticiaUpdateView.as_view(), name='app_noticia_editar'),
