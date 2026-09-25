@@ -44,6 +44,139 @@ def _username_de_email(email):
     return candidato
 
 
+def _assinatura_gratuita_para_upgrade(cliente):
+    return (
+        Assinatura.objects.filter(
+            cliente=cliente,
+            origem=Assinatura.ORIGEM_GRATUITA,
+            status=Assinatura.STATUS_ATIVA,
+        )
+        .select_related('portal', 'plano', 'cliente')
+        .order_by('-criado_em')
+        .first()
+    )
+
+
+def _aplicar_upgrade_pago(assinatura, dados_sub, plano, request=None):
+    assinatura.plano = plano
+    assinatura.origem = Assinatura.ORIGEM_KIWIFY
+    assinatura.status = Assinatura.STATUS_ATIVA
+    if dados_sub.get('subscription_id'):
+        assinatura.kiwify_subscription_id = dados_sub['subscription_id']
+    if dados_sub.get('order_id'):
+        assinatura.kiwify_order_id = dados_sub['order_id']
+    if dados_sub.get('transaction_id'):
+        assinatura.kiwify_transaction_id = str(dados_sub['transaction_id'])[:80]
+    assinatura.iniciado_em = assinatura.iniciado_em or dados_sub.get('start_date') or now()
+    if dados_sub.get('next_payment'):
+        assinatura.proximo_vencimento = dados_sub['next_payment']
+    assinatura.cancelado_em = None
+    assinatura.bloqueado_em = None
+    assinatura.save()
+    portal = assinatura.portal
+    portal.status = Portal.STATUS_ATIVO
+    portal.pagamento_status = Portal.PAGAMENTO_PAGO
+    portal.plano = plano
+    portal.save(update_fields=['status', 'pagamento_status', 'plano'])
+    _sincronizar_portal_pagamento(portal, assinatura)
+    log_audit(
+        request, 'upgrade_plano', objeto='Assinatura', objeto_id=assinatura.pk,
+        portal=portal, detalhes={'plano': plano.codigo if plano else ''},
+    )
+    try:
+        from plataforma.services.analytics import registrar_compra
+        registrar_compra(assinatura)
+    except Exception:
+        logger.exception('Falha ao registrar upgrade no analytics')
+    return {
+        'criado': False,
+        'upgrade': True,
+        'portal': portal,
+        'cliente': assinatura.cliente,
+        'assinatura': assinatura,
+        'usuario': None,
+    }
+
+
+def plano_gratuito():
+    plano = Plano.objects.filter(ativo=True, codigo='gratuito').first()
+    if plano is None:
+        plano = Plano.objects.filter(ativo=True, preco_mensal=0).order_by('ordem', 'id').first()
+    return plano
+
+
+@transaction.atomic
+def provisionar_portal_gratuito(*, nome, email, slug, cidade, estado, senha='', usuario=None, request=None):
+    """Cria Cliente, Portal, User e Membership no plano gratuito, sem Kiwify."""
+    email = (email or '').strip().lower()
+    if not email:
+        raise ValueError('E-mail obrigatório.')
+    plano = plano_gratuito()
+    if plano is None:
+        raise ValueError('Plano gratuito indisponível.')
+
+    cliente, _ = Cliente.objects.get_or_create(
+        email=email,
+        defaults={'nome': nome[:160] or email.split('@')[0], 'status': Cliente.STATUS_ATIVO},
+    )
+    if cliente.status != Cliente.STATUS_ATIVO:
+        cliente.status = Cliente.STATUS_ATIVO
+        cliente.save(update_fields=['status'])
+
+    portal = Portal.objects.create(
+        nome=nome[:120],
+        slug=slug,
+        cidade=(cidade or 'Brasil')[:80],
+        estado=(estado or 'BR')[:50],
+        email=email,
+        cliente=cliente,
+        cliente_nome=cliente.nome,
+        cliente_email=cliente.email,
+        plano=plano,
+        status=Portal.STATUS_ATIVO,
+        pagamento_status=Portal.PAGAMENTO_GRATUITO,
+        slogan='Notícias da sua cidade',
+        descricao=f'Portal de notícias de {(cidade or "sua cidade")}.',
+        setup_concluido=True,
+    )
+    Categoria.all_objects.get_or_create(
+        portal=portal, slug='geral', defaults={'nome': 'Geral'},
+    )
+
+    user = usuario or User.objects.filter(email__iexact=email).first()
+    if user is None:
+        user = User.objects.create_user(
+            username=_username_de_email(email),
+            email=email,
+            password=senha or get_random_string(12),
+            first_name=(nome or '')[:30],
+        )
+    Membership.objects.get_or_create(
+        usuario=user,
+        portal=portal,
+        defaults={'papel': Membership.PAPEL_ADMIN, 'ativo': True},
+    )
+    assinatura = Assinatura.objects.create(
+        cliente=cliente,
+        portal=portal,
+        plano=plano,
+        status=Assinatura.STATUS_ATIVA,
+        origem=Assinatura.ORIGEM_GRATUITA,
+        iniciado_em=now(),
+    )
+    log_audit(
+        request, 'onboarding_gratuito', objeto='Assinatura', objeto_id=assinatura.pk,
+        portal=portal, detalhes={'email': cliente.email, 'slug': portal.slug},
+    )
+    return {
+        'criado': True,
+        'portal': portal,
+        'cliente': cliente,
+        'assinatura': assinatura,
+        'usuario': user,
+    }
+
+
 def _localizar_assinatura(dados):
     if dados.get('subscription_id'):
         existente = Assinatura.objects.filter(
@@ -99,6 +232,13 @@ def provisionar_pagamento_aprovado(payload, request=None):
     existente = _localizar_assinatura(dados_sub)
     if existente:
         return atualizar_assinatura_aprovada(existente, dados_sub, request=request)
+
+    cliente_previo = Cliente.objects.filter(email=dados_cli['email']).first()
+    if cliente_previo is not None:
+        gratuita = _assinatura_gratuita_para_upgrade(cliente_previo)
+        if gratuita is not None:
+            plano = resolver_plano(dados_sub)
+            return _aplicar_upgrade_pago(gratuita, dados_sub, plano, request=request)
 
     cliente, _ = Cliente.objects.get_or_create(
         email=dados_cli['email'],
@@ -169,6 +309,7 @@ def provisionar_pagamento_aprovado(payload, request=None):
         portal=portal,
         plano=plano,
         status=Assinatura.STATUS_ATIVA,
+        origem=Assinatura.ORIGEM_KIWIFY,
         kiwify_subscription_id=dados_sub['subscription_id'],
         kiwify_order_id=dados_sub['order_id'],
         kiwify_transaction_id=str(dados_sub['transaction_id'])[:80],

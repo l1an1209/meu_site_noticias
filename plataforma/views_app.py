@@ -1,11 +1,11 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import (
@@ -17,16 +17,17 @@ from noticias.utils import limpar_cache_portal
 from noticias.utils_noticia import criar_noticia_de_contribuicao
 from plataforma.forms import (
     AnuncioForm, AparenciaForm, CategoriaForm, ConfigForm, EquipeForm,
-    NoticiaForm, PortalOnboardingForm, SeoForm,
+    CadastroPortalForm, NoticiaForm, PortalOnboardingForm, SeoForm,
 )
 from plataforma.metrics import format_mb, storage_bytes_portal
-from plataforma.models import ConversaAjuda, Membership, Portal
+from plataforma.models import ConversaAjuda, Membership, Plano, Portal
 from plataforma.permissions import (
     PAPEIS_ANUNCIO, PAPEIS_CATEGORIA, PAPEIS_MODERACAO, PAPEIS_NOTICIA,
     has_portal_role, is_platform_master,
 )
 from plataforma.resolvers import resolve_portal_from_host
 from plataforma.security import log_audit, safe_redirect
+from plataforma.services.onboarding import provisionar_portal_gratuito
 from plataforma.services.pos_login import (
     _port_suffix,
     app_url_for_portal,
@@ -583,9 +584,14 @@ class AppAssinaturaView(AppAccessMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         portal = self.request.portal
-        ctx['assinatura'] = portal.assinatura_atual()
+        assinatura = portal.assinatura_atual()
+        ctx['assinatura'] = assinatura
         ctx['cliente_portal'] = portal.cliente
         ctx['host_previsto'] = portal.host_previsto
+        atual = portal.plano
+        ctx['plano_atual'] = atual
+        ctx['planos_upgrade'] = Plano.objects.filter(ativo=True, preco_mensal__gt=0).order_by('ordem', 'preco_mensal')
+        ctx['pode_upgrade'] = atual is None or atual.e_gratuito
         return ctx
 
 
@@ -608,14 +614,57 @@ class AppComecarView(AppAccessMixin, FormView):
 
     def dispatch(self, request, *args, **kwargs):
         portal = getattr(request, 'portal', None)
+        if portal is None:
+            return self._dispatch_cadastro(request)
         if (
             request.user.is_authenticated
-            and portal is not None
             and portal.setup_concluido
             and has_portal_role(request, Membership.PAPEL_ADMIN)
         ):
             return redirect('app_home')
         return super().dispatch(request, *args, **kwargs)
+
+    def _dispatch_cadastro(self, request):
+        if request.user.is_authenticated:
+            destinos = list(portais_administraveis(request.user)[:1])
+            if destinos:
+                return redirect(app_url_for_portal(request, destinos[0]))
+        usuario = request.user if request.user.is_authenticated else None
+        if request.method == 'POST':
+            form = CadastroPortalForm(request.POST, usuario=usuario)
+            if form.is_valid():
+                return self._concluir_cadastro(request, form)
+        else:
+            form = CadastroPortalForm(usuario=usuario)
+        return render(request, 'plataforma/app/comecar_gratis.html', {
+            'form': form,
+            'planos': list(form.planos.values()),
+            'tenant_base_domain': getattr(settings, 'TENANT_BASE_DOMAIN', 'portalnoticias.com.br'),
+            'mostrar_formulario': request.method == 'POST' or bool(form.errors),
+        })
+
+    def _concluir_cadastro(self, request, form):
+        plano = form.plano_escolhido
+        if plano is None or not plano.e_gratuito:
+            codigo = plano.codigo if plano else 'basico'
+            return redirect('pagina_checkout_plano', codigo=codigo)
+        dados = form.cleaned_data
+        usuario = request.user if request.user.is_authenticated else None
+        resultado = provisionar_portal_gratuito(
+            nome=dados['nome'],
+            email=dados['email'],
+            slug=dados['slug'],
+            cidade=dados.get('cidade') or '',
+            estado=dados.get('estado') or '',
+            senha=dados.get('senha') or '',
+            usuario=usuario,
+            request=request,
+        )
+        user = resultado['usuario']
+        if not request.user.is_authenticated:
+            login(request, user, backend='django.contrib.auth.backends.ModelBackend')
+        messages.success(request, 'Portal criado. Você já pode publicar.')
+        return redirect(_url_app_no_novo_host(request, resultado['portal']))
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

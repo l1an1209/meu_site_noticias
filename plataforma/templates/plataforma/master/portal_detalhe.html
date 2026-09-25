@@ -48,6 +48,19 @@
         </div>
         <button class="btn btn-ds-ghost">Salvar plano</button>
     </form>
+    <form method="post" action="{% url 'master_portal_acao' item.pk %}" class="d-flex flex-wrap gap-2 align-items-end mt-3">
+        {% csrf_token %}
+        <input type="hidden" name="acao" value="publicidade">
+        <div>
+            <label class="form-label small mb-1">Publicidade deste portal</label>
+            <select name="publicidade_modo" class="form-select">
+                {% for valor, rotulo in item.PUBLICIDADE_MODO_CHOICES %}
+                <option value="{{ valor }}" {% if item.publicidade_modo == valor %}selected{% endif %}>{{ rotulo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button class="btn btn-ds-ghost">Salvar publicidade</button>
+    </form>
 </div>
 <div class="ds-card p-4">
     <h2 class="h6">Equipe</h2>

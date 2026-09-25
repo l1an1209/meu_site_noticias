@@ -37,7 +37,15 @@ def ad_slot(context, slot):
         except Anuncio.DoesNotExist:
             anuncio = None
         cache.set(cache_key, anuncio, 120)
-    return {'anuncio': anuncio, 'slot': slot}
+    rede = context.get('rede_publicidade') or {}
+    posicoes = rede.get('posicoes') or []
+    if rede.get('exibir') and slot in posicoes:
+        return {
+            'anuncio': None,
+            'slot': slot,
+            'rede': rede,
+        }
+    return {'anuncio': anuncio, 'slot': slot, 'rede': None}
 
 
 @register.simple_tag

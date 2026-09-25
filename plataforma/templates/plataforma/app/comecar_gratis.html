@@ -1,0 +1,96 @@
+{% extends "plataforma/sales_base.html" %}
+{% block title %}Criar portal — PortalUP{% endblock %}
+{% block content %}
+<div class="comecar">
+    <header class="comecar__intro">
+        <h1 class="display-font">Crie seu portal de notícias gratuitamente</h1>
+        <p>Publique notícias, construa sua audiência e evolua seu portal quando quiser.</p>
+    </header>
+
+    <div class="comecar__planos" role="list">
+        {% for plano in planos %}
+        <article class="comecar__plano {% if plano.e_gratuito %}is-free{% endif %}" role="listitem">
+            <h2>{{ plano.nome }}</h2>
+            <p class="comecar__preco">{% if plano.e_gratuito %}R$ 0{% else %}R$ {{ plano.preco_mensal }}{% endif %}<span>/mês</span></p>
+            {% if plano.e_gratuito %}
+            <p class="comecar__nota">Comece seu portal sem mensalidade. Pode exibir publicidade do PortalUP.</p>
+            <button class="btn btn-contribuir w-100" type="button" data-comecar-gratis>Criar gratuitamente</button>
+            {% else %}
+            {% if plano.descricao %}<p class="comecar__nota">{{ plano.descricao }}</p>{% endif %}
+            <a class="btn btn-ds-ghost w-100" href="{% url 'pagina_checkout_plano' plano.codigo %}">Começar com {{ plano.nome }}</a>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+
+    <form method="post" class="comecar__form {% if mostrar_formulario %}is-open{% endif %}" id="comecar-form" novalidate>
+        {% csrf_token %}
+        <input type="radio" name="plano" value="gratuito" class="visually-hidden" checked>
+        <h2>Dados do portal</h2>
+        <p class="comecar__lead">Sem cartão. O endereço fica no subdomínio da plataforma.</p>
+        {% if form.non_field_errors %}
+        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {% if form.plano.errors %}<div class="text-danger small mb-2">{{ form.plano.errors }}</div>{% endif %}
+
+        {% if request.user.is_authenticated %}
+        <p class="comecar__conta">Conta: {{ request.user.email }}</p>
+        <input type="hidden" name="nome_pessoa" value="{{ form.nome_pessoa.value|default:request.user.get_full_name|default:request.user.username }}">
+        <input type="hidden" name="email" value="{{ request.user.email }}">
+        {% else %}
+        <label class="form-label" for="{{ form.nome_pessoa.id_for_label }}">Seu nome</label>
+        {{ form.nome_pessoa }}
+        {% if form.nome_pessoa.errors %}<div class="text-danger small mb-2">{{ form.nome_pessoa.errors }}</div>{% endif %}
+
+        <label class="form-label" for="{{ form.email.id_for_label }}">E-mail</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div class="text-danger small mb-2">{{ form.email.errors }}</div>{% endif %}
+
+        <label class="form-label" for="{{ form.senha.id_for_label }}">Senha</label>
+        {{ form.senha }}
+        {% if form.senha.errors %}<div class="text-danger small mb-2">{{ form.senha.errors }}</div>{% endif %}
+        {% endif %}
+
+        <label class="form-label" for="{{ form.nome.id_for_label }}">Nome do portal</label>
+        {{ form.nome }}
+        {% if form.nome.errors %}<div class="text-danger small mb-2">{{ form.nome.errors }}</div>{% endif %}
+
+        <label class="form-label" for="{{ form.slug.id_for_label }}">Subdomínio</label>
+        <div class="comecar__slug">
+            {{ form.slug }}
+            <span>.{{ tenant_base_domain }}</span>
+        </div>
+        {% if form.slug.errors %}<div class="text-danger small mb-2">{{ form.slug.errors }}</div>{% endif %}
+
+        <div class="comecar__lugar">
+            <div>
+                <label class="form-label" for="{{ form.cidade.id_for_label }}">Cidade</label>
+                {{ form.cidade }}
+                {% if form.cidade.errors %}<div class="text-danger small">{{ form.cidade.errors }}</div>{% endif %}
+            </div>
+            <div>
+                <label class="form-label" for="{{ form.estado.id_for_label }}">Estado</label>
+                {{ form.estado }}
+                {% if form.estado.errors %}<div class="text-danger small">{{ form.estado.errors }}</div>{% endif %}
+            </div>
+        </div>
+
+        <button class="btn btn-contribuir w-100" type="submit">Criar gratuitamente</button>
+    </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+    var abrir = document.querySelector('[data-comecar-gratis]');
+    var form = document.getElementById('comecar-form');
+    if (!abrir || !form) return;
+    abrir.addEventListener('click', function () {
+        form.classList.add('is-open');
+        var foco = form.querySelector('input:not([type="hidden"]):not([type="radio"])');
+        if (foco) foco.focus();
+        form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+})();
+</script>
+{% endblock %}

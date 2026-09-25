@@ -1,6 +1,11 @@
 import json
 
 
+def _rede_publicidade(portal, request):
+    from plataforma.services.publicidade import payload_publicidade
+    return payload_publicidade(portal, request)
+
+
 def identidade_vazia():
     """Sem tenant: textos genéricos, nunca cidade/marca de um cliente."""
     return {
@@ -31,6 +36,9 @@ def identidade_vazia():
         'site_twitter': '',
         'site_tiktok': '',
         'site_adsense_client_id': '',
+        'rede_publicidade': {
+            'exibir': False, 'script': '', 'publisher_id': '', 'provedor': '', 'posicoes': [],
+        },
         'site_texto_rodape': '',
         'site_json_ld': '',
         'envios_pendentes': 0,
@@ -110,6 +118,7 @@ def identidade_do_portal(portal, request=None):
         'site_twitter': portal.twitter,
         'site_tiktok': portal.tiktok,
         'site_adsense_client_id': portal.adsense_client_id,
+        'rede_publicidade': _rede_publicidade(portal, request),
         'site_texto_rodape': portal.texto_rodape,
         'site_json_ld': json.dumps(_clean(org), ensure_ascii=False),
         'portal': portal,

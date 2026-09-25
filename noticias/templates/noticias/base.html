@@ -2,7 +2,12 @@
 <!DOCTYPE html>
 <html lang="pt-br" data-bs-theme="light">
 <head>
-    {% if site_adsense_client_id %}
+    {% if rede_publicidade.exibir %}
+    <meta name="rede-publicidade" content="1" data-rede-publicidade="1">
+    {% if rede_publicidade.script %}{{ rede_publicidade.script|safe }}{% elif rede_publicidade.publisher_id %}
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ rede_publicidade.publisher_id }}" crossorigin="anonymous"></script>
+    {% endif %}
+    {% elif site_adsense_client_id %}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ site_adsense_client_id }}"
      crossorigin="anonymous"></script>
     {% endif %}
@@ -249,6 +254,16 @@
         });
         document.getElementById('backToTop').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
     </script>
+    {% if rede_publicidade.exibir and rede_publicidade.provedor == 'adsense' %}
+    <script>
+        document.querySelectorAll('.ad-slot--rede ins.adsbygoogle').forEach(function (el) {
+            if (!el.getAttribute('data-ads-pushed')) {
+                el.setAttribute('data-ads-pushed', '1');
+                (window.adsbygoogle = window.adsbygoogle || []).push({});
+            }
+        });
+    </script>
+    {% endif %}
     {% block extra_js %}{% endblock %}
 </body>
 </html>

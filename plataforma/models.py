@@ -77,6 +77,10 @@ class Plano(models.Model):
     def lista_recursos(self):
         return [linha.strip() for linha in (self.recursos or '').splitlines() if linha.strip()]
 
+    @property
+    def e_gratuito(self):
+        return self.preco_mensal == 0
+
 
 class Portal(models.Model):
     STATUS_ATIVO = 'ativo'
@@ -89,14 +93,25 @@ class Portal(models.Model):
     ]
 
     PAGAMENTO_CORTESIA = 'cortesia'
+    PAGAMENTO_GRATUITO = 'gratuito'
     PAGAMENTO_PAGO = 'pago'
     PAGAMENTO_PENDENTE = 'pendente'
     PAGAMENTO_ATRASADO = 'atrasado'
     PAGAMENTO_CHOICES = [
         (PAGAMENTO_CORTESIA, 'Cortesia / legado'),
+        (PAGAMENTO_GRATUITO, 'Gratuito'),
         (PAGAMENTO_PAGO, 'Pago'),
         (PAGAMENTO_PENDENTE, 'Pendente'),
         (PAGAMENTO_ATRASADO, 'Atrasado'),
+    ]
+
+    PUBLICIDADE_HERDAR = ''
+    PUBLICIDADE_ATIVA = 'ativa'
+    PUBLICIDADE_INATIVA = 'inativa'
+    PUBLICIDADE_MODO_CHOICES = [
+        (PUBLICIDADE_HERDAR, 'Seguir a política do plano'),
+        (PUBLICIDADE_ATIVA, 'Exibir publicidade'),
+        (PUBLICIDADE_INATIVA, 'Não exibir publicidade'),
     ]
 
     SLUG_LEGADO = 'noticiasjiparana'
@@ -169,6 +184,13 @@ class Portal(models.Model):
         max_length=20,
         choices=PAGAMENTO_CHOICES,
         default=PAGAMENTO_CORTESIA,
+    )
+    publicidade_modo = models.CharField(
+        max_length=16,
+        choices=PUBLICIDADE_MODO_CHOICES,
+        default=PUBLICIDADE_HERDAR,
+        blank=True,
+        help_text='Vazio segue a política global do plano. O Master pode ligar ou desligar neste portal.',
     )
     cliente_nome = models.CharField(max_length=120, blank=True)
     cliente_email = models.EmailField(blank=True)
@@ -246,6 +268,11 @@ class Portal(models.Model):
             return self.assinatura
         except ObjectDoesNotExist:
             return None
+
+    @property
+    def should_show_ads(self):
+        from plataforma.services.publicidade import portal_deve_exibir_publicidade
+        return portal_deve_exibir_publicidade(self)
 
 
 class Membership(models.Model):
@@ -354,6 +381,12 @@ class Assinatura(models.Model):
     STATUS_ATRASADA = 'atrasada'
     STATUS_CANCELADA = 'cancelada'
     STATUS_BLOQUEADA = 'bloqueada'
+    ORIGEM_KIWIFY = 'kiwify'
+    ORIGEM_GRATUITA = 'gratuito'
+    ORIGEM_CHOICES = [
+        (ORIGEM_KIWIFY, 'Kiwify'),
+        (ORIGEM_GRATUITA, 'Gratuito'),
+    ]
     STATUS_CHOICES = [
         (STATUS_AGUARDANDO, 'Aguardando pagamento'),
         (STATUS_ATIVA, 'Ativa'),
@@ -382,6 +415,12 @@ class Assinatura(models.Model):
         max_length=32,
         choices=STATUS_CHOICES,
         default=STATUS_AGUARDANDO,
+        db_index=True,
+    )
+    origem = models.CharField(
+        max_length=20,
+        choices=ORIGEM_CHOICES,
+        default=ORIGEM_KIWIFY,
         db_index=True,
     )
     kiwify_subscription_id = models.CharField(max_length=80, blank=True, db_index=True)
@@ -413,6 +452,77 @@ class Assinatura(models.Model):
 
     def __str__(self):
         return f'{self.cliente.email} · {self.portal.slug} · {self.status}'
+
+    @property
+    def e_gratuita(self):
+        return self.origem == self.ORIGEM_GRATUITA or (
+            self.plano_id and self.plano.preco_mensal == 0
+        )
+
+
+class ConfiguracaoMonetizacao(models.Model):
+    """Política global de publicidade da rede. Uma única linha, só o Master altera."""
+
+    PROVEDOR_ADSENSE = 'adsense'
+    PROVEDOR_OUTRO = 'outro'
+    PROVEDOR_PROPRIA = 'propria'
+    PROVEDOR_CHOICES = [
+        (PROVEDOR_ADSENSE, 'AdSense'),
+        (PROVEDOR_OUTRO, 'Outro'),
+        (PROVEDOR_PROPRIA, 'Própria'),
+    ]
+    POSICOES = ('top', 'sidebar', 'article', 'feed', 'mobile')
+
+    ativa = models.BooleanField(default=False)
+    provedor = models.CharField(
+        max_length=20, choices=PROVEDOR_CHOICES, default=PROVEDOR_ADSENSE,
+    )
+    publisher_id = models.CharField(
+        max_length=40, blank=True, help_text='Ex.: ca-pub-123. Usado no script único do AdSense.',
+    )
+    codigo_script = models.TextField(
+        blank=True,
+        help_text='Script ou HTML do provedor. Carregado uma vez por página pública.',
+    )
+    posicoes = models.JSONField(
+        default=list,
+        blank=True,
+        help_text='Posições permitidas: top, sidebar, article, feed, mobile.',
+    )
+    publicidade_gratuito = models.BooleanField(
+        default=True,
+        help_text='Portais de plano gratuito herdam esta política.',
+    )
+    publicidade_pago = models.BooleanField(
+        default=False,
+        help_text='Portais de plano pago herdam esta política.',
+    )
+    atualizado_em = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Configuração de monetização'
+        verbose_name_plural = 'Configuração de monetização'
+
+    def __str__(self):
+        return 'Monetização da rede'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def obter(cls):
+        obj, _ = cls.objects.get_or_create(
+            pk=1,
+            defaults={'posicoes': ['top', 'article']},
+        )
+        return obj
+
+    def posicoes_permitidas(self):
+        brutas = self.posicoes or []
+        if isinstance(brutas, str):
+            brutas = [p.strip() for p in brutas.split(',') if p.strip()]
+        return [p for p in brutas if p in self.POSICOES]
 
 
 class WebhookEvent(models.Model):

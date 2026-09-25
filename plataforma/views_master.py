@@ -10,12 +10,14 @@ from django.views.generic import DetailView, ListView, TemplateView, UpdateView
 from noticias.models import Noticia
 from plataforma.metrics import format_mb, storage_bytes_portal
 from plataforma.models import (
-    Assinatura, Cliente, ConversaAjuda, EmailLog, Membership, Plano, Portal, WebhookEvent,
+    Assinatura, Cliente, ConfiguracaoMonetizacao, ConversaAjuda, EmailLog,
+    Membership, Plano, Portal, WebhookEvent,
 )
 from plataforma.permissions import is_platform_master
 from plataforma.security import log_audit
 from plataforma.services.acesso import usuario_do_cliente
 from plataforma.services.onboarding import master_alterar_plano, master_definir_status_portal
+from plataforma.services.publicidade import limpar_cache_monetizacao, resumo_rede
 from plataforma.services.saude import problemas_operacao
 from plataforma.services.timeline import timeline_cliente
 
@@ -220,6 +222,36 @@ class MasterPlanoUpdateView(MasterRequiredMixin, UpdateView):
         return super().form_valid(form)
 
 
+class MasterMonetizacaoView(MasterRequiredMixin, UpdateView):
+    template_name = 'plataforma/master/monetizacao.html'
+    model = ConfiguracaoMonetizacao
+    fields = [
+        'ativa', 'provedor', 'publisher_id', 'codigo_script',
+        'publicidade_gratuito', 'publicidade_pago',
+    ]
+    success_url = reverse_lazy('master_monetizacao')
+    app_active = 'monetizacao'
+
+    def get_object(self, queryset=None):
+        return ConfiguracaoMonetizacao.obter()
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        ctx.update(resumo_rede())
+        ctx['posicoes_conhecidas'] = ConfiguracaoMonetizacao.POSICOES
+        return ctx
+
+    def form_valid(self, form):
+        posicoes = self.request.POST.getlist('posicoes')
+        permitidas = [p for p in posicoes if p in ConfiguracaoMonetizacao.POSICOES]
+        form.instance.posicoes = permitidas
+        messages.success(self.request, 'Monetização atualizada.')
+        log_audit(self.request, 'monetizacao_alterar', objeto='ConfiguracaoMonetizacao', objeto_id=1)
+        response = super().form_valid(form)
+        limpar_cache_monetizacao()
+        return response
+
+
 class MasterPortalAcaoView(MasterRequiredMixin, View):
     def post(self, request, pk):
         portal = get_object_or_404(Portal, pk=pk)
@@ -234,6 +266,16 @@ class MasterPortalAcaoView(MasterRequiredMixin, View):
             plano = get_object_or_404(Plano, pk=request.POST.get('plano_id'))
             master_alterar_plano(portal, plano, request=request)
             messages.success(request, f'Plano de {portal.nome} agora é {plano.nome}.')
+        elif acao == 'publicidade':
+            modo = request.POST.get('publicidade_modo', '')
+            permitidos = {item[0] for item in Portal.PUBLICIDADE_MODO_CHOICES}
+            if modo not in permitidos:
+                messages.error(request, 'Modo de publicidade inválido.')
+            else:
+                portal.publicidade_modo = modo
+                portal.save(update_fields=['publicidade_modo'])
+                limpar_cache_monetizacao()
+                messages.success(request, 'Publicidade deste portal atualizada.')
         else:
             messages.error(request, 'Ação inválida.')
         return redirect('master_portal', pk=portal.pk)

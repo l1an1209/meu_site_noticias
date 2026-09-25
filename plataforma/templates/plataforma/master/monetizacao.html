@@ -1,0 +1,52 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Monetização{% endblock %}
+{% block heading %}Monetização{% endblock %}
+{% block subheading %}Publicidade da rede · exclusivo do Master{% endblock %}
+{% block content %}
+<div class="stat-grid mb-4">
+    <div class="stat-card"><span>Portais ativos</span><strong>{{ portais_ativos }}</strong></div>
+    <div class="stat-card"><span>Gratuitos</span><strong>{{ portais_gratuitos }}</strong></div>
+    <div class="stat-card"><span>Pagos</span><strong>{{ portais_pagos }}</strong></div>
+    <div class="stat-card"><span>Com publicidade</span><strong>{{ portais_com_publicidade }}</strong></div>
+    <div class="stat-card"><span>Pageviews de notícias</span><strong>{{ pageviews_rede }}</strong></div>
+</div>
+<form method="post" class="ds-card p-4" style="max-width:760px">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="form-check mb-3">
+        {{ form.ativa }}
+        <label class="form-check-label" for="{{ form.ativa.id_for_label }}">Publicidade ativa na rede</label>
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="{{ form.provedor.id_for_label }}">Provedor</label>
+        {{ form.provedor }}
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="{{ form.publisher_id.id_for_label }}">ID do publisher</label>
+        {{ form.publisher_id }}
+    </div>
+    <div class="mb-3">
+        <label class="form-label" for="{{ form.codigo_script.id_for_label }}">Código / script</label>
+        {{ form.codigo_script }}
+        <div class="form-text">Carregado uma vez nas páginas públicas. Não entra no painel.</div>
+    </div>
+    <fieldset class="mb-3">
+        <legend class="form-label">Posições permitidas</legend>
+        {% for pos in posicoes_conhecidas %}
+        <label class="form-check">
+            <input class="form-check-input" type="checkbox" name="posicoes" value="{{ pos }}" {% if pos in object.posicoes_permitidas %}checked{% endif %}>
+            <span class="form-check-label">{{ pos }}</span>
+        </label>
+        {% endfor %}
+    </fieldset>
+    <div class="form-check mb-2">
+        {{ form.publicidade_gratuito }}
+        <label class="form-check-label" for="{{ form.publicidade_gratuito.id_for_label }}">Publicidade em portal gratuito</label>
+    </div>
+    <div class="form-check mb-4">
+        {{ form.publicidade_pago }}
+        <label class="form-check-label" for="{{ form.publicidade_pago.id_for_label }}">Publicidade em plano pago</label>
+    </div>
+    <button class="btn btn-contribuir" type="submit">Salvar</button>
+</form>
+{% endblock %}

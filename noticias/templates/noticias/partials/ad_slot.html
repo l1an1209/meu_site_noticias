@@ -1,4 +1,10 @@
-{% if anuncio and anuncio.tem_conteudo %}
+{% if rede %}
+<div class="ad-slot ad-slot--rede ad-slot--{{ slot }}" data-rede-slot="{{ slot }}" role="complementary" aria-label="Publicidade">
+    {% if rede.provedor == 'adsense' and rede.publisher_id %}
+    <ins class="adsbygoogle" style="display:block" data-ad-client="{{ rede.publisher_id }}" data-ad-format="auto" data-full-width-responsive="true"></ins>
+    {% endif %}
+</div>
+{% elif anuncio and anuncio.tem_conteudo %}
 <div class="ad-slot ad-slot--{{ slot }} ad-slot--live" role="complementary" aria-label="Publicidade">
     {% if anuncio.codigo_html %}
     {{ anuncio.codigo_html|safe }}

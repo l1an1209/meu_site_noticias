@@ -23,6 +23,7 @@
         <a href="{% url 'master_portais' %}" class="{% if app_active == 'portais' %}is-active{% endif %}"><i class="fas fa-building"></i> <span>Portais</span></a>
         <a href="{% url 'master_assinaturas' %}" class="{% if app_active == 'assinaturas' %}is-active{% endif %}"><i class="fas fa-file-invoice-dollar"></i> <span>Assinaturas</span></a>
         <a href="{% url 'master_planos' %}" class="{% if app_active == 'planos' %}is-active{% endif %}"><i class="fas fa-tags"></i> <span>Planos</span></a>
+        <a href="{% url 'master_monetizacao' %}" class="{% if app_active == 'monetizacao' %}is-active{% endif %}"><i class="fas fa-rectangle-ad"></i> <span>Monetização</span></a>
         <a href="{% url 'master_webhooks' %}" class="{% if app_active == 'webhooks' %}is-active{% endif %}"><i class="fas fa-bolt"></i> <span>Webhooks</span></a>
         <div class="nav-label">Sistema</div>
         <a href="{% url 'master_configuracoes' %}" class="{% if app_active == 'config' %}is-active{% endif %}"><i class="fas fa-envelope"></i> <span>Configuração de e-mail</span></a>
@@ -49,7 +50,7 @@
         <a href="{% url 'app_seo' %}" class="{% if app_active == 'seo' %}is-active{% endif %}"><i class="fas fa-search"></i> <span>SEO</span></a>
         <div class="nav-label">Configurações</div>
         <a href="{% url 'app_config' %}" class="{% if app_active == 'config' %}is-active{% endif %}"><i class="fas fa-gear"></i> <span>Configurações</span></a>
-        <a href="{% url 'app_assinatura' %}" class="{% if app_active == 'assinatura' %}is-active{% endif %}"><i class="fas fa-credit-card"></i> <span>Assinatura</span></a>
+        <a href="{% url 'app_assinatura' %}" class="{% if app_active == 'assinatura' %}is-active{% endif %}"><i class="fas fa-credit-card"></i> <span>Meu plano</span></a>
         <a href="{% url 'app_ajuda' %}" class="{% if app_active == 'ajuda' %}is-active{% endif %}">
             <i class="fas fa-life-ring"></i> <span>Ajuda</span>
             {% if ajuda_nao_lidas %}<span class="ds-badge ms-auto">{{ ajuda_nao_lidas }}</span>{% endif %}

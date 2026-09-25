@@ -14,6 +14,7 @@ class PaginaVendasView(CommercialAnalyticsMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx['planos_venda'] = Plano.objects.filter(ativo=True).exclude(preco_mensal=0)
+        ctx['plano_gratuito'] = Plano.objects.filter(ativo=True, codigo='gratuito').first()
         ctx['is_sales_page'] = True
         return ctx
 
@@ -29,6 +30,7 @@ class PaginaHomeSaaSView(CommercialAnalyticsMixin, TemplateView):
         ctx['is_sales_page'] = True
         ctx['product_name'] = 'PortalUP'
         ctx['planos_venda'] = Plano.objects.filter(ativo=True).exclude(preco_mensal=0)
+        ctx['plano_gratuito'] = Plano.objects.filter(ativo=True, codigo='gratuito').first()
         return ctx
 
 

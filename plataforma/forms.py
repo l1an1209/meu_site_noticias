@@ -11,7 +11,7 @@ from noticias.image_utils import (
     validate_video_file,
 )
 from noticias.models import Anuncio, Categoria, Noticia
-from plataforma.models import Membership, Portal
+from plataforma.models import Membership, Plano, Portal
 from plataforma.slugs import SLUGS_RESERVADOS, slug_disponivel
 
 User = get_user_model()
@@ -248,3 +248,101 @@ class PortalOnboardingForm(forms.Form):
         if not slug_disponivel(slug, ignore_pk=ignore_pk):
             raise forms.ValidationError('Este subdomínio já está em uso. Escolha outro.')
         return slug
+
+
+class CadastroPortalForm(forms.Form):
+    """Entrada gratuita em /app/comecar/ no host da plataforma."""
+
+    nome_pessoa = forms.CharField(
+        label='Seu nome', max_length=80,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'autocomplete': 'name'}),
+    )
+    email = forms.EmailField(
+        label='E-mail',
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'autocomplete': 'email'}),
+    )
+    senha = forms.CharField(
+        label='Senha', required=False,
+        widget=forms.PasswordInput(attrs={'class': 'form-control', 'autocomplete': 'new-password'}),
+    )
+    nome = forms.CharField(
+        label='Nome do portal', max_length=120,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex.: Notícias de Campinas'}),
+    )
+    slug = forms.CharField(
+        label='Subdomínio', max_length=50, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'noticias-campinas'}),
+    )
+    cidade = forms.CharField(
+        label='Cidade', max_length=80, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control'}),
+    )
+    estado = forms.CharField(
+        label='Estado', max_length=50, required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'SP'}),
+    )
+    plano = forms.ChoiceField(
+        label='Plano',
+        widget=forms.RadioSelect,
+    )
+
+    def __init__(self, *args, usuario=None, **kwargs):
+        self.usuario = usuario if getattr(usuario, 'is_authenticated', False) else None
+        super().__init__(*args, **kwargs)
+        planos = list(
+            Plano.objects.filter(ativo=True)
+            .exclude(codigo='inicial')
+            .order_by('ordem', 'preco_mensal', 'nome')
+        )
+        self.planos = {p.codigo: p for p in planos}
+        self.fields['plano'].choices = [(p.codigo, p.nome) for p in planos]
+        if self.usuario:
+            self.fields['nome_pessoa'].initial = self.usuario.get_full_name() or self.usuario.username
+            self.fields['email'].initial = self.usuario.email
+            self.fields['senha'].required = False
+        gratuito = next((p.codigo for p in planos if p.e_gratuito), '')
+        if gratuito and not self.initial.get('plano'):
+            self.fields['plano'].initial = gratuito
+
+    def clean_email(self):
+        email = (self.cleaned_data.get('email') or '').strip().lower()
+        if self.usuario and (self.usuario.email or '').lower() != email:
+            raise forms.ValidationError('Use o e-mail da conta em que você entrou.')
+        if self.usuario is None and User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError('Este e-mail já tem conta. Entre para criar o portal.')
+        return email
+
+    def clean_slug(self):
+        bruto = (self.cleaned_data.get('slug') or '').strip()
+        if not bruto:
+            return ''
+        slug = slugify(bruto)[:50].strip('-')
+        if not slug or slug in SLUGS_RESERVADOS or not slug_disponivel(slug):
+            raise forms.ValidationError('Este subdomínio não está disponível.')
+        return slug
+
+    def clean(self):
+        cleaned = super().clean()
+        plano = self.planos.get(cleaned.get('plano') or '')
+        self.plano_escolhido = plano
+        if plano is None:
+            self.add_error('plano', 'Escolha um plano.')
+            return cleaned
+        if not plano.e_gratuito:
+            return cleaned
+        if not cleaned.get('slug'):
+            self.add_error('slug', 'Informe o subdomínio do portal.')
+        if not (cleaned.get('cidade') or '').strip():
+            self.add_error('cidade', 'Informe a cidade.')
+        if not (cleaned.get('estado') or '').strip():
+            self.add_error('estado', 'Informe o estado.')
+        if self.usuario is None:
+            senha = cleaned.get('senha') or ''
+            if not senha:
+                self.add_error('senha', 'Crie uma senha para entrar no painel.')
+            else:
+                try:
+                    validate_password(senha)
+                except DjangoValidationError as exc:
+                    self.add_error('senha', exc)
+        return cleaned

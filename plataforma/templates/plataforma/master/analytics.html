@@ -24,6 +24,15 @@
 </form>
 <p class="small text-muted mb-3">Atualizado às {{ gerado_em|date:"H:i:s" }} · sessão ativa = atividade nos últimos minutos</p>
 
+{% if rede %}
+<div class="an-grid mb-4">
+    <div class="ds-card p-3"><span class="text-muted small">Portais ativos</span><strong>{{ rede.portais_ativos }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Gratuitos</span><strong>{{ rede.portais_gratuitos }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Pagos</span><strong>{{ rede.portais_pagos }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Publicidade ativa</span><strong>{{ rede.portais_com_publicidade }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Pageviews de notícias</span><strong>{{ rede.pageviews_rede }}</strong></div>
+</div>
+{% endif %}
 <div class="an-grid mb-4">
     <div class="ds-card p-3"><span class="text-muted small">Visitantes hoje/período</span><strong>{{ visitantes }}</strong></div>
     <div class="ds-card p-3"><span class="text-muted small">Visitantes agora</span><strong id="anNowCount">{{ ativos }}</strong></div>

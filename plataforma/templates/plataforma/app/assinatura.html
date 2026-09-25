@@ -1,7 +1,7 @@
 {% extends "plataforma/app/base.html" %}
-{% block title %}Minha assinatura{% endblock %}
-{% block heading %}Assinatura{% endblock %}
-{% block subheading %}Situação comercial deste portal{% endblock %}
+{% block title %}Meu plano{% endblock %}
+{% block heading %}Meu plano{% endblock %}
+{% block subheading %}Plano atual e evolução{% endblock %}
 {% block content %}
 <div class="row g-3">
     <div class="col-lg-7">
@@ -38,8 +38,15 @@
                 <dd class="col-sm-7">{{ assinatura.proximo_vencimento|date:"d/m/Y"|default:"—" }}</dd>
             </dl>
             {% else %}
-            <h2 class="h5">Sem assinatura Kiwify</h2>
-            <p class="text-muted mb-0">Este portal é legado ou cortesia. Não há cobrança automática neste momento.</p>
+            <h2 class="h5">{{ plano_atual.nome|default:"Sem plano comercial" }}</h2>
+            <p class="text-muted mb-0">Este portal segue como está. O conteúdo não depende de uma cobrança ativa.</p>
+            {% endif %}
+            {% if plano_atual %}
+            <ul class="mt-3 mb-0">
+                {% for item in plano_atual.lista_recursos %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
             {% endif %}
         </div>
     </div>
@@ -49,7 +56,17 @@
             <p class="mb-1 fw-semibold">{{ site_name }}</p>
             <p class="mb-1 small text-muted">{{ host_previsto }}</p>
             {% if cliente_portal %}
-            <p class="mb-0 small">Titular: {{ cliente_portal.nome }} · {{ cliente_portal.email }}</p>
+            <p class="mb-3 small">Titular: {{ cliente_portal.nome }} · {{ cliente_portal.email }}</p>
+            {% endif %}
+            {% if pode_upgrade %}
+            <p class="section-kicker">Evoluir</p>
+            {% for plano in planos_upgrade %}
+            <p class="mb-2">
+                <a href="{% url 'pagina_checkout_plano' plano.codigo %}">{{ plano.nome }} · R$ {{ plano.preco_mensal }}/mês</a>
+            </p>
+            {% empty %}
+            <p class="text-muted small mb-0">Nenhum plano pago disponível no momento.</p>
+            {% endfor %}
             {% endif %}
         </div>
     </div>

@@ -2,9 +2,9 @@
 {% block title %}Planos — PortalUP{% endblock %}
 {% block content %}
 <section class="sales-hero">
-    <p class="sales-kicker">Assinatura mensal</p>
+    <p class="sales-kicker">Comece grátis</p>
     <h1 class="display-font">Tenha seu próprio portal profissional.</h1>
-    <p class="lead">Escolha um plano, assine a plataforma e administre o seu portal. Sem desenvolver o sistema do zero.</p>
+    <p class="lead">Crie seu portal de notícias gratuitamente. Publique, construa audiência e evolua para um plano pago quando quiser.</p>
     <div class="home-hero__actions">
         <a href="#planos" class="btn btn-contribuir btn-lg">COMEÇAR AGORA</a>
         <a href="{% url 'entrar' %}" class="btn btn-ds-ghost btn-lg">ENTRAR</a>
@@ -31,6 +31,21 @@
     <h2 class="display-font h3 text-center mb-2">Planos</h2>
     <p class="text-center text-muted mb-4">Valores mensais e recursos exatamente como estão cadastrados hoje.</p>
     <div class="row g-3">
+        {% if plano_gratuito %}
+        <div class="col-md-4">
+            <div class="ds-card plan-card">
+                <h3 class="h5">{{ plano_gratuito.nome }}</h3>
+                <p class="price mb-1">R$ 0<span class="fs-6 text-muted fw-normal">/mês</span></p>
+                <p class="text-muted">{{ plano_gratuito.descricao }}</p>
+                <ul class="small flex-grow-1 ps-3">
+                    {% for item in plano_gratuito.lista_recursos %}
+                    <li class="mb-1">{{ item }}</li>
+                    {% endfor %}
+                </ul>
+                <a class="btn btn-contribuir w-100" href="{% url 'app_comecar' %}">Criar grátis</a>
+            </div>
+        </div>
+        {% endif %}
         {% for plano in planos_venda %}
         <div class="col-md-4">
             <div class="ds-card plan-card {% if plano.codigo == 'profissional' %}plan-card--featured{% endif %}">

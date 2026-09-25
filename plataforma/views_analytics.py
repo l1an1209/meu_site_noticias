@@ -8,6 +8,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import TemplateView
 
 from plataforma.models import AnalyticsSession
+from plataforma.services.publicidade import resumo_rede
 from plataforma.services.analytics import (
     anexar_page_view,
     gravar_cookie,
@@ -59,6 +60,7 @@ class MasterAnalyticsView(MasterRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         ctx.update(montar_dashboard(self.request.GET))
+        ctx['rede'] = resumo_rede()
         ctx['gerado_em'] = now()
         return ctx
 
