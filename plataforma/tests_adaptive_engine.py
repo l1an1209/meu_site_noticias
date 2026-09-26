@@ -1,14 +1,22 @@
+import ast
 import uuid
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
+from pathlib import Path
 
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 from django.utils.timezone import now
 
-from plataforma.models import AnalyticsEvent, AnalyticsSession, Portal
+from plataforma.models import (
+    AdaptiveExperiment, AnalyticsEvent, AnalyticsSession, Membership, Portal,
+)
 from plataforma.services.adaptive_engine import (
-    Insight, analisar, calcular, detectar, gerar, ler, pode_gerar_experimento,
-    preparar_contexto, sugerir_experimentos,
+    ExperimentSuggestion, Insight, analisar, calcular, criar_experimento, detectar,
+    gerar, ler, listar_experimentos, pode_gerar_experimento, pode_transicionar,
+    preparar_contexto, sugerir_experimentos, transicionar,
 )
 from plataforma.services.adaptive_engine.bottlenecks import (
     LIMIAR_BAIXA_PASSAGEM,
@@ -839,3 +847,252 @@ class ExperimentosAdaptiveEngineTests(TestCase):
         self.assertNotEqual(a[0].id, b[0].id)
         self.assertEqual(b[0].confianca, 'alta')
         self.assertEqual(b[0].metrica_principal, 'click_plan → initiate_checkout')
+
+
+class PersistenciaAdaptiveEngineTests(TestCase):
+    def _sugestao(self, **extra):
+        dados = {
+            'id': 'funil_gratis_baixa_passagem:teste_de_fluxo',
+            'insight_id': 'funil_gratis_baixa_passagem',
+            'tipo': 'teste_de_fluxo',
+            'titulo': 'Teste de fluxo na criação do portal',
+            'hipotese': 'Hipótese: pode existir um ponto da jornada.',
+            'metrica_principal': 'click_subscribe → portal_created',
+            'metrica_referencia': 'linha de base = período de 14 dias antes do início',
+            'amostra': 30,
+            'confianca': 'media',
+            'status': AdaptiveExperiment.STATUS_AGUARDANDO_APROVACAO,
+            'variante_a': 'Fluxo atual, sem alteração.',
+            'variante_b': 'Variação controlada nesta etapa, definida somente após aprovação humana.',
+        }
+        dados.update(extra)
+        return ExperimentSuggestion(**dados)
+
+    def test_criacao_valida_comeca_aguardando(self):
+        registro = AdaptiveExperiment(
+            insight_id='funil_gratis_baixa_passagem',
+            tipo='teste_de_fluxo',
+            area='funil_gratis',
+            titulo='Teste',
+            hipotese='Hipótese: observar.',
+            metrica_principal='click_subscribe → portal_created',
+            metrica_referencia='linha de base',
+            variante_a='A',
+            variante_b='B',
+        )
+        registro.full_clean()
+        registro.save()
+        self.assertEqual(registro.status, AdaptiveExperiment.STATUS_AGUARDANDO_APROVACAO)
+        self.assertIsNone(registro.valor_baseline)
+        self.assertEqual(registro.amostra_baseline, 0)
+
+    def test_campos_obrigatorios(self):
+        with self.assertRaises(ValidationError):
+            AdaptiveExperiment().full_clean()
+
+    def test_cria_a_partir_de_sugestao_e_preserva_variantes(self):
+        inicio = date(2026, 9, 1)
+        fim = date(2026, 9, 14)
+        registro = criar_experimento(
+            self._sugestao(),
+            area='funil_gratis',
+            valor_baseline=Decimal('0.1200'),
+            amostra_baseline=40,
+            periodo_baseline_inicio=inicio,
+            periodo_baseline_fim=fim,
+        )
+        self.assertEqual(registro.variante_a, 'Fluxo atual, sem alteração.')
+        self.assertEqual(registro.variante_b, 'Variação controlada nesta etapa, definida somente após aprovação humana.')
+        self.assertEqual(registro.valor_baseline, Decimal('0.1200'))
+        self.assertEqual(registro.amostra_baseline, 40)
+        self.assertEqual(registro.periodo_baseline_inicio, inicio)
+        self.assertEqual(registro.periodo_baseline_fim, fim)
+        self.assertEqual(registro.observacoes, '')
+        transicionar(registro, AdaptiveExperiment.STATUS_APROVADO)
+        registro.refresh_from_db()
+        self.assertEqual(registro.valor_baseline, Decimal('0.1200'))
+        self.assertEqual(registro.amostra_baseline, 40)
+
+    def test_sugestao_invalida_nao_cria(self):
+        self.assertIsNone(criar_experimento(object(), area='funil_gratis'))
+        self.assertIsNone(criar_experimento(self._sugestao(insight_id=''), area='funil_gratis'))
+        self.assertIsNone(criar_experimento(self._sugestao(), area=' '))
+        self.assertIsNone(criar_experimento(
+            self._sugestao(status=AdaptiveExperiment.STATUS_APROVADO),
+            area='funil_gratis',
+        ))
+        self.assertEqual(AdaptiveExperiment.objects.count(), 0)
+
+    def test_baseline_indisponivel_grava_nulo(self):
+        registro = criar_experimento(
+            self._sugestao(),
+            area='funil_gratis',
+            valor_baseline=None,
+            amostra_baseline=80,
+        )
+        self.assertIsNone(registro.valor_baseline)
+        self.assertEqual(registro.amostra_baseline, 0)
+        self.assertEqual(registro.observacoes, 'baseline indisponível no momento da criação')
+
+    def test_idempotencia_devolve_o_ativo_e_terminal_cria_outro(self):
+        primeiro = criar_experimento(
+            self._sugestao(), area='funil_gratis', valor_baseline=Decimal('0.1000'),
+        )
+        repetido = criar_experimento(
+            self._sugestao(), area='funil_gratis', valor_baseline=Decimal('0.9000'),
+        )
+        self.assertEqual(primeiro.pk, repetido.pk)
+        self.assertEqual(repetido.valor_baseline, Decimal('0.1000'))
+        self.assertTrue(transicionar(primeiro, AdaptiveExperiment.STATUS_CANCELADO))
+        outro = criar_experimento(self._sugestao(), area='funil_gratis')
+        self.assertNotEqual(outro.pk, primeiro.pk)
+        self.assertEqual(
+            AdaptiveExperiment.objects.filter(insight_id='funil_gratis_baixa_passagem').count(),
+            2,
+        )
+
+    def test_transicoes_validas_e_invalidas(self):
+        S = AdaptiveExperiment
+        self.assertTrue(pode_transicionar(S.STATUS_AGUARDANDO_APROVACAO, S.STATUS_APROVADO))
+        self.assertTrue(pode_transicionar(S.STATUS_AGUARDANDO_APROVACAO, S.STATUS_CANCELADO))
+        self.assertTrue(pode_transicionar(S.STATUS_APROVADO, S.STATUS_EXECUTANDO))
+        self.assertTrue(pode_transicionar(S.STATUS_APROVADO, S.STATUS_CANCELADO))
+        self.assertTrue(pode_transicionar(S.STATUS_EXECUTANDO, S.STATUS_CONCLUIDO))
+        self.assertTrue(pode_transicionar(S.STATUS_EXECUTANDO, S.STATUS_CANCELADO))
+        self.assertFalse(pode_transicionar(S.STATUS_CONCLUIDO, S.STATUS_APROVADO))
+        self.assertFalse(pode_transicionar(S.STATUS_CANCELADO, S.STATUS_EXECUTANDO))
+        self.assertFalse(pode_transicionar(S.STATUS_AGUARDANDO_APROVACAO, S.STATUS_EXECUTANDO))
+        self.assertFalse(pode_transicionar(S.STATUS_AGUARDANDO_APROVACAO, 'inconclusivo'))
+
+    def test_aprovacao_inicio_conclusao_e_cancelamento_gravam_datas(self):
+        S = AdaptiveExperiment
+        aprovado = criar_experimento(self._sugestao(), area='funil_gratis')
+        self.assertTrue(transicionar(aprovado, S.STATUS_APROVADO))
+        aprovado.refresh_from_db()
+        self.assertIsNotNone(aprovado.aprovado_em)
+        self.assertIsNone(aprovado.iniciado_em)
+        self.assertTrue(transicionar(aprovado, S.STATUS_EXECUTANDO))
+        aprovado.refresh_from_db()
+        self.assertIsNotNone(aprovado.iniciado_em)
+        self.assertTrue(transicionar(aprovado, S.STATUS_CONCLUIDO))
+        aprovado.refresh_from_db()
+        self.assertIsNotNone(aprovado.finalizado_em)
+        self.assertFalse(transicionar(aprovado, S.STATUS_APROVADO))
+
+        cancelado = criar_experimento(
+            self._sugestao(insight_id='funil_pago_baixa_passagem'),
+            area='funil_pago',
+        )
+        self.assertTrue(transicionar(cancelado, S.STATUS_CANCELADO))
+        cancelado.refresh_from_db()
+        self.assertEqual(cancelado.status, S.STATUS_CANCELADO)
+        self.assertIsNotNone(cancelado.finalizado_em)
+        self.assertIsNone(cancelado.aprovado_em)
+
+    def test_isolamento_entre_portais_e_global(self):
+        p1 = Portal.objects.create(nome='Portal A', slug='ae-p1', cidade='X', estado='RO')
+        p2 = Portal.objects.create(nome='Portal B', slug='ae-p2', cidade='Y', estado='RO')
+        do_a = criar_experimento(self._sugestao(insight_id='insight-a'), area='funil_gratis', portal=p1)
+        do_b = criar_experimento(self._sugestao(insight_id='insight-b'), area='funil_pago', portal=p2)
+        global_ = criar_experimento(self._sugestao(insight_id='insight-g'), area='funil_gratis', portal=None)
+        self.assertEqual(list(listar_experimentos(portal=p1)), [do_a])
+        self.assertEqual(list(listar_experimentos(portal=p2)), [do_b])
+        self.assertEqual(list(listar_experimentos(portal=None)), [global_])
+        self.assertNotIn(do_b, listar_experimentos(portal=p1))
+        self.assertNotIn(global_, listar_experimentos(portal=p1))
+        self.assertNotIn(do_a, listar_experimentos(portal=None))
+
+    def test_persistencia_nao_importa_camadas_analiticas(self):
+        caminho = (
+            Path(__file__).resolve().parent
+            / 'services' / 'adaptive_engine' / 'persistence.py'
+        )
+        arvore = ast.parse(caminho.read_text(encoding='utf-8'))
+        modulos = []
+        for no in ast.walk(arvore):
+            if isinstance(no, ast.ImportFrom) and no.module:
+                modulos.append(no.module)
+            elif isinstance(no, ast.Import):
+                modulos.extend(alias.name for alias in no.names)
+        texto = ' '.join(modulos)
+        self.assertNotIn('metrics', texto)
+        self.assertNotIn('bottlenecks', texto)
+        self.assertNotIn('insights', texto)
+        self.assertIn('experiments', texto)
+
+
+class TelasExperimentosAdaptiveEngineTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.master = User.objects.create_superuser('ae_master', 'aemaster@test.com', 'senha-forte-ae')
+        self.comum = User.objects.create_user('ae_user', 'aeuser@test.com', 'senha-forte-ae')
+        self.portal = Portal.objects.create(nome='Portal T', slug='ae-tenant', cidade='X', estado='RO')
+        self.outro = Portal.objects.create(nome='Portal U', slug='ae-outro', cidade='Y', estado='RO')
+        Membership.objects.create(
+            usuario=self.comum, portal=self.portal, papel=Membership.PAPEL_ADMIN,
+        )
+        self.registro = criar_experimento(
+            ExperimentSuggestion(
+                id='funil_gratis_baixa_passagem:teste_de_fluxo',
+                insight_id='funil_gratis_baixa_passagem',
+                tipo='teste_de_fluxo',
+                titulo='Teste visivel do master',
+                hipotese='Hipótese: observar o fluxo.',
+                metrica_principal='click_subscribe → portal_created',
+                metrica_referencia='linha de base = período de 14 dias antes do início',
+                amostra=30,
+                confianca='media',
+                status=AdaptiveExperiment.STATUS_AGUARDANDO_APROVACAO,
+                variante_a='Fluxo atual, sem alteração.',
+                variante_b='Variação controlada.',
+            ),
+            area='funil_gratis',
+            portal=self.outro,
+        )
+
+    def test_somente_superuser_acessa(self):
+        url = reverse('master_experimentos')
+        self.assertEqual(self.client.get(url).status_code, 302)
+        self.client.force_login(self.comum)
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.assertEqual(
+            self.client.get(url, HTTP_HOST=f'{self.portal.slug}.test').status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse('master_experimento', args=[self.registro.pk]),
+                {'acao': 'aprovar'},
+                HTTP_HOST=f'{self.portal.slug}.test',
+            ).status_code,
+            403,
+        )
+        self.registro.refresh_from_db()
+        self.assertEqual(self.registro.status, AdaptiveExperiment.STATUS_AGUARDANDO_APROVACAO)
+        self.client.force_login(self.master)
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Teste visivel do master')
+        self.assertContains(resp, self.outro.nome)
+
+    def test_detalhe_mostra_so_acoes_do_estado_e_recusa_post_invalido(self):
+        self.client.force_login(self.master)
+        url = reverse('master_experimento', args=[self.registro.pk])
+        resp = self.client.get(url)
+        self.assertContains(resp, 'value="aprovar"')
+        self.assertContains(resp, 'value="cancelar"')
+        self.assertNotContains(resp, 'value="iniciar"')
+        self.assertNotContains(resp, 'value="concluir"')
+        recusa = self.client.post(url, {'acao': 'iniciar'}, follow=True)
+        self.assertContains(recusa, 'Transição não permitida')
+        self.registro.refresh_from_db()
+        self.assertEqual(self.registro.status, AdaptiveExperiment.STATUS_AGUARDANDO_APROVACAO)
+        self.assertIsNone(self.registro.iniciado_em)
+        self.client.post(url, {'acao': 'aprovar'})
+        self.registro.refresh_from_db()
+        self.assertEqual(self.registro.status, AdaptiveExperiment.STATUS_APROVADO)
+        self.assertIsNotNone(self.registro.aprovado_em)
+        aprovado = self.client.get(url)
+        self.assertContains(aprovado, 'value="iniciar"')
+        self.assertNotContains(aprovado, 'value="aprovar"')
+        self.assertNotContains(aprovado, 'value="concluir"')

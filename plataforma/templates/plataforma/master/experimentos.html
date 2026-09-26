@@ -1,0 +1,36 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}Experimentos{% endblock %}
+{% block heading %}Experimentos{% endblock %}
+{% block subheading %}Sugestões persistidas · exclusivo do Master{% endblock %}
+{% block content %}
+<div class="app-table-wrap">
+<table class="table align-middle">
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Área</th>
+            <th>Tipo</th>
+            <th>Status</th>
+            <th>Baseline</th>
+            <th>Criado em</th>
+            <th>Portal</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for experimento in experimentos %}
+    <tr>
+        <td><a href="{% url 'master_experimento' experimento.pk %}">{{ experimento.titulo }}</a></td>
+        <td>{{ experimento.area }}</td>
+        <td>{{ experimento.tipo }}</td>
+        <td>{{ experimento.get_status_display }}</td>
+        <td>{% if experimento.valor_baseline is not None %}{{ experimento.valor_baseline }}{% else %}—{% endif %}</td>
+        <td>{{ experimento.criado_em|date:"d/m/Y H:i" }}</td>
+        <td>{% if experimento.portal %}{{ experimento.portal.nome }}{% else %}—{% endif %}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="7"><div class="empty-state my-3"><p class="empty-title">Nenhum experimento.</p></div></td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

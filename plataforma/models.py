@@ -877,3 +877,70 @@ class MensagemAjuda(models.Model):
 
     def __str__(self):
         return f'{self.origem} #{self.pk}'
+
+
+class AdaptiveExperiment(models.Model):
+    """Registro operacional de um experimento sugerido. Não executa o teste."""
+
+    STATUS_AGUARDANDO_APROVACAO = 'aguardando_aprovacao'
+    STATUS_APROVADO = 'aprovado'
+    STATUS_EXECUTANDO = 'executando'
+    STATUS_CONCLUIDO = 'concluido'
+    STATUS_CANCELADO = 'cancelado'
+    STATUS_CHOICES = [
+        (STATUS_AGUARDANDO_APROVACAO, 'Aguardando aprovação'),
+        (STATUS_APROVADO, 'Aprovado'),
+        (STATUS_EXECUTANDO, 'Executando'),
+        (STATUS_CONCLUIDO, 'Concluído'),
+        (STATUS_CANCELADO, 'Cancelado'),
+    ]
+    STATUS_ATIVOS = (
+        STATUS_AGUARDANDO_APROVACAO,
+        STATUS_APROVADO,
+        STATUS_EXECUTANDO,
+    )
+
+    portal = models.ForeignKey(
+        Portal,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='experimentos_adaptativos',
+    )
+    insight_id = models.CharField(max_length=120, db_index=True)
+    tipo = models.CharField(max_length=40)
+    area = models.CharField(max_length=40)
+    titulo = models.CharField(max_length=200)
+    hipotese = models.TextField()
+    metrica_principal = models.CharField(max_length=200)
+    metrica_referencia = models.CharField(max_length=200)
+    valor_baseline = models.DecimalField(max_digits=12, decimal_places=4, null=True, blank=True)
+    amostra_baseline = models.PositiveIntegerField(default=0)
+    periodo_baseline_inicio = models.DateField(null=True, blank=True)
+    periodo_baseline_fim = models.DateField(null=True, blank=True)
+    variante_a = models.TextField()
+    variante_b = models.TextField()
+    status = models.CharField(
+        max_length=32,
+        choices=STATUS_CHOICES,
+        default=STATUS_AGUARDANDO_APROVACAO,
+        db_index=True,
+    )
+    resultado = models.TextField(blank=True)
+    observacoes = models.TextField(blank=True)
+    criado_em = models.DateTimeField(auto_now_add=True, db_index=True)
+    aprovado_em = models.DateTimeField(null=True, blank=True)
+    iniciado_em = models.DateTimeField(null=True, blank=True)
+    finalizado_em = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-criado_em']
+        verbose_name = 'Experimento adaptativo'
+        verbose_name_plural = 'Experimentos adaptativos'
+        indexes = [
+            models.Index(fields=['insight_id', 'status']),
+            models.Index(fields=['portal', 'status']),
+        ]
+
+    def __str__(self):
+        return self.titulo

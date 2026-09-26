@@ -15,6 +15,7 @@
         <div class="nav-label">Visão geral</div>
         <a href="{% url 'master_home' %}" class="{% if app_active == 'home' %}is-active{% endif %}"><i class="fas fa-chart-pie"></i> <span>Visão geral</span></a>
         <a href="{% url 'master_analytics' %}" class="{% if app_active == 'analytics' %}is-active{% endif %}"><i class="fas fa-chart-line"></i> <span>Analytics</span></a>
+        <a href="{% url 'master_experimentos' %}" class="{% if app_active == 'experimentos' %}is-active{% endif %}"><i class="fas fa-flask"></i> <span>Experimentos</span></a>
         <a href="{% url 'master_saude' %}" class="{% if app_active == 'saude' %}is-active{% endif %}"><i class="fas fa-heart-pulse"></i> <span>Saúde do sistema</span></a>
         <a href="{% url 'master_busca' %}" class="{% if app_active == 'busca' %}is-active{% endif %}"><i class="fas fa-magnifying-glass"></i> <span>Busca</span></a>
         <a href="{% url 'master_atendimento' %}" class="{% if app_active == 'atendimento' %}is-active{% endif %}">

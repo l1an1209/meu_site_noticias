@@ -1,0 +1,70 @@
+{% extends "plataforma/app/base.html" %}
+{% block title %}{{ experimento.titulo }}{% endblock %}
+{% block heading %}{{ experimento.titulo }}{% endblock %}
+{% block subheading %}{{ experimento.get_status_display }}{% endblock %}
+{% block content %}
+<p class="mb-3"><a href="{% url 'master_experimentos' %}">Voltar à lista</a></p>
+
+<h2 class="h6">Identificação</h2>
+<dl class="row">
+    <dt class="col-sm-3">Título</dt><dd class="col-sm-9">{{ experimento.titulo }}</dd>
+    <dt class="col-sm-3">Tipo</dt><dd class="col-sm-9">{{ experimento.tipo }}</dd>
+    <dt class="col-sm-3">Área</dt><dd class="col-sm-9">{{ experimento.area }}</dd>
+    <dt class="col-sm-3">Insight de origem</dt><dd class="col-sm-9">{{ experimento.insight_id }}</dd>
+    <dt class="col-sm-3">Portal</dt><dd class="col-sm-9">{% if experimento.portal %}{{ experimento.portal.nome }}{% else %}Global{% endif %}</dd>
+</dl>
+
+<h2 class="h6">Hipótese</h2>
+<p>{{ experimento.hipotese }}</p>
+
+<h2 class="h6">Evidências</h2>
+<dl class="row">
+    <dt class="col-sm-3">Métrica principal</dt><dd class="col-sm-9">{{ experimento.metrica_principal }}</dd>
+    <dt class="col-sm-3">Métrica de referência</dt><dd class="col-sm-9">{{ experimento.metrica_referencia }}</dd>
+    <dt class="col-sm-3">Baseline</dt><dd class="col-sm-9">{% if experimento.valor_baseline is not None %}{{ experimento.valor_baseline }}{% else %}—{% endif %}</dd>
+    <dt class="col-sm-3">Amostra da baseline</dt><dd class="col-sm-9">{{ experimento.amostra_baseline }}</dd>
+    <dt class="col-sm-3">Período</dt>
+    <dd class="col-sm-9">
+        {% if experimento.periodo_baseline_inicio %}{{ experimento.periodo_baseline_inicio|date:"d/m/Y" }}{% else %}—{% endif %}
+        –
+        {% if experimento.periodo_baseline_fim %}{{ experimento.periodo_baseline_fim|date:"d/m/Y" }}{% else %}—{% endif %}
+    </dd>
+</dl>
+
+<h2 class="h6">Variantes</h2>
+<dl class="row">
+    <dt class="col-sm-3">Variante A</dt><dd class="col-sm-9">{{ experimento.variante_a }}</dd>
+    <dt class="col-sm-3">Variante B</dt><dd class="col-sm-9">{{ experimento.variante_b }}</dd>
+</dl>
+
+<h2 class="h6">Estado</h2>
+<dl class="row">
+    <dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ experimento.get_status_display }}</dd>
+    <dt class="col-sm-3">Criado em</dt><dd class="col-sm-9">{{ experimento.criado_em|date:"d/m/Y H:i" }}</dd>
+    <dt class="col-sm-3">Aprovado em</dt><dd class="col-sm-9">{% if experimento.aprovado_em %}{{ experimento.aprovado_em|date:"d/m/Y H:i" }}{% else %}—{% endif %}</dd>
+    <dt class="col-sm-3">Iniciado em</dt><dd class="col-sm-9">{% if experimento.iniciado_em %}{{ experimento.iniciado_em|date:"d/m/Y H:i" }}{% else %}—{% endif %}</dd>
+    <dt class="col-sm-3">Finalizado em</dt><dd class="col-sm-9">{% if experimento.finalizado_em %}{{ experimento.finalizado_em|date:"d/m/Y H:i" }}{% else %}—{% endif %}</dd>
+</dl>
+
+<h2 class="h6">Resultado</h2>
+<dl class="row">
+    <dt class="col-sm-3">Resultado</dt><dd class="col-sm-9">{{ experimento.resultado|default:"—" }}</dd>
+    <dt class="col-sm-3">Observações</dt><dd class="col-sm-9">{{ experimento.observacoes|default:"—" }}</dd>
+</dl>
+
+{% if experimento.status == 'aguardando_aprovacao' or experimento.status == 'aprovado' or experimento.status == 'executando' %}
+<form method="post" class="d-flex gap-2">
+    {% csrf_token %}
+    {% if experimento.status == 'aguardando_aprovacao' %}
+    <button class="btn btn-ds-primary" name="acao" value="aprovar">Aprovar</button>
+    <button class="btn btn-ds-ghost" name="acao" value="cancelar">Cancelar</button>
+    {% elif experimento.status == 'aprovado' %}
+    <button class="btn btn-ds-primary" name="acao" value="iniciar">Iniciar</button>
+    <button class="btn btn-ds-ghost" name="acao" value="cancelar">Cancelar</button>
+    {% elif experimento.status == 'executando' %}
+    <button class="btn btn-ds-primary" name="acao" value="concluir">Concluir</button>
+    <button class="btn btn-ds-ghost" name="acao" value="cancelar">Cancelar</button>
+    {% endif %}
+</form>
+{% endif %}
+{% endblock %}
