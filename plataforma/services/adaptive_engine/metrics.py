@@ -4,10 +4,10 @@ Não grava evento, não altera o dashboard e não coloca a compra numa fila
 linear. Taxa sem denominador volta sem amostra. Amostra abaixo do mínimo
 continua numérica, marcada como baixa confiança.
 """
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
-from django.utils.timezone import localtime
+from django.utils.timezone import is_aware, localdate, localtime
 
 from plataforma.models import AnalyticsSession
 from plataforma.services.adaptive_engine.leitura import ler
@@ -24,6 +24,54 @@ def calcular(params):
     bloco = _bloco(recorte)
     bloco['comparacao'] = _bloco(ler(_params_anterior(recorte, params)))
     return bloco
+
+
+_BASELINE_POR_AREA = {
+    'funil_gratis': 'gratis_clique_para_portal',
+    'funil_pago': 'pago_clique_para_checkout',
+}
+
+
+def baseline_da_etapa(area, referencia=None):
+    """Taxa dos 14 dias anteriores à referência, lida de calcular().
+
+    O fim é o dia imediatamente anterior. A janela inclui os dois extremos,
+    no mesmo critério de 7d e 30d, e por isso o início fica 13 dias antes do fim.
+    Sem taxa calculável, devolve None.
+    """
+    chave = _BASELINE_POR_AREA.get(area)
+    dia = _dia_referencia(referencia)
+    if chave is None or dia is None:
+        return None
+    fim = dia - timedelta(days=1)
+    inicio = fim - timedelta(days=13)
+    bloco = calcular({
+        'periodo': 'custom',
+        'de': inicio.isoformat(),
+        'ate': fim.isoformat(),
+    })
+    taxa = bloco.get('conversoes', {}).get(chave) or {}
+    valor = taxa.get('valor')
+    if valor is None:
+        return None
+    return {
+        'valor_baseline': Decimal(str(valor)),
+        'amostra_baseline': taxa.get('amostra') or 0,
+        'periodo_baseline_inicio': inicio,
+        'periodo_baseline_fim': fim,
+    }
+
+
+def _dia_referencia(referencia):
+    if referencia is None:
+        return localdate()
+    if isinstance(referencia, datetime):
+        if is_aware(referencia):
+            return localtime(referencia).date()
+        return referencia.date()
+    if isinstance(referencia, date):
+        return referencia
+    return None
 
 
 def _params_anterior(recorte, params):

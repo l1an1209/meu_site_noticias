@@ -29,6 +29,7 @@ from plataforma.views_analytics import (
     MasterAnalyticsView,
 )
 from plataforma.views_experimentos import (
+    MasterExperimentoCriarView,
     MasterExperimentoDetailView,
     MasterExperimentosView,
 )
@@ -50,6 +51,7 @@ urlpatterns = [
     path('auditoria/', MasterAuditoriaView.as_view(), name='master_auditoria'),
     path('analytics/', MasterAnalyticsView.as_view(), name='master_analytics'),
     path('experimentos/', MasterExperimentosView.as_view(), name='master_experimentos'),
+    path('experimentos/criar/', MasterExperimentoCriarView.as_view(), name='master_experimento_criar'),
     path('experimentos/<int:pk>/', MasterExperimentoDetailView.as_view(), name='master_experimento'),
     path('analytics/agora/', MasterAnalyticsAgoraView.as_view(), name='master_analytics_agora'),
     path('analytics/sessoes/<uuid:pk>/', MasterAnalyticsSessaoView.as_view(), name='master_analytics_sessao'),

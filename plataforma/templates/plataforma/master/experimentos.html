@@ -3,6 +3,52 @@
 {% block heading %}Experimentos{% endblock %}
 {% block subheading %}Sugestões persistidas · exclusivo do Master{% endblock %}
 {% block content %}
+<h2 class="h5">Sugestões pendentes</h2>
+{% if sugestoes %}
+<div class="app-table-wrap mb-4">
+<table class="table align-middle">
+    <thead>
+        <tr>
+            <th>Título</th>
+            <th>Área</th>
+            <th>Tipo</th>
+            <th>Hipótese</th>
+            <th>Métrica principal</th>
+            <th>Baseline</th>
+            <th>Amostra</th>
+            <th>Portal</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in sugestoes %}
+    <tr>
+        <td>{{ item.titulo }}</td>
+        <td>{{ item.area }}</td>
+        <td>{{ item.tipo }}</td>
+        <td>{{ item.hipotese }}</td>
+        <td>{{ item.metrica_principal }}</td>
+        <td>{% if item.valor_baseline is not None %}{{ item.valor_baseline }}{% else %}indisponível{% endif %}</td>
+        <td>{{ item.amostra }}</td>
+        <td>nenhum</td>
+        <td>
+            <form method="post" action="{% url 'master_experimento_criar' %}">
+                {% csrf_token %}
+                <input type="hidden" name="insight_id" value="{{ item.insight_id }}">
+                {% if periodo %}<input type="hidden" name="periodo" value="{{ periodo }}">{% endif %}
+                {% if de %}<input type="hidden" name="de" value="{{ de }}">{% endif %}
+                {% if ate %}<input type="hidden" name="ate" value="{{ ate }}">{% endif %}
+                <button type="submit" class="btn btn-ds-primary btn-sm">Criar experimento</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted mb-4">Nenhuma sugestão pendente.</p>
+{% endif %}
 <div class="app-table-wrap">
 <table class="table align-middle">
     <thead>

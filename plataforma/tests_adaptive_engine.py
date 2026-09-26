@@ -1,12 +1,14 @@
 import ast
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import Client, TestCase
+from django.utils.timezone import localdate, make_aware
 from django.urls import reverse
 from django.utils.timezone import now
 
@@ -24,7 +26,7 @@ from plataforma.services.adaptive_engine.bottlenecks import (
     LIMIAR_QUEDA_TRAFEGO,
     LIMIAR_VARIACAO_CONVERSAO,
 )
-from plataforma.services.adaptive_engine.metrics import AMOSTRA_MINIMA
+from plataforma.services.adaptive_engine.metrics import AMOSTRA_MINIMA, baseline_da_etapa
 from plataforma.services.analytics import montar_dashboard
 
 
@@ -285,6 +287,97 @@ class MetricasAdaptiveEngineTests(TestCase):
         self.assertEqual(painel['compras_orfas'], 0)
         self.assertIn('funil_pago', painel)
         self.assertIn('funil_gratis', painel)
+
+
+class BaselineDaEtapaTests(TestCase):
+    REFERENCIA = date(2026, 9, 26)
+    INICIO = date(2026, 9, 12)
+    FIM = date(2026, 9, 25)
+
+    def _sessao(self, portal=None):
+        uid = uuid.uuid4()
+        return AnalyticsSession.objects.create(
+            id=uid, rotulo=uid.hex[:4].upper(), visto_em=now(),
+            path_primeiro='/', path_atual='/', portal=portal,
+        )
+
+    def _no_dia(self, sessao, dia, tipo, path, portal=None):
+        evento = AnalyticsEvent.objects.create(
+            sessao=sessao, portal=portal, tipo=tipo, path=path, extra={},
+        )
+        momento = make_aware(datetime.combine(dia, time(12, 0)))
+        sessao.criado_em = momento
+        sessao.save(update_fields=['criado_em'])
+        evento.criado_em = momento
+        evento.save(update_fields=['criado_em'])
+        return evento
+
+    def _pago(self, dia, portal=None, converte=True):
+        sessao = self._sessao(portal=portal)
+        self._no_dia(sessao, dia, 'click_plan', '/comece/basico/', portal=portal)
+        if converte:
+            self._no_dia(sessao, dia, 'initiate_checkout', '/comece/basico/', portal=portal)
+        return sessao
+
+    def _gratis(self, dia, portal=None, converte=True):
+        sessao = self._sessao(portal=portal)
+        self._no_dia(sessao, dia, 'click_subscribe', '/app/comecar/', portal=portal)
+        if converte:
+            self._no_dia(sessao, dia, 'portal_created', '/app/comecar/', portal=portal)
+        return sessao
+
+    def test_janela_tem_14_dias_e_referencia_explicita(self):
+        self._pago(self.INICIO)
+        self._pago(self.FIM, converte=False)
+        self._pago(self.INICIO - timedelta(days=1))
+        self._pago(self.REFERENCIA, converte=False)
+        antes = AnalyticsEvent.objects.count()
+        resultado = baseline_da_etapa('funil_pago', referencia=self.REFERENCIA)
+        self.assertEqual(resultado['periodo_baseline_inicio'], self.INICIO)
+        self.assertEqual(resultado['periodo_baseline_fim'], self.FIM)
+        self.assertEqual(
+            (resultado['periodo_baseline_fim'] - resultado['periodo_baseline_inicio']).days + 1,
+            14,
+        )
+        self.assertEqual(resultado['valor_baseline'], Decimal('0.5'))
+        self.assertEqual(resultado['amostra_baseline'], 2)
+        self.assertEqual(AnalyticsEvent.objects.count(), antes)
+
+    def test_referencia_omitida_usa_a_data_atual(self):
+        self._gratis(self.FIM)
+        with patch(
+            'plataforma.services.adaptive_engine.metrics.localdate',
+            return_value=self.REFERENCIA,
+        ):
+            resultado = baseline_da_etapa('funil_gratis')
+        self.assertEqual(resultado['periodo_baseline_inicio'], self.INICIO)
+        self.assertEqual(resultado['periodo_baseline_fim'], self.FIM)
+        self.assertEqual(resultado['valor_baseline'], Decimal('1'))
+        self.assertEqual(resultado['amostra_baseline'], 1)
+
+    def test_funil_gratis_nao_usa_a_taxa_paga(self):
+        self._pago(self.FIM)
+        self.assertIsNone(baseline_da_etapa('funil_gratis', referencia=self.REFERENCIA))
+        pago = baseline_da_etapa('funil_pago', referencia=self.REFERENCIA)
+        self.assertEqual(pago['valor_baseline'], Decimal('1'))
+
+    def test_ausencia_de_dados_e_area_invalida_devolvem_none(self):
+        self.assertIsNone(baseline_da_etapa('funil_gratis', referencia=self.REFERENCIA))
+        self.assertIsNone(baseline_da_etapa('funil_pago', referencia=self.REFERENCIA))
+        self.assertIsNone(baseline_da_etapa('checkout', referencia=self.REFERENCIA))
+        self.assertIsNone(baseline_da_etapa('', referencia=self.REFERENCIA))
+        self.assertIsNone(baseline_da_etapa('funil_pago', referencia='hoje'))
+
+    def test_baseline_global_reune_os_portais_dentro_da_janela(self):
+        p1 = Portal.objects.create(nome='B1', slug='ae-base-1', cidade='X', estado='RO')
+        p2 = Portal.objects.create(nome='B2', slug='ae-base-2', cidade='Y', estado='RO')
+        self._gratis(self.FIM, portal=p1, converte=True)
+        self._gratis(self.FIM, portal=p2, converte=False)
+        self._gratis(self.INICIO - timedelta(days=1), portal=p1, converte=True)
+        resultado = baseline_da_etapa('funil_gratis', referencia=self.REFERENCIA)
+        self.assertEqual(resultado['valor_baseline'], Decimal('0.5'))
+        self.assertEqual(resultado['amostra_baseline'], 2)
+        self.assertNotIn('portal', resultado)
 
 
 class GargalosAdaptiveEngineTests(TestCase):
@@ -1096,3 +1189,109 @@ class TelasExperimentosAdaptiveEngineTests(TestCase):
         self.assertContains(aprovado, 'value="iniciar"')
         self.assertNotContains(aprovado, 'value="aprovar"')
         self.assertNotContains(aprovado, 'value="concluir"')
+
+
+class PonteSugestoesExperimentosTests(TestCase):
+    INSIGHT = 'funil_gratis_baixa_passagem'
+
+    def setUp(self):
+        User = get_user_model()
+        self.master = User.objects.create_superuser('ponte_master', 'pontemaster@test.com', 'senha-forte-ae')
+        self.comum = User.objects.create_user('ponte_user', 'ponteuser@test.com', 'senha-forte-ae')
+        self.portal = Portal.objects.create(nome='Portal Ponte', slug='ae-ponte', cidade='X', estado='RO')
+        hoje = make_aware(datetime.combine(localdate(), time(12, 0)))
+        for _ in range(AMOSTRA_MINIMA):
+            self._gratis(hoje, converte=False)
+        anterior = make_aware(datetime.combine(localdate() - timedelta(days=3), time(12, 0)))
+        self._gratis(anterior, converte=True)
+        self._gratis(anterior, converte=True)
+
+    def _gratis(self, momento, converte):
+        uid = uuid.uuid4()
+        sessao = AnalyticsSession.objects.create(
+            id=uid, rotulo=uid.hex[:4].upper(), visto_em=momento,
+            path_primeiro='/', path_atual='/', portal=self.portal,
+        )
+        evento = AnalyticsEvent.objects.create(
+            sessao=sessao, portal=self.portal, tipo='click_subscribe', path='/app/comecar/', extra={},
+        )
+        sessao.criado_em = momento
+        sessao.save(update_fields=['criado_em'])
+        evento.criado_em = momento
+        evento.save(update_fields=['criado_em'])
+        if converte:
+            criado = AnalyticsEvent.objects.create(
+                sessao=sessao, portal=self.portal, tipo='portal_created', path='/app/comecar/', extra={},
+            )
+            criado.criado_em = momento
+            criado.save(update_fields=['criado_em'])
+
+    def test_lista_mostra_sugestao_com_area_e_sem_portal(self):
+        self.client.force_login(self.master)
+        resp = self.client.get(reverse('master_experimentos'))
+        self.assertContains(resp, 'Sugestões pendentes')
+        self.assertContains(resp, 'Teste de fluxo na criação do portal')
+        self.assertContains(resp, 'funil_gratis')
+        self.assertContains(resp, 'click_subscribe → portal_created')
+        self.assertContains(resp, 'nenhum')
+        self.assertContains(resp, 'Criar experimento')
+        self.assertContains(resp, f'value="{self.INSIGHT}"')
+
+    def test_master_cria_e_congela_baseline_sem_portal(self):
+        self.client.force_login(self.master)
+        esperado = baseline_da_etapa('funil_gratis')
+        self.assertIsNotNone(esperado)
+        resp = self.client.post(
+            reverse('master_experimento_criar'),
+            {'insight_id': self.INSIGHT},
+            follow=True,
+        )
+        self.assertContains(resp, 'Experimento criado — aguardando aprovação.')
+        self.assertNotContains(resp, f'value="{self.INSIGHT}"')
+        registro = AdaptiveExperiment.objects.get()
+        self.assertEqual(registro.status, AdaptiveExperiment.STATUS_AGUARDANDO_APROVACAO)
+        self.assertEqual(registro.insight_id, self.INSIGHT)
+        self.assertEqual(registro.area, 'funil_gratis')
+        self.assertIsNone(registro.portal_id)
+        self.assertEqual(registro.valor_baseline, esperado['valor_baseline'])
+        self.assertEqual(registro.amostra_baseline, esperado['amostra_baseline'])
+        self.assertEqual(registro.periodo_baseline_inicio, esperado['periodo_baseline_inicio'])
+        self.assertEqual(registro.periodo_baseline_fim, esperado['periodo_baseline_fim'])
+        self.assertNotEqual(registro.observacoes, 'baseline indisponível no momento da criação')
+
+    def test_get_nao_cria_e_visitante_comum_recebe_403(self):
+        url = reverse('master_experimento_criar')
+        self.client.force_login(self.master)
+        antes = AdaptiveExperiment.objects.count()
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.assertEqual(AdaptiveExperiment.objects.count(), antes)
+        self.client.force_login(self.comum)
+        self.assertEqual(self.client.get(reverse('master_experimentos')).status_code, 403)
+        self.assertEqual(self.client.post(url, {'insight_id': self.INSIGHT}).status_code, 403)
+        self.assertEqual(AdaptiveExperiment.objects.count(), antes)
+
+    def test_post_sem_csrf_e_insight_invalido_nao_criam(self):
+        self.client.force_login(self.master)
+        antes = AdaptiveExperiment.objects.count()
+        cliente = Client(enforce_csrf_checks=True)
+        cliente.force_login(self.master)
+        recusado = cliente.post(reverse('master_experimento_criar'), {'insight_id': self.INSIGHT})
+        self.assertEqual(recusado.status_code, 403)
+        self.assertEqual(AdaptiveExperiment.objects.count(), antes)
+        resp = self.client.post(
+            reverse('master_experimento_criar'),
+            {'insight_id': 'nao-existe'},
+            follow=True,
+        )
+        self.assertContains(resp, 'Sugestão não encontrada para o período observado.')
+        self.assertEqual(AdaptiveExperiment.objects.count(), antes)
+
+    def test_segunda_tentativa_nao_duplica_e_aponta_o_existente(self):
+        self.client.force_login(self.master)
+        url = reverse('master_experimento_criar')
+        self.client.post(url, {'insight_id': self.INSIGHT})
+        registro = AdaptiveExperiment.objects.get()
+        segunda = self.client.post(url, {'insight_id': self.INSIGHT}, follow=True)
+        self.assertEqual(AdaptiveExperiment.objects.count(), 1)
+        self.assertContains(segunda, 'Já existe um experimento ativo para esta sugestão.')
+        self.assertContains(segunda, reverse('master_experimento', args=[registro.pk]))
