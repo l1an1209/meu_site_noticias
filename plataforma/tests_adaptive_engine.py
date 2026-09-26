@@ -6,7 +6,10 @@ from django.test import TestCase
 from django.utils.timezone import now
 
 from plataforma.models import AnalyticsEvent, AnalyticsSession, Portal
-from plataforma.services.adaptive_engine import Insight, analisar, calcular, detectar, gerar, ler, preparar_contexto
+from plataforma.services.adaptive_engine import (
+    Insight, analisar, calcular, detectar, gerar, ler, pode_gerar_experimento,
+    preparar_contexto, sugerir_experimentos,
+)
 from plataforma.services.adaptive_engine.bottlenecks import (
     LIMIAR_BAIXA_PASSAGEM,
     LIMIAR_CHECKOUT_DIRETO,
@@ -734,3 +737,105 @@ class IaAdaptiveEngineTests(TestCase):
         self.assertEqual(a['metricas']['aquisicao']['sessoes']['valor'], 247)
         self.assertEqual(b['metricas']['aquisicao']['sessoes']['valor'], 3)
         self.assertNotIn('247', str(b))
+
+
+class ExperimentosAdaptiveEngineTests(TestCase):
+    def _insight(self, **extra):
+        dados = {
+            'id': 'funil_gratis_baixa_passagem',
+            'tipo': 'baixa_passagem',
+            'area': 'funil_gratis',
+            'confianca': 'media',
+            'amostra': 30,
+            'acao_sugerida': 'Investigar as etapas entre o clique e a criação do portal.',
+            'hipotese': 'Hipótese: pode existir um ponto da jornada que merece investigação.',
+        }
+        dados.update(extra)
+        return dados
+
+    def test_pode_gerar_para_funil_com_amostra_e_acao_investigavel(self):
+        self.assertTrue(pode_gerar_experimento(self._insight()))
+        pago = self._insight(
+            id='funil_pago_baixa_passagem', tipo='baixa_passagem', area='funil_pago',
+            acao_sugerida='Analisar o caminho entre a seleção do plano e o início do checkout.',
+        )
+        self.assertTrue(pode_gerar_experimento(pago))
+
+    def test_nao_gera_trafego_comparacao_ou_amostra_pequena(self):
+        self.assertFalse(pode_gerar_experimento(self._insight(
+            id='queda_de_trafego', tipo='queda_de_trafego', area='trafego',
+            acao_sugerida='Comparar origem, dispositivo e campanha entre os períodos.',
+        )))
+        self.assertFalse(pode_gerar_experimento(self._insight(
+            id='variacao_conversao_funil_pago', tipo='variacao_de_conversao', area='funil_pago',
+            acao_sugerida='Comparar funil, origem e dispositivo entre os períodos.',
+        )))
+        self.assertFalse(pode_gerar_experimento(self._insight(amostra=5, confianca='baixa')))
+        self.assertFalse(pode_gerar_experimento(self._insight(
+            acao_sugerida='Monitorar o funil nas próximas semanas.',
+        )))
+
+    def test_insight_malformado_nao_quebra_e_os_demais_seguem(self):
+        incompleto = {'id': 'sem_resto'}
+        valido = self._insight()
+        self.assertFalse(pode_gerar_experimento(incompleto))
+        self.assertFalse(pode_gerar_experimento({'id': 'x', 'tipo': 'baixa_passagem'}))
+        sugestoes = sugerir_experimentos([incompleto, valido, object()])
+        self.assertEqual(len(sugestoes), 1)
+        self.assertEqual(sugestoes[0].insight_id, 'funil_gratis_baixa_passagem')
+
+    def test_sugestao_tem_id_estavel_referencia_e_status(self):
+        sugestao = sugerir_experimentos([self._insight()])[0]
+        self.assertEqual(sugestao.id, 'funil_gratis_baixa_passagem:teste_de_fluxo')
+        self.assertNotIn('-', sugestao.id)
+        self.assertEqual(sugestao.metrica_principal, 'click_subscribe → portal_created')
+        self.assertEqual(
+            sugestao.metrica_referencia,
+            'linha de base = período de 14 dias antes do início',
+        )
+        self.assertEqual(sugestao.status, 'aguardando_aprovacao')
+        self.assertEqual(sugestao.confianca, 'media')
+        self.assertEqual(sugestao.amostra, 30)
+        self.assertIn('hipótese', sugestao.hipotese.lower())
+        self.assertNotIn('preço', sugestao.variante_b.lower())
+
+    def test_mesma_entrada_produz_a_mesma_sugestao(self):
+        insights = [
+            self._insight(
+                id='funil_pago_baixa_passagem', area='funil_pago',
+                acao_sugerida='Analisar o caminho.',
+            ),
+            self._insight(),
+        ]
+        primeira = [item.id for item in sugerir_experimentos(insights)]
+        segunda = [item.id for item in sugerir_experimentos(list(reversed(insights)))]
+        self.assertEqual(primeira, segunda)
+        self.assertEqual(primeira, [
+            'funil_gratis_baixa_passagem:teste_de_fluxo',
+            'funil_pago_baixa_passagem:teste_de_fluxo',
+        ])
+
+    def test_nao_altera_insight_nem_registros(self):
+        uid = uuid.uuid4()
+        AnalyticsSession.objects.create(
+            id=uid, rotulo='EX01', visto_em=now(), path_primeiro='/', path_atual='/',
+        )
+        AnalyticsEvent.objects.create(sessao_id=uid, tipo='view_home', path='/', extra={})
+        antes = AnalyticsEvent.objects.count()
+        insight = self._insight()
+        copia = dict(insight)
+        sugerir_experimentos([insight])
+        self.assertEqual(insight, copia)
+        self.assertEqual(AnalyticsEvent.objects.count(), antes)
+
+    def test_isolamento_entre_listas_de_insights(self):
+        a = sugerir_experimentos([self._insight(amostra=40)])
+        b = sugerir_experimentos([self._insight(
+            id='funil_pago_baixa_passagem', area='funil_pago', amostra=80, confianca='alta',
+            acao_sugerida='Analisar o caminho entre o plano e o checkout.',
+        )])
+        self.assertEqual(a[0].insight_id, 'funil_gratis_baixa_passagem')
+        self.assertEqual(b[0].insight_id, 'funil_pago_baixa_passagem')
+        self.assertNotEqual(a[0].id, b[0].id)
+        self.assertEqual(b[0].confianca, 'alta')
+        self.assertEqual(b[0].metrica_principal, 'click_plan → initiate_checkout')
