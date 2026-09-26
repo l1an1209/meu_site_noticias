@@ -55,13 +55,50 @@
 
 <section class="home-hero home-hero--simple">
     <div class="container">
-        <div class="home-hero__copy home-hero__copy--center">
-            <p class="home-badge">Portal de notícias profissional</p>
-            <h1 class="display-font">Crie seu portal de notícias gratuitamente.</h1>
-            <p class="lead">Crie seu próprio portal de notícias. Publique notícias, construa sua audiência e evolua seu portal quando quiser.</p>
-            <div class="home-hero__actions home-hero__actions--center">
-                <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'app_comecar' %}">Criar meu portal</a>
-                <a class="btn btn-ds-ghost btn-lg" href="#planos">Ver planos</a>
+        <div class="home-hero__grid">
+            <div class="home-hero__copy">
+                <p class="home-badge">Portal de notícias profissional</p>
+                <h1 class="display-font">Crie seu portal de notícias gratuitamente.</h1>
+                <p class="lead">Crie seu próprio portal de notícias. Publique notícias, construa sua audiência e evolua seu portal quando quiser.</p>
+                <div class="home-hero__actions">
+                    <a class="btn btn-contribuir btn-lg" data-pup-event="click_subscribe" href="{% url 'app_comecar' %}">Criar meu portal</a>
+                    <a class="btn btn-ds-ghost btn-lg" href="#planos">Ver planos</a>
+                </div>
+            </div>
+            <div class="home-hero__stage" aria-hidden="true">
+                <div class="pup-mock pup-mock--site">
+                    <div class="pup-mock__top">
+                        <span></span><span></span><span></span>
+                        <em>seu-portal.portalnoticias.com.br</em>
+                    </div>
+                    <div class="pup-mock__brand">
+                        <b></b>
+                        <strong>Seu portal</strong>
+                    </div>
+                    <div class="pup-mock__nav">Início · Cidade · Esportes · Vídeos</div>
+                    <div class="pup-mock__story">
+                        <div class="pup-mock__hero"></div>
+                        <p>Manchete do dia</p>
+                    </div>
+                    <div class="pup-mock__rows">
+                        <div></div><div></div><div></div>
+                    </div>
+                </div>
+                <div class="pup-mock pup-mock--app pup-mock--app-inline">
+                    <div class="pup-mock__app-side">
+                        <b>Painel</b>
+                        <i>Dashboard</i>
+                        <i>Notícias</i>
+                        <i>Categorias</i>
+                        <i>Anúncios</i>
+                    </div>
+                    <div class="pup-mock__app-main">
+                        <small>Área administrativa</small>
+                        <div class="pup-mock__kpis"><span></span><span></span><span></span></div>
+                        <div class="pup-mock__line"></div>
+                        <div class="pup-mock__line pup-mock__line--short"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -81,41 +118,6 @@
                 <li><i class="fas fa-ad" aria-hidden="true"></i>Espaços de publicidade</li>
                 <li><i class="fas fa-gauge-high" aria-hidden="true"></i>Painel administrativo</li>
             </ul>
-        </div>
-        <div class="home-product__stage" aria-hidden="true">
-            <div class="pup-mock pup-mock--site">
-                <div class="pup-mock__top">
-                    <span></span><span></span><span></span>
-                    <em>seu-portal.portalnoticias.com.br</em>
-                </div>
-                <div class="pup-mock__brand">
-                    <b></b>
-                    <strong>Seu portal</strong>
-                </div>
-                <div class="pup-mock__nav">Início · Cidade · Esportes · Vídeos</div>
-                <div class="pup-mock__story">
-                    <div class="pup-mock__hero"></div>
-                    <p>Manchete do dia</p>
-                </div>
-                <div class="pup-mock__rows">
-                    <div></div><div></div><div></div>
-                </div>
-            </div>
-            <div class="pup-mock pup-mock--app pup-mock--app-inline">
-                <div class="pup-mock__app-side">
-                    <b>Painel</b>
-                    <i>Dashboard</i>
-                    <i>Notícias</i>
-                    <i>Categorias</i>
-                    <i>Anúncios</i>
-                </div>
-                <div class="pup-mock__app-main">
-                    <small>Área administrativa</small>
-                    <div class="pup-mock__kpis"><span></span><span></span><span></span></div>
-                    <div class="pup-mock__line"></div>
-                    <div class="pup-mock__line pup-mock__line--short"></div>
-                </div>
-            </div>
         </div>
     </div>
 </section>
