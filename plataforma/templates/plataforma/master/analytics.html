@@ -40,8 +40,10 @@
     <div class="ds-card p-3"><span class="text-muted small">Planos</span><strong>{{ view_plans }}</strong></div>
     <div class="ds-card p-3"><span class="text-muted small">Cliques contratar</span><strong>{{ clicks }}</strong></div>
     <div class="ds-card p-3"><span class="text-muted small">Checkouts</span><strong>{{ checkouts }}</strong></div>
-    <div class="ds-card p-3"><span class="text-muted small">Cadastros</span><strong>{{ cadastros }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Cadastro de leitor</span><strong>{{ cadastros }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Portais grátis criados</span><strong>{{ portais_gratis }}</strong></div>
     <div class="ds-card p-3"><span class="text-muted small">Compras</span><strong>{{ compras }}</strong></div>
+    <div class="ds-card p-3"><span class="text-muted small">Compras não vinculadas ao funil</span><strong>{{ compras_orfas }}</strong></div>
     <div class="ds-card p-3"><span class="text-muted small">Receita (eventos)</span><strong>R$ {{ receita }}</strong></div>
     <div class="ds-card p-3"><span class="text-muted small">Conversão</span><strong>{{ taxa }}%</strong></div>
 </div>
@@ -62,13 +64,48 @@
 </section>
 
 <section class="ds-card p-4 mb-4">
-    <h2 class="h5 mb-3">Funil comercial</h2>
+    <h2 class="h5 mb-1">Funil grátis</h2>
+    <p class="small text-muted">Quem clicou em criar o portal e chegou a ter o portal criado. Login e primeira publicação ainda não entram nesta medição.</p>
     <ol class="an-funnel">
-        {% for etapa in funil %}
+        {% for etapa in funil_gratis %}
         <li>
             <div>
                 <strong>{{ etapa.label }}</strong>
                 <span>{{ etapa.quantidade }} sessões · {{ etapa.pct_anterior }}% da etapa anterior · {{ etapa.pct_total }}% do início{% if etapa.abandono %} · abandono {{ etapa.abandono }}{% endif %}</span>
+            </div>
+            <div class="an-bar"><i style="width: {{ etapa.pct_total }}%"></i></div>
+        </li>
+        {% endfor %}
+    </ol>
+    <p class="small text-muted mb-0">Portais criados sem clique rastreado: {{ portais_sem_clique }}</p>
+</section>
+
+<section class="ds-card p-4 mb-4">
+    <h2 class="h5 mb-1">Funil pago</h2>
+    <p class="small text-muted">Do clique no plano até a abertura do checkout. A compra confirmada fica no card de compras, porque o webhook não traz a sessão do visitante.</p>
+    <ol class="an-funnel">
+        {% for etapa in funil_pago %}
+        <li>
+            <div>
+                <strong>{{ etapa.label }}</strong>
+                <span>{{ etapa.quantidade }} sessões · {{ etapa.pct_anterior }}% da etapa anterior · {{ etapa.pct_total }}% do início{% if etapa.abandono %} · abandono {{ etapa.abandono }}{% endif %}</span>
+            </div>
+            <div class="an-bar"><i style="width: {{ etapa.pct_total }}%"></i></div>
+        </li>
+        {% endfor %}
+    </ol>
+    <p class="small text-muted mb-0">Entrada direta no checkout, fora desta sequência: {{ entrada_direta }} sessões</p>
+</section>
+
+<section class="ds-card p-4 mb-4">
+    <h2 class="h5 mb-1">Comparação</h2>
+    <p class="small text-muted">Visita à página /comece/. Não é o caminho do botão Começar agora na Home.</p>
+    <ol class="an-funnel">
+        {% for etapa in funil_comparacao %}
+        <li>
+            <div>
+                <strong>{{ etapa.label }}</strong>
+                <span>{{ etapa.quantidade }} sessões</span>
             </div>
             <div class="an-bar"><i style="width: {{ etapa.pct_total }}%"></i></div>
         </li>

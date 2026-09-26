@@ -173,6 +173,18 @@ def provisionar_portal_gratuito(*, nome, email, slug, cidade, estado, senha='', 
         enviar_boas_vindas_gratuito(user, portal, request=request, cliente=cliente)
     except Exception:
         logger.exception('Falha ao disparar o e-mail do cadastro gratuito')
+    try:
+        if request is not None:
+            from plataforma.services.analytics import registrar_evento
+            registrar_evento(
+                request,
+                'portal_created',
+                path='/app/comecar/',
+                extra={'plano': 'gratuito'},
+                portal=portal,
+            )
+    except Exception:
+        logger.exception('Falha ao registrar portal gratuito no analytics')
     return {
         'criado': True,
         'portal': portal,

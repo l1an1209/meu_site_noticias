@@ -23,9 +23,11 @@ TIPOS = frozenset({
     'initiate_checkout',
     'registration_start',
     'registration_complete',
+    'portal_created',
     'purchase',
     'heartbeat',
 })
+# Nomes históricos. O Master não soma mais estes tipos numa fila só.
 FUNIL = (
     ('view_home', 'Home'),
     ('view_plans', 'Planos'),
@@ -47,6 +49,13 @@ def ativo_desde():
 
 def _limpar_texto(valor, limite):
     return str(valor or '').strip()[:limite]
+
+
+def _paths_equivalentes(path):
+    path = _path_seguro(path)
+    sem_barra = path.rstrip('/') or '/'
+    com_barra = sem_barra if sem_barra == '/' else sem_barra + '/'
+    return list({path, sem_barra, com_barra})
 
 
 def _path_seguro(valor):
@@ -174,6 +183,15 @@ def registrar_evento(request, tipo, path='/', extra=None, ref_externo='', portal
         derivado = classificar_path(path)
         if derivado != 'page_view':
             tipo = derivado
+            # O script repete a abertura que o servidor já gravou. Uma visita
+            # posterior continua contando, porque o servidor grava de novo.
+            if AnalyticsEvent.objects.filter(
+                sessao=sessao,
+                tipo=tipo,
+                path__in=_paths_equivalentes(path),
+                criado_em__gte=now() - timedelta(seconds=120),
+            ).exists():
+                return sessao
     ref_externo = _limpar_texto(ref_externo or extra.get('eid') or extra.get('order_id'), 80)
     if ref_externo and AnalyticsEvent.objects.filter(tipo=tipo, ref_externo=ref_externo).exists():
         return sessao
@@ -295,6 +313,32 @@ def _sessoes_unicas(qs, tipo):
     return qs.filter(tipo=tipo).values('sessao_id').distinct().count()
 
 
+def _ids(qs):
+    return set(qs.values_list('sessao_id', flat=True).distinct())
+
+
+def _funil_sequencial(passos):
+    """Cada etapa só conta sessões que também passaram pela anterior."""
+    funil = []
+    anterior = None
+    entrada = 0
+    for tipo, label, ids in passos:
+        ids = set(ids)
+        atual = ids if anterior is None else ids & anterior
+        qtd = len(atual)
+        if anterior is None:
+            entrada = qtd
+        pct_total = round((qtd / entrada) * 100, 1) if entrada else 0
+        pct_ant = round((qtd / len(anterior)) * 100, 1) if anterior else 100.0
+        abandono = max(0, len(anterior) - qtd) if anterior is not None else 0
+        funil.append({
+            'tipo': tipo, 'label': label, 'quantidade': qtd,
+            'pct_total': pct_total, 'pct_anterior': pct_ant, 'abandono': abandono,
+        })
+        anterior = atual
+    return funil
+
+
 def montar_dashboard(params):
     periodo, inicio, fim = periodo_de_params(params)
     portal = portal_filtrado(params)
@@ -306,33 +350,39 @@ def montar_dashboard(params):
     if portal is not None:
         ativos_qs = ativos_qs.filter(Q(portal=portal) | Q(eventos__portal=portal)).distinct()
 
-    funil = []
-    anterior = None
-    entrada = _sessoes_unicas(eventos, 'view_home') or sessoes.count()
-    for tipo, label in FUNIL:
-        qtd = _sessoes_unicas(eventos, tipo)
-        if tipo == 'click_plan':
-            qtd = eventos.filter(tipo__in=['click_plan', 'click_subscribe']).values('sessao_id').distinct().count()
-        pct_total = round((qtd / entrada) * 100, 1) if entrada else 0
-        pct_ant = round((qtd / anterior) * 100, 1) if anterior else 100.0
-        abandono = max(0, (anterior or 0) - qtd) if anterior is not None else 0
-        funil.append({
-            'tipo': tipo, 'label': label, 'quantidade': qtd,
-            'pct_total': pct_total, 'pct_anterior': pct_ant, 'abandono': abandono,
-        })
-        anterior = qtd
+    cliques_gratis = _ids(eventos.filter(tipo='click_subscribe', path__startswith='/app/comecar'))
+    cliques_pagos = _ids(eventos.filter(tipo='click_plan'))
+    checkouts_ids = _ids(eventos.filter(tipo='initiate_checkout'))
+    portais_ids = _ids(eventos.filter(tipo='portal_created'))
+    entrada_direta_ids = checkouts_ids - cliques_pagos
+    portais_sem_clique_ids = portais_ids - cliques_gratis
+    funil_gratis = _funil_sequencial([
+        ('click_subscribe', 'Criar meu portal', cliques_gratis),
+        ('portal_created', 'Portal criado', portais_ids),
+    ])
+    funil_pago = _funil_sequencial([
+        ('click_plan', 'Plano pago escolhido', cliques_pagos),
+        ('initiate_checkout', 'Checkout', checkouts_ids),
+    ])
+    funil_comparacao = _funil_sequencial([
+        ('view_plans', 'Visita a /comece/', _ids(eventos.filter(tipo='view_plans'))),
+    ])
+    funil = funil_pago
 
-    compras = eventos.filter(tipo='purchase')
+    compras_qs = eventos.filter(tipo='purchase')
+    sessoes_compra = _ids(compras_qs)
+    sessoes_com_jornada = _ids(eventos.exclude(tipo='purchase'))
+    compras_orfas_ids = sessoes_compra - sessoes_com_jornada
     receita = Decimal('0')
-    for item in compras.values_list('extra', flat=True):
+    for item in compras_qs.values_list('extra', flat=True):
         try:
             receita += Decimal(str((item or {}).get('valor') or '0'))
         except (InvalidOperation, TypeError):
             continue
 
     visitantes = sessoes.count() or eventos.values('sessao_id').distinct().count()
-    conversoes = funil[-1]['quantidade']
-    taxa = round((conversoes / visitantes) * 100, 2) if visitantes else 0
+    compras_total = len(sessoes_compra)
+    taxa = round((compras_total / visitantes) * 100, 2) if visitantes else 0
 
     por_hora = list(
         eventos.annotate(hora=TruncHour('criado_em')).values('hora').annotate(
@@ -384,19 +434,28 @@ def montar_dashboard(params):
         ).count(),
         'view_plans': _sessoes_unicas(eventos, 'view_plans'),
         'clicks': eventos.filter(tipo__in=['click_plan', 'click_subscribe']).values('sessao_id').distinct().count(),
-        'checkouts': _sessoes_unicas(eventos, 'initiate_checkout'),
+        'clicks_gratis': len(cliques_gratis),
+        'clicks_pagos': len(cliques_pagos),
+        'checkouts': len(checkouts_ids),
+        'entrada_direta': len(entrada_direta_ids),
+        'portais_gratis': len(portais_ids),
+        'portais_sem_clique': len(portais_sem_clique_ids),
         'cadastros': _sessoes_unicas(eventos, 'registration_complete') or _sessoes_unicas(eventos, 'registration_start'),
-        'compras': conversoes,
+        'compras': compras_total,
+        'compras_orfas': len(compras_orfas_ids),
         'receita': receita,
         'taxa': taxa,
         'funil': funil,
+        'funil_gratis': funil_gratis,
+        'funil_pago': funil_pago,
+        'funil_comparacao': funil_comparacao,
         'por_hora': por_hora,
         'eventos_hora': por_hora,
         'origens': _barras(origens),
         'dispositivos': _barras(dispositivos),
         'campanhas': _barras(campanhas),
         'paginas': paginas,
-        'compras_lista': list(compras.select_related('sessao', 'portal')[:20]),
+        'compras_lista': list(compras_qs.select_related('sessao', 'portal')[:20]),
         'sessoes': list(sessoes.order_by('-visto_em')[:40]),
         'ativos_lista': list(ativos_qs.order_by('-visto_em')[:30]),
         'portais': list(Portal.objects.order_by('nome').only('id', 'nome', 'slug')),
